@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="AppBey 2.0 — Plataforma oficial de torneos, ranking, deck builder 3on3 y comunidad Beyblade X.">
+  <meta name="theme-color" content="#1246A0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AppBey">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/shield.png">
+
+  <title>AppBey 2.0 — Plataforma Competitiva Beyblade X</title>
+
+  <!-- Google Fonts & Tailwind CSS CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#1246A0',
+              cyan: '#06B6D4',
+              gold: '#F59E0B',
+              dark: '#070F26',
+              card: '#0B1536'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-[#070F26] text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-black">
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-[#070F26]/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Logo -->
+      <a href="#/" class="flex items-center gap-2.5 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition">
+          ⚡
+        </div>
+        <div>
+          <span class="font-extrabold text-xl tracking-tight text-white">AppBey</span>
+          <span class="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-amber-400 ml-1">2.0</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Items -->
+      <nav class="hidden md:flex items-center gap-6 text-sm font-semibold">
+        <a href="#/" class="nav-link text-slate-400 hover:text-cyan-400 transition">Inicio</a>
+        <a href="#/tournaments" class="nav-link text-slate-400 hover:text-cyan-400 transition">Torneos</a>
+        <a href="#/deck-builder" class="nav-link text-slate-400 hover:text-cyan-400 transition">Deck 3on3</a>
+        <a href="#/tier-list" class="nav-link text-slate-400 hover:text-cyan-400 transition">Tier List</a>
+        <a href="#/rankings" class="nav-link text-slate-400 hover:text-cyan-400 transition">Rankings</a>
+        <a href="#/social" class="nav-link text-slate-400 hover:text-cyan-400 transition">Comunidad</a>
+      </nav>
+
+      <!-- Auth Header / User Profile -->
+      <div id="nav-auth-container" class="flex items-center gap-3">
+        <!-- Injected by app.js -->
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8" id="main-content">
+    <!-- View rendered by SPA router -->
+  </main>
+
+  <!-- Mobile Bottom Navigation Bar (Native App Feel) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#070F26]/95 backdrop-blur-lg border-t border-slate-800 px-3 py-2 flex items-center justify-around text-[10px] font-bold">
+    <a href="#/" class="nav-link flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-400">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span>Inicio</span>
+    </a>
+    <a href="#/tournaments" class="nav-link flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-400">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      <span>Torneos</span>
+    </a>
+    <a href="#/deck-builder" class="nav-link flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-400">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <span>Deck 3on3</span>
+    </a>
+    <a href="#/rankings" class="nav-link flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-400">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span>Rankings</span>
+    </a>
+    <a href="#/wallet" class="nav-link flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-400">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Billetera</span>
+    </a>
+  </nav>
+
+  <!-- Client Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/ws.js"></script>
+  <script src="/js/views/home.js"></script>
+  <script src="/js/views/tournaments.js"></script>
+  <script src="/js/views/tournament_detail.js"></script>
+  <script src="/js/views/referee_pad.js"></script>
+  <script src="/js/views/stadium_display.js"></script>
+  <script src="/js/views/deck_builder.js"></script>
+  <script src="/js/views/tier_list.js"></script>
+  <script src="/js/views/rankings.js"></script>
+  <script src="/js/views/hall_of_fame.js"></script>
+  <script src="/js/views/wallet.js"></script>
+  <script src="/js/views/social.js"></script>
+  <script src="/js/views/profile.js"></script>
+  <script src="/js/views/auth.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+﻿{
+  "name": "AppBey 2.0 — Plataforma Competitiva Beyblade",
+  "short_name": "AppBey",
+  "start_url": "/#/",
+  "display": "standalone",
+  "background_color": "#07132B",
+  "theme_color": "#1246A0",
+  "description": "Torneos, brackets en vivo, deck builder 3on3, arbitraje tactil y ranking competitivo de Beyblade X.",
+  "orientation": "any",
+  "categories": [
+    "sports",
+    "games",
+    "utilities"
+  ],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
