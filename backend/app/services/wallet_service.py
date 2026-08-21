@@ -16,7 +16,7 @@ class WalletService:
                 wallet_id=wallet.id,
                 amount=250,
                 tx_type="signup_bonus",
-                reason="Bono de bienvenida AppBey 2.0"
+                reason="Bono de bienvenida AppBey"
             )
             db.add(tx)
             db.commit()

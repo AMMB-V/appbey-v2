@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="API RESTful y WebSocket de Alto Rendimiento para AppBey 2.0 (Torneos Beyblade X, Brackets, Decks, Wallet y Arbitraje en Vivo)",
+    description="API RESTful y WebSocket de Alto Rendimiento para AppBey (Torneos Beyblade X, Brackets, Decks, Wallet y Arbitraje en Vivo)",
     lifespan=lifespan
 )
 
@@ -75,7 +75,7 @@ def get_manifest():
     manifest_file = settings.STATIC_DIR / "manifest.json"
     if manifest_file.exists():
         return FileResponse(manifest_file, media_type="application/manifest+json")
-    return {"name": "AppBey 2.0"}
+    return {"name": "AppBey"}
 
 @app.get("/sw.js")
 def get_service_worker():
@@ -89,7 +89,7 @@ def serve_index():
     index_file = settings.STATIC_DIR / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
-    return {"message": "AppBey 2.0 API Server Online", "docs_url": "/docs"}
+    return {"message": "AppBey API Server Online", "docs_url": "/docs"}
 
 if __name__ == "__main__":
     import uvicorn

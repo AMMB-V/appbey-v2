@@ -1,4 +1,4 @@
-﻿// AppBey 2.0 API Client
+﻿// AppBey API Client
 const API_BASE = window.location.origin + "/api/v1";
 
 class ApiClient {

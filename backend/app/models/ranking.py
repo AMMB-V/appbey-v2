@@ -26,6 +26,11 @@ class SeasonRanking(Base):
     podium_finishes = Column(Integer, default=0)
     matches_won = Column(Integer, default=0)
     matches_lost = Column(Integer, default=0)
+    points_for = Column(Integer, default=0)
+    points_against = Column(Integer, default=0)
+    bonus_points = Column(Integer, default=0)
+    warnings = Column(Integer, default=0)
+    overall_rank = Column(Integer, nullable=True)
 
     season = relationship("Season")
     user = relationship("User")

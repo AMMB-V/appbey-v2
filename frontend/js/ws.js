@@ -1,4 +1,4 @@
-﻿// AppBey 2.0 WebSocket Hub
+﻿// AppBey WebSocket Hub
 class WebSocketHub {
   constructor() {
     this.socket = null;

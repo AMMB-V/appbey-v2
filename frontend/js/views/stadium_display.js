@@ -32,7 +32,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
             <div>
               <div class="text-xs uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                AppBey 2.0 Live Stadium Display • ${tournament.country}
+                AppBey Live Stadium Display • ${tournament.country}
               </div>
               <h1 class="text-2xl md:text-3xl font-black text-white tracking-wide">${tournament.title}</h1>
             </div>
@@ -119,7 +119,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
             `).join("") : '<span class="text-slate-500">Ningún match finalizado aún</span>'}
           </div>
           <div class="font-mono text-cyan-400 font-bold shrink-0">
-            UC x AppBey
+            AppBey
           </div>
         </div>
       </div>

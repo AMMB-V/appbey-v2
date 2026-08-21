@@ -8,7 +8,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR = BASE_DIR.parent / "frontend"
 
 class Settings(BaseModel):
-    PROJECT_NAME: str = "AppBey 2.0"
+    PROJECT_NAME: str = "AppBey"
     VERSION: str = "2.0.0"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "appbey-super-secret-jwt-key-2026-beyblade-championship")

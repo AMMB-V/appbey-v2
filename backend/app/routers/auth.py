@@ -16,12 +16,15 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="El correo electronico ya esta registrado")
 
+    # Seguridad: quien se registra por su cuenta SIEMPRE entra como "blader".
+    # Los demas roles (organizer, referee, admin) solo los puede asignar un admin
+    # despues, vía PUT /users/{user_id}/role o POST /users/admin-create.
     user = User(
         username=req.username,
         email=req.email,
         password_hash=hash_password(req.password),
         display_name=req.display_name,
-        role=req.role or "blader",
+        role="blader",
         country=req.country or "PA",
         elo_rating=1200
     )

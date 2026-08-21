@@ -1,4 +1,4 @@
-﻿// AppBey 2.0 Core Application Router & Shell
+﻿// AppBey Core Application Router & Shell
 (function() {
   const router = () => {
     const hash = window.location.hash || "#/";
@@ -57,7 +57,7 @@
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("/sw.js").then(reg => {
-        console.log("AppBey 2.0 PWA Service Worker Registered:", reg.scope);
+        console.log("AppBey PWA Service Worker Registered:", reg.scope);
       }).catch(err => {
         console.log("SW Registration failed:", err);
       });

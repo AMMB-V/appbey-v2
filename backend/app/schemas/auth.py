@@ -20,5 +20,15 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     display_name: str
-    role: Optional[str] = "blader"
     country: Optional[str] = "PA"
+
+class AdminCreateUserRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    display_name: str
+    role: str  # admin, organizer, referee, blader, spectator
+    country: Optional[str] = "PA"
+
+class RoleUpdateRequest(BaseModel):
+    role: str  # admin, organizer, referee, blader, spectator

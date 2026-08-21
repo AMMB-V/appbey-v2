@@ -12,7 +12,7 @@ def seed_database(db: Session):
     if db.query(User).first():
         return
 
-    print("Seeding AppBey 2.0 initial database...")
+    print("Seeding AppBey initial database...")
 
     # 1. Users
     admin = User(
@@ -23,7 +23,7 @@ def seed_database(db: Session):
         role="admin",
         country="PA",
         avatar_url="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-        bio="Organizador Oficial de Torneos Beyblade X en Panama y fundador de UC x AppBey.",
+        bio="Organizador Oficial de Torneos Beyblade X en Panama.",
         favorite_combo="Phoenix Wing 9-60 GF",
         elo_rating=1850
     )
@@ -75,7 +75,7 @@ def seed_database(db: Session):
         w = Wallet(user_id=u.id, balance=1200 if u.role in ["admin", "organizer"] else 500)
         db.add(w)
         db.commit()
-        tx = Transaction(wallet_id=w.id, amount=w.balance, tx_type="signup_bonus", reason="Saldo inicial y bienvenida AppBey 2.0")
+        tx = Transaction(wallet_id=w.id, amount=w.balance, tx_type="signup_bonus", reason="Saldo inicial y bienvenida AppBey")
         db.add(tx)
     db.commit()
 
@@ -324,7 +324,7 @@ def seed_database(db: Session):
     # 6. Community Posts
     p1 = CommunityPost(
         user_id=admin.id,
-        content="Bienvenidos a la nueva plataforma de **AppBey 2.0**. Hemos redisenado por completo el motor de torneos, constructor de decks y marcador de arbitraje tactil.",
+        content="Bienvenidos a la nueva plataforma de **AppBey**. Hemos redisenado por completo el motor de torneos, constructor de decks y marcador de arbitraje tactil.",
         likes_count=24,
         comments_count=2
     )
@@ -357,4 +357,4 @@ def seed_database(db: Session):
     db.add(n1)
     db.commit()
 
-    print("AppBey 2.0 Database seeded successfully!")
+    print("AppBey Database seeded successfully!")
