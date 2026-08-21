@@ -1,4 +1,4 @@
-﻿# AppBey 2.0 Production Dockerfile
+﻿# AppBey Production Dockerfile
 FROM python:3.12-slim
 
 WORKDIR /app

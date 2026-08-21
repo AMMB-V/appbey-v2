@@ -1,6 +1,6 @@
-﻿# AppBey 2.0 — Plataforma Competitiva de Torneos Beyblade X (Web & Mobile PWA)
+﻿# AppBey — Plataforma Competitiva de Torneos Beyblade X (Web & Mobile PWA)
 
-AppBey 2.0 es la nueva generación de software diseñada para la comunidad competitiva de **Beyblade X** (y formatos compatibles). Reemplaza arquitecturas pesadas con un backend ultrarrápido en **FastAPI (Python)**, persistencia relacional con **SQLite WAL / PostgreSQL Ready**, sincronización en tiempo real vía **WebSockets**, y una aplicación frontend **PWA offline-first** descargable en dispositivos móviles (iOS y Android).
+AppBey es la nueva generación de software diseñada para la comunidad competitiva de **Beyblade X** (y formatos compatibles). Reemplaza arquitecturas pesadas con un backend ultrarrápido en **FastAPI (Python)**, persistencia relacional con **SQLite WAL / PostgreSQL Ready**, sincronización en tiempo real vía **WebSockets**, y una aplicación frontend **PWA offline-first** descargable en dispositivos móviles (iOS y Android).
 
 ---
 
