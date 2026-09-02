@@ -10,8 +10,11 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "esbuild": "^0.28.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
     "ws": "^8.21.3"
   },
   "devDependencies": {
@@ -20,9 +23,6 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.4.1",
-    "@types/ws": "^8.18.1",
-    "esbuild": "^0.28.2",
-    "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "@types/ws": "^8.18.1"
   }
 }
