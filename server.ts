@@ -255,13 +255,154 @@ let communityPosts: CommunityPost[] = [];
 let postComments: PostComment[] = [];
 let notifications: Notification[] = [];
 
+// Official Season 1 Data from Asociacion Panamena de Beyblade
+interface HistoricalBladerData {
+  rank: number;
+  blader: string;
+  tournaments_played: number;
+  matches_played: number;
+  matches_won: number;
+  matches_lost: number;
+  points_for: number;
+  points_against: number;
+  bonus_points: number;
+  warnings: number;
+  win_rate: string;
+  total_points: number;
+}
+
+const APB_SEASON_1_RANKINGS: HistoricalBladerData[] = [
+  { rank: 1, blader: "Yorch", tournaments_played: 15, matches_played: 145, matches_won: 96, matches_lost: 49, points_for: 519, points_against: 317, bonus_points: 444, warnings: 0, win_rate: "66%", total_points: 646 },
+  { rank: 2, blader: "Woonka", tournaments_played: 14, matches_played: 150, matches_won: 94, matches_lost: 56, points_for: 484, points_against: 353, bonus_points: 352, warnings: 0, win_rate: "63%", total_points: 483 },
+  { rank: 3, blader: "Kanghy", tournaments_played: 16, matches_played: 157, matches_won: 87, matches_lost: 70, points_for: 505, points_against: 417, bonus_points: 392, warnings: 0, win_rate: "55%", total_points: 480 },
+  { rank: 4, blader: "Raines", tournaments_played: 12, matches_played: 117, matches_won: 73, matches_lost: 44, points_for: 429, points_against: 311, bonus_points: 347, warnings: 0, win_rate: "62%", total_points: 465 },
+  { rank: 5, blader: "Zirox", tournaments_played: 16, matches_played: 138, matches_won: 78, matches_lost: 60, points_for: 440, points_against: 354, bonus_points: 352, warnings: 0, win_rate: "57%", total_points: 438 },
+  { rank: 6, blader: "Káiser", tournaments_played: 12, matches_played: 116, matches_won: 70, matches_lost: 46, points_for: 416, points_against: 323, bonus_points: 286, warnings: 0, win_rate: "60%", total_points: 379 },
+  { rank: 7, blader: "Baco", tournaments_played: 16, matches_played: 149, matches_won: 81, matches_lost: 68, points_for: 479, points_against: 413, bonus_points: 304, warnings: 0, win_rate: "54%", total_points: 370 },
+  { rank: 8, blader: "RADD", tournaments_played: 12, matches_played: 107, matches_won: 69, matches_lost: 38, points_for: 370, points_against: 268, bonus_points: 241, warnings: 0, win_rate: "64%", total_points: 343 },
+  { rank: 9, blader: "Raphaeru", tournaments_played: 10, matches_played: 91, matches_won: 56, matches_lost: 35, points_for: 305, points_against: 222, bonus_points: 237, warnings: 0, win_rate: "62%", total_points: 320 },
+  { rank: 10, blader: "Wolf", tournaments_played: 10, matches_played: 99, matches_won: 55, matches_lost: 44, points_for: 330, points_against: 266, bonus_points: 240, warnings: 0, win_rate: "56%", total_points: 304 },
+  { rank: 11, blader: "ProdyQ", tournaments_played: 13, matches_played: 125, matches_won: 67, matches_lost: 58, points_for: 369, points_against: 353, bonus_points: 283, warnings: 0, win_rate: "54%", total_points: 299 },
+  { rank: 12, blader: "Panda", tournaments_played: 8, matches_played: 65, matches_won: 36, matches_lost: 29, points_for: 269, points_against: 223, bonus_points: 237, warnings: 0, win_rate: "55%", total_points: 283 },
+  { rank: 13, blader: "Jiji", tournaments_played: 7, matches_played: 62, matches_won: 36, matches_lost: 26, points_for: 193, points_against: 172, bonus_points: 206, warnings: 0, win_rate: "58%", total_points: 227 },
+  { rank: 14, blader: "Scorpio", tournaments_played: 5, matches_played: 71, matches_won: 40, matches_lost: 31, points_for: 210, points_against: 169, bonus_points: 153, warnings: 0, win_rate: "56%", total_points: 194 },
+  { rank: 15, blader: "C J", tournaments_played: 11, matches_played: 97, matches_won: 60, matches_lost: 37, points_for: 269, points_against: 270, bonus_points: 178, warnings: 0, win_rate: "62%", total_points: 177 },
+  { rank: 16, blader: "Dimetrodon", tournaments_played: 7, matches_played: 50, matches_won: 27, matches_lost: 23, points_for: 139, points_against: 144, bonus_points: 181, warnings: 0, win_rate: "54%", total_points: 176 },
+  { rank: 17, blader: "King", tournaments_played: 10, matches_played: 75, matches_won: 41, matches_lost: 34, points_for: 231, points_against: 221, bonus_points: 159, warnings: 0, win_rate: "55%", total_points: 169 },
+  { rank: 18, blader: "Gurren Iann", tournaments_played: 6, matches_played: 44, matches_won: 23, matches_lost: 21, points_for: 133, points_against: 125, bonus_points: 153, warnings: 0, win_rate: "52%", total_points: 161 },
+  { rank: 19, blader: "Pejex", tournaments_played: 10, matches_played: 67, matches_won: 29, matches_lost: 38, points_for: 195, points_against: 204, bonus_points: 166, warnings: 0, win_rate: "43%", total_points: 157 },
+  { rank: 20, blader: "Bubbles", tournaments_played: 10, matches_played: 81, matches_won: 33, matches_lost: 48, points_for: 198, points_against: 236, bonus_points: 181, warnings: 0, win_rate: "41%", total_points: 143 },
+  { rank: 21, blader: "Krizia Olmos", tournaments_played: 10, matches_played: 77, matches_won: 42, matches_lost: 35, points_for: 224, points_against: 230, bonus_points: 141, warnings: 0, win_rate: "55%", total_points: 135 },
+  { rank: 22, blader: "Sombra", tournaments_played: 10, matches_played: 75, matches_won: 33, matches_lost: 42, points_for: 196, points_against: 226, bonus_points: 131, warnings: 0, win_rate: "44%", total_points: 101 },
+  { rank: 23, blader: "Kurenai", tournaments_played: 9, matches_played: 71, matches_won: 27, matches_lost: 44, points_for: 193, points_against: 230, bonus_points: 138, warnings: 0, win_rate: "38%", total_points: 101 },
+  { rank: 24, blader: "Parzival", tournaments_played: 4, matches_played: 40, matches_won: 21, matches_lost: 19, points_for: 95, points_against: 103, bonus_points: 98, warnings: 0, win_rate: "53%", total_points: 90 },
+  { rank: 25, blader: "Asuma", tournaments_played: 2, matches_played: 7, matches_won: 4, matches_lost: 3, points_for: 79, points_against: 50, bonus_points: 59, warnings: 0, win_rate: "57%", total_points: 88 },
+  { rank: 26, blader: "Mia Blader", tournaments_played: 3, matches_played: 35, matches_won: 20, matches_lost: 15, points_for: 107, points_against: 86, bonus_points: 51, warnings: 0, win_rate: "57%", total_points: 72 },
+  { rank: 27, blader: "Sollux", tournaments_played: 15, matches_played: 100, matches_won: 37, matches_lost: 63, points_for: 248, points_against: 332, bonus_points: 154, warnings: 0, win_rate: "37%", total_points: 70 },
+  { rank: 28, blader: "Rex1243", tournaments_played: 5, matches_played: 35, matches_won: 17, matches_lost: 18, points_for: 99, points_against: 111, bonus_points: 74, warnings: 0, win_rate: "49%", total_points: 62 },
+  { rank: 29, blader: "Julio Jaen", tournaments_played: 1, matches_played: 13, matches_won: 6, matches_lost: 7, points_for: 37, points_against: 37, bonus_points: 60, warnings: 0, win_rate: "46%", total_points: 60 },
+  { rank: 30, blader: "Metaman", tournaments_played: 3, matches_played: 21, matches_won: 9, matches_lost: 12, points_for: 55, points_against: 60, bonus_points: 58, warnings: 0, win_rate: "43%", total_points: 53 },
+  { rank: 31, blader: "Bellota", tournaments_played: 6, matches_played: 32, matches_won: 13, matches_lost: 19, points_for: 87, points_against: 107, bonus_points: 72, warnings: 0, win_rate: "41%", total_points: 52 },
+  { rank: 32, blader: "Geovane NG", tournaments_played: 3, matches_played: 22, matches_won: 10, matches_lost: 12, points_for: 63, points_against: 64, bonus_points: 53, warnings: 0, win_rate: "45%", total_points: 52 },
+  { rank: 33, blader: "Diego Q.", tournaments_played: 3, matches_played: 21, matches_won: 10, matches_lost: 11, points_for: 61, points_against: 61, bonus_points: 52, warnings: 0, win_rate: "48%", total_points: 52 },
+  { rank: 34, blader: "Gengar", tournaments_played: 6, matches_played: 31, matches_won: 15, matches_lost: 16, points_for: 86, points_against: 100, bonus_points: 59, warnings: 0, win_rate: "48%", total_points: 45 },
+  { rank: 35, blader: "Saviñon Sr", tournaments_played: 2, matches_played: 15, matches_won: 7, matches_lost: 8, points_for: 42, points_against: 43, bonus_points: 45, warnings: 0, win_rate: "47%", total_points: 44 },
+  { rank: 36, blader: "Nova", tournaments_played: 3, matches_played: 22, matches_won: 8, matches_lost: 14, points_for: 60, points_against: 66, bonus_points: 46, warnings: 0, win_rate: "36%", total_points: 40 },
+  { rank: 37, blader: "Miguel de sedas", tournaments_played: 2, matches_played: 18, matches_won: 11, matches_lost: 7, points_for: 55, points_against: 44, bonus_points: 28, warnings: 0, win_rate: "61%", total_points: 39 },
+  { rank: 38, blader: "Saviñon Jr", tournaments_played: 2, matches_played: 13, matches_won: 5, matches_lost: 8, points_for: 41, points_against: 32, bonus_points: 28, warnings: 0, win_rate: "38%", total_points: 37 },
+  { rank: 39, blader: "Zero", tournaments_played: 2, matches_played: 13, matches_won: 7, matches_lost: 6, points_for: 43, points_against: 41, bonus_points: 30, warnings: 0, win_rate: "54%", total_points: 32 },
+  { rank: 40, blader: "Kai", tournaments_played: 5, matches_played: 29, matches_won: 11, matches_lost: 18, points_for: 76, points_against: 100, bonus_points: 55, warnings: 0, win_rate: "38%", total_points: 31 },
+  { rank: 41, blader: "Alejandro LUNA", tournaments_played: 1, matches_played: 7, matches_won: 4, matches_lost: 3, points_for: 23, points_against: 17, bonus_points: 25, warnings: 0, win_rate: "57%", total_points: 31 },
+  { rank: 42, blader: "Damir", tournaments_played: 2, matches_played: 18, matches_won: 10, matches_lost: 8, points_for: 50, points_against: 57, bonus_points: 36, warnings: 0, win_rate: "56%", total_points: 29 },
+  { rank: 43, blader: "Twilight", tournaments_played: 5, matches_played: 36, matches_won: 15, matches_lost: 21, points_for: 92, points_against: 120, bonus_points: 56, warnings: 0, win_rate: "42%", total_points: 28 },
+  { rank: 44, blader: "Johanes V.", tournaments_played: 2, matches_played: 10, matches_won: 6, matches_lost: 4, points_for: 32, points_against: 27, bonus_points: 23, warnings: 0, win_rate: "60%", total_points: 28 },
+  { rank: 45, blader: "Lance", tournaments_played: 2, matches_played: 12, matches_won: 7, matches_lost: 5, points_for: 40, points_against: 36, bonus_points: 23, warnings: 0, win_rate: "58%", total_points: 27 },
+  { rank: 46, blader: "Aletaco", tournaments_played: 1, matches_played: 6, matches_won: 4, matches_lost: 2, points_for: 17, points_against: 16, bonus_points: 25, warnings: 0, win_rate: "67%", total_points: 26 },
+  { rank: 47, blader: "Hannie", tournaments_played: 1, matches_played: 8, matches_won: 5, matches_lost: 3, points_for: 21, points_against: 20, bonus_points: 21, warnings: 0, win_rate: "63%", total_points: 22 },
+  { rank: 48, blader: "Juan Davild", tournaments_played: 2, matches_played: 9, matches_won: 3, matches_lost: 6, points_for: 23, points_against: 20, bonus_points: 18, warnings: 0, win_rate: "33%", total_points: 21 },
+  { rank: 49, blader: "Samux", tournaments_played: 1, matches_played: 11, matches_won: 6, matches_lost: 5, points_for: 29, points_against: 33, bonus_points: 21, warnings: 0, win_rate: "55%", total_points: 17 },
+  { rank: 50, blader: "juan diego", tournaments_played: 1, matches_played: 11, matches_won: 5, matches_lost: 6, points_for: 29, points_against: 34, bonus_points: 21, warnings: 0, win_rate: "45%", total_points: 16 },
+  { rank: 51, blader: "Superior Slayer", tournaments_played: 1, matches_played: 5, matches_won: 2, matches_lost: 3, points_for: 21, points_against: 28, bonus_points: 21, warnings: 0, win_rate: "40%", total_points: 14 },
+  { rank: 52, blader: "Arkham", tournaments_played: 2, matches_played: 17, matches_won: 5, matches_lost: 12, points_for: 41, points_against: 50, bonus_points: 23, warnings: 0, win_rate: "29%", total_points: 14 },
+  { rank: 53, blader: "Chris", tournaments_played: 1, matches_played: 7, matches_won: 3, matches_lost: 4, points_for: 22, points_against: 22, bonus_points: 13, warnings: 0, win_rate: "43%", total_points: 13 },
+  { rank: 54, blader: "Niko", tournaments_played: 1, matches_played: 5, matches_won: 3, matches_lost: 2, points_for: 16, points_against: 14, bonus_points: 10, warnings: 0, win_rate: "60%", total_points: 12 },
+  { rank: 55, blader: "Papi Jake", tournaments_played: 3, matches_played: 20, matches_won: 6, matches_lost: 14, points_for: 50, points_against: 70, bonus_points: 31, warnings: 0, win_rate: "30%", total_points: 11 },
+  { rank: 56, blader: "Alphangel", tournaments_played: 4, matches_played: 20, matches_won: 4, matches_lost: 16, points_for: 43, points_against: 69, bonus_points: 36, warnings: 0, win_rate: "20%", total_points: 10 },
+  { rank: 57, blader: "JohnnyX", tournaments_played: 1, matches_played: 7, matches_won: 3, matches_lost: 4, points_for: 21, points_against: 22, bonus_points: 10, warnings: 0, win_rate: "43%", total_points: 9 },
+  { rank: 58, blader: "Diogenes E.", tournaments_played: 1, matches_played: 4, matches_won: 2, matches_lost: 2, points_for: 11, points_against: 12, bonus_points: 10, warnings: 0, win_rate: "50%", total_points: 9 },
+  { rank: 59, blader: "Ignacio", tournaments_played: 1, matches_played: 4, matches_won: 1, matches_lost: 3, points_for: 13, points_against: 9, bonus_points: 5, warnings: 0, win_rate: "25%", total_points: 9 },
+  { rank: 60, blader: "SIr Lancelot", tournaments_played: 1, matches_played: 3, matches_won: 1, matches_lost: 2, points_for: 8, points_against: 9, bonus_points: 10, warnings: 0, win_rate: "33%", total_points: 9 },
+  { rank: 61, blader: "Jorge Valdes", tournaments_played: 3, matches_played: 21, matches_won: 7, matches_lost: 14, points_for: 38, points_against: 69, bonus_points: 39, warnings: 0, win_rate: "33%", total_points: 8 },
+  { rank: 62, blader: "Emmanuel", tournaments_played: 1, matches_played: 3, matches_won: 1, matches_lost: 2, points_for: 7, points_against: 9, bonus_points: 10, warnings: 0, win_rate: "33%", total_points: 8 },
+  { rank: 63, blader: "Ana Carolina", tournaments_played: 2, matches_played: 11, matches_won: 4, matches_lost: 7, points_for: 21, points_against: 37, bonus_points: 23, warnings: 0, win_rate: "36%", total_points: 7 },
+  { rank: 64, blader: "Maleantin", tournaments_played: 1, matches_played: 6, matches_won: 1, matches_lost: 5, points_for: 12, points_against: 12, bonus_points: 5, warnings: 0, win_rate: "17%", total_points: 5 },
+  { rank: 65, blader: "Bastan", tournaments_played: 1, matches_played: 3, matches_won: 1, matches_lost: 2, points_for: 6, points_against: 12, bonus_points: 10, warnings: 0, win_rate: "33%", total_points: 4 },
+  { rank: 67, blader: "Edson", tournaments_played: 1, matches_played: 6, matches_won: 2, matches_lost: 4, points_for: 15, points_against: 17, bonus_points: 5, warnings: 0, win_rate: "33%", total_points: 3 },
+  { rank: 68, blader: "Ramses", tournaments_played: 1, matches_played: 8, matches_won: 3, matches_lost: 5, points_for: 21, points_against: 26, bonus_points: 7, warnings: 0, win_rate: "38%", total_points: 2 },
+  { rank: 69, blader: "Zahik", tournaments_played: 2, matches_played: 7, matches_won: 1, matches_lost: 6, points_for: 10, points_against: 25, bonus_points: 15, warnings: 0, win_rate: "14%", total_points: 0 },
+  { rank: 70, blader: "Isaias S.", tournaments_played: 1, matches_played: 4, matches_won: 1, matches_lost: 3, points_for: 5, points_against: 15, bonus_points: 10, warnings: 0, win_rate: "25%", total_points: 0 },
+  { rank: 71, blader: "Ceferino Sr.", tournaments_played: 2, matches_played: 8, matches_won: 2, matches_lost: 6, points_for: 15, points_against: 26, bonus_points: 10, warnings: 0, win_rate: "25%", total_points: -1 },
+  { rank: 72, blader: "Tomyyaser", tournaments_played: 1, matches_played: 6, matches_won: 2, matches_lost: 4, points_for: 13, points_against: 20, bonus_points: 5, warnings: 0, win_rate: "33%", total_points: -2 },
+  { rank: 73, blader: "Salomon Nieto", tournaments_played: 1, matches_played: 5, matches_won: 1, matches_lost: 4, points_for: 5, points_against: 17, bonus_points: 10, warnings: 0, win_rate: "20%", total_points: -2 },
+  { rank: 74, blader: "Noah Herbert", tournaments_played: 1, matches_played: 5, matches_won: 2, matches_lost: 3, points_for: 11, points_against: 19, bonus_points: 5, warnings: 0, win_rate: "40%", total_points: -3 },
+  { rank: 75, blader: "Alejandro Jaen", tournaments_played: 1, matches_played: 5, matches_won: 1, matches_lost: 4, points_for: 11, points_against: 19, bonus_points: 5, warnings: 0, win_rate: "20%", total_points: -3 },
+  { rank: 76, blader: "Joel Caballero", tournaments_played: 1, matches_played: 4, matches_won: 0, matches_lost: 4, points_for: 5, points_against: 18, bonus_points: 10, warnings: 0, win_rate: "0%", total_points: -3 },
+  { rank: 77, blader: "Alejandro D.", tournaments_played: 1, matches_played: 4, matches_won: 0, matches_lost: 4, points_for: 3, points_against: 16, bonus_points: 10, warnings: 0, win_rate: "0%", total_points: -3 },
+  { rank: 78, blader: "Ethan Mendoza", tournaments_played: 2, matches_played: 9, matches_won: 2, matches_lost: 7, points_for: 14, points_against: 34, bonus_points: 15, warnings: 0, win_rate: "22%", total_points: -5 },
+  { rank: 79, blader: "Javier Abrego", tournaments_played: 1, matches_played: 5, matches_won: 1, matches_lost: 4, points_for: 9, points_against: 19, bonus_points: 5, warnings: 0, win_rate: "20%", total_points: -5 },
+  { rank: 80, blader: "aeloz Cogley", tournaments_played: 1, matches_played: 5, matches_won: 1, matches_lost: 4, points_for: 8, points_against: 18, bonus_points: 5, warnings: 0, win_rate: "20%", total_points: -5 },
+  { rank: 81, blader: "Wistom Mendez", tournaments_played: 1, matches_played: 5, matches_won: 1, matches_lost: 4, points_for: 8, points_against: 19, bonus_points: 5, warnings: 0, win_rate: "20%", total_points: -6 },
+  { rank: 82, blader: "Alesito33", tournaments_played: 1, matches_played: 4, matches_won: 0, matches_lost: 4, points_for: 3, points_against: 19, bonus_points: 10, warnings: 0, win_rate: "0%", total_points: -6 },
+  { rank: 83, blader: "Abraham Garcia", tournaments_played: 3, matches_played: 20, matches_won: 6, matches_lost: 14, points_for: 35, points_against: 71, bonus_points: 28, warnings: 0, win_rate: "30%", total_points: -8 },
+  { rank: 84, blader: "Cerferino Jr.", tournaments_played: 2, matches_played: 10, matches_won: 3, matches_lost: 7, points_for: 11, points_against: 29, bonus_points: 10, warnings: 0, win_rate: "30%", total_points: -8 },
+  { rank: 85, blader: "Cristofer Scott", tournaments_played: 1, matches_played: 5, matches_won: 0, matches_lost: 5, points_for: 2, points_against: 21, bonus_points: 10, warnings: 0, win_rate: "0%", total_points: -9 },
+  { rank: 86, blader: "Lukas Axel", tournaments_played: 1, matches_played: 5, matches_won: 1, matches_lost: 4, points_for: 6, points_against: 20, bonus_points: 5, warnings: 0, win_rate: "20%", total_points: -9 },
+  { rank: 87, blader: "Fernando", tournaments_played: 1, matches_played: 4, matches_won: 0, matches_lost: 4, points_for: 2, points_against: 17, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -10 },
+  { rank: 88, blader: "Lore", tournaments_played: 1, matches_played: 4, matches_won: 0, matches_lost: 4, points_for: 0, points_against: 16, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -11 },
+  { rank: 89, blader: "Alex", tournaments_played: 2, matches_played: 18, matches_won: 3, matches_lost: 15, points_for: 34, points_against: 69, bonus_points: 23, warnings: 0, win_rate: "17%", total_points: -12 },
+  { rank: 90, blader: "Lazuli", tournaments_played: 1, matches_played: 5, matches_won: 0, matches_lost: 5, points_for: 5, points_against: 22, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -12 },
+  { rank: 91, blader: "Sonico", tournaments_played: 1, matches_played: 6, matches_won: 0, matches_lost: 6, points_for: 6, points_against: 25, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -14 },
+  { rank: 92, blader: "Rebecca", tournaments_played: 1, matches_played: 6, matches_won: 0, matches_lost: 6, points_for: 5, points_against: 26, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -16 },
+  { rank: 93, blader: "Juanita", tournaments_played: 5, matches_played: 25, matches_won: 6, matches_lost: 19, points_for: 49, points_against: 96, bonus_points: 30, warnings: 0, win_rate: "24%", total_points: -17 },
+  { rank: 94, blader: "Nessa", tournaments_played: 2, matches_played: 10, matches_won: 2, matches_lost: 8, points_for: 16, points_against: 52, bonus_points: 18, warnings: 0, win_rate: "20%", total_points: -18 },
+  { rank: 95, blader: "David Navarro", tournaments_played: 1, matches_played: 5, matches_won: 0, matches_lost: 5, points_for: 1, points_against: 24, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -18 },
+  { rank: 96, blader: "Danilo", tournaments_played: 1, matches_played: 6, matches_won: 0, matches_lost: 6, points_for: 0, points_against: 24, bonus_points: 5, warnings: 0, win_rate: "0%", total_points: -19 }
+];
+
 // Seed Database Function
 function seedDatabase() {
   const hash = (pw: string) => bcrypt.hashSync(pw, 10);
   const now = new Date().toISOString();
 
-  // Users
-  users = [
+  const avatarPool = [
+    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150",
+    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+    "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
+    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150"
+  ];
+
+  const combos = [
+    "Phoenix Wing 9-60 GF",
+    "Wizard Rod 5-70 DB",
+    "Dran Buster 1-60 F",
+    "Shark Edge 3-60 LF",
+    "Hells Chain 5-60 HT",
+    "Tyranno Beat 4-70 Q",
+    "Cobalt Dragoon 1-60 E",
+    "Unicorn Sting 5-60 GP",
+    "Hells Hammer 3-70 H",
+    "Knight Shield 3-80 N"
+  ];
+
+  // Base Staff Users
+  const staffUsers: User[] = [
     {
       id: 1,
       username: "byjankraftyt",
@@ -285,9 +426,9 @@ function seedDatabase() {
       password_hash: hash("123456"),
       display_name: "Carlos 'Xtreme' Vega",
       role: "organizer",
-      country: "MX",
+      country: "PA",
       avatar_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-      bio: "Juez oficial y organizador de la liga competitiva de Beyblade Xtreme.",
+      bio: "Juez oficial y organizador de la liga competitiva de Beyblade Xtreme Panama.",
       favorite_combo: "Wizard Rod 5-70 DB",
       elo_rating: 1720,
       is_active: true,
@@ -309,136 +450,32 @@ function seedDatabase() {
       is_active: true,
       is_verified: true,
       created_at: now
-    },
-    {
-      id: 4,
-      username: "ryu_blader",
-      email: "ryu@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Ryu Kusanagi",
-      role: "blader",
-      country: "PA",
-      avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-      bio: "Especialista en ataque y rush finish.",
-      favorite_combo: "Shark Edge 3-60 LF",
-      elo_rating: 1680,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 5,
-      username: "valkyrie_pro",
-      email: "valk@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Sofia 'Valkyrie' Gomez",
-      role: "blader",
-      country: "CL",
-      avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-      bio: "Capitana del equipo Valkyrie Chile.",
-      favorite_combo: "Cobalt Dragoon 1-60 E",
-      elo_rating: 1620,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 6,
-      username: "dran_legend",
-      email: "dran@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Mateo Morales",
-      role: "blader",
-      country: "MX",
-      avatar_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-      bio: "Puro ataque smash y potencia.",
-      favorite_combo: "Tyranno Beat 4-70 Q",
-      elo_rating: 1590,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 7,
-      username: "storm_blader",
-      email: "storm@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Gabriel Mendez",
-      role: "blader",
-      country: "PE",
-      avatar_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
-      bio: "Control y balance.",
-      favorite_combo: "Hells Chain 5-60 HT",
-      elo_rating: 1510,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 8,
-      username: "pegasus_fire",
-      email: "pegasus@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Lucas Rossi",
-      role: "blader",
-      country: "AR",
-      avatar_url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80",
-      bio: "Especialista en Unicorn Sting.",
-      favorite_combo: "Unicorn Sting 5-60 GP",
-      elo_rating: 1480,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 9,
-      username: "viper_fang",
-      email: "viper@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Diego Santos",
-      role: "blader",
-      country: "CO",
-      avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      bio: "Stamina pura.",
-      favorite_combo: "Viper Tail 5-80 O",
-      elo_rating: 1420,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 10,
-      username: "phoenix_queen",
-      email: "phoenix@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Elena Castillo",
-      role: "blader",
-      country: "PA",
-      avatar_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-      bio: "Invicta en torneos locales.",
-      favorite_combo: "Phoenix Wing 9-60 GF",
-      elo_rating: 1650,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
-      id: 11,
-      username: "knight_shield",
-      email: "knight@appbey.app",
-      password_hash: hash("123456"),
-      display_name: "Victor Bravo",
-      role: "blader",
-      country: "PA",
-      avatar_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
-      bio: "Defensa absoluta y contraataque.",
-      favorite_combo: "Knight Shield 3-80 N",
-      elo_rating: 1380,
-      is_active: true,
-      is_verified: true,
-      created_at: now
     }
   ];
+
+  // Map 96 Official Bladers into Users
+  const bladerUsers: User[] = APB_SEASON_1_RANKINGS.map((b, idx) => {
+    const cleanUsername = b.blader.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "") || `blader_${b.rank}`;
+    const baseElo = Math.max(1000, Math.round(1800 - (b.rank - 1) * 8.5));
+    return {
+      id: 4 + idx,
+      username: cleanUsername,
+      email: `${cleanUsername}@appbey.app`,
+      password_hash: hash("123456"),
+      display_name: b.blader,
+      role: "blader",
+      country: "PA",
+      avatar_url: avatarPool[idx % avatarPool.length],
+      bio: `Blader oficial de la Asociación Panameña de Beyblade (Rank #${b.rank}).`,
+      favorite_combo: combos[idx % combos.length],
+      elo_rating: baseElo,
+      is_active: true,
+      is_verified: true,
+      created_at: now
+    };
+  });
+
+  users = [...staffUsers, ...bladerUsers];
 
   // Wallets
   wallets = users.map((u, i) => ({
@@ -569,8 +606,8 @@ function seedDatabase() {
     }
   ];
 
-  // Participants in Tournament 1
-  const sampleBladers = [users[0], ...users.slice(3, 10)];
+  // Participants in Tournament 1 (Top Official Bladers)
+  const sampleBladers = users.slice(3, 19); // Yorch, Woonka, Kanghy, Raines, Zirox, Káiser, Baco, RADD, etc.
   participants = sampleBladers.map((u, idx) => ({
     id: idx + 1,
     tournament_id: 1,
@@ -578,14 +615,14 @@ function seedDatabase() {
     seed: idx + 1,
     checked_in: true,
     checked_in_at: now,
-    swiss_points: idx === 1 ? 3 : 0,
+    swiss_points: idx === 0 ? 3 : (idx === 1 ? 3 : (idx === 2 ? 3 : 0)),
     buchholz: 0,
-    points_scored: idx === 1 ? 4 : (idx === 0 ? 3 : 0),
-    points_conceded: idx === 1 ? 1 : (idx === 0 ? 2 : 0),
-    matches_played: [0, 1, 2, 3].includes(idx) ? 1 : 0,
-    matches_won: idx === 1 ? 1 : 0,
+    points_scored: idx === 0 ? 4 : (idx === 1 ? 4 : (idx === 2 ? 4 : 1)),
+    points_conceded: idx === 0 ? 1 : (idx === 1 ? 2 : (idx === 2 ? 0 : 4)),
+    matches_played: [0, 1, 2, 3, 4, 5, 6, 7].includes(idx) ? 1 : 0,
+    matches_won: [0, 1, 2].includes(idx) ? 1 : 0,
     matches_drawn: 0,
-    matches_lost: idx === 3 ? 1 : 0,
+    matches_lost: [3, 4, 5].includes(idx) ? 1 : 0,
     final_rank: null
   }));
 
@@ -598,8 +635,8 @@ function seedDatabase() {
       stage: "swiss",
       bracket_position: 1,
       station_number: 1,
-      player_a_id: sampleBladers[0].id,
-      player_b_id: sampleBladers[1].id,
+      player_a_id: sampleBladers[0].id, // Yorch
+      player_b_id: sampleBladers[1].id, // Woonka
       score_a: 3,
       score_b: 2,
       winner_id: null,
@@ -615,8 +652,8 @@ function seedDatabase() {
       stage: "swiss",
       bracket_position: 2,
       station_number: 2,
-      player_a_id: sampleBladers[2].id,
-      player_b_id: sampleBladers[3].id,
+      player_a_id: sampleBladers[2].id, // Kanghy
+      player_b_id: sampleBladers[3].id, // Raines
       score_a: 4,
       score_b: 1,
       winner_id: sampleBladers[2].id,
@@ -632,8 +669,8 @@ function seedDatabase() {
       stage: "swiss",
       bracket_position: 3,
       station_number: 3,
-      player_a_id: sampleBladers[4].id,
-      player_b_id: sampleBladers[5].id,
+      player_a_id: sampleBladers[4].id, // Zirox
+      player_b_id: sampleBladers[5].id, // Káiser
       score_a: 0,
       score_b: 0,
       winner_id: null,
@@ -649,8 +686,8 @@ function seedDatabase() {
       stage: "swiss",
       bracket_position: 4,
       station_number: 4,
-      player_a_id: sampleBladers[6].id,
-      player_b_id: sampleBladers[7].id,
+      player_a_id: sampleBladers[6].id, // Baco
+      player_b_id: sampleBladers[7].id, // RADD
       score_a: 0,
       score_b: 0,
       winner_id: null,
@@ -663,11 +700,11 @@ function seedDatabase() {
 
   // Match Games
   matchGames = [
-    { id: 1, match_id: 1, game_order: 1, finish_type: "spin_finish_1p", awarded_to: "player_a", points: 1, notes: "Phoenix Wing desgasta a Shark Edge", created_at: now },
+    { id: 1, match_id: 1, game_order: 1, finish_type: "spin_finish_1p", awarded_to: "player_a", points: 1, notes: "Phoenix Wing desgasta con Spin Finish", created_at: now },
     { id: 2, match_id: 1, game_order: 2, finish_type: "over_finish_2p", awarded_to: "player_b", points: 2, notes: "Shark Edge aprovecha Over Zone", created_at: now },
     { id: 3, match_id: 1, game_order: 3, finish_type: "over_finish_2p", awarded_to: "player_a", points: 2, notes: "Phoenix Wing contraataca con Xtreme Dash", created_at: now },
     { id: 4, match_id: 2, game_order: 1, finish_type: "spin_finish_1p", awarded_to: "player_b", points: 1, created_at: now },
-    { id: 5, match_id: 2, game_order: 2, finish_type: "xtreme_finish_3p", awarded_to: "player_a", points: 3, notes: "Valkyrie ejecuta un Xtreme Dash fulminante de 3 puntos!", created_at: now },
+    { id: 5, match_id: 2, game_order: 2, finish_type: "xtreme_finish_3p", awarded_to: "player_a", points: 3, notes: "Kanghy ejecuta un Xtreme Dash fulminante de 3 puntos!", created_at: now },
     { id: 6, match_id: 2, game_order: 3, finish_type: "spin_finish_1p", awarded_to: "player_a", points: 1, created_at: now }
   ];
 
@@ -675,133 +712,97 @@ function seedDatabase() {
   seasons = [
     {
       id: 1,
-      name: "Temporada 2025 - Temporada Inaugural",
+      name: "Temporada 1 (Oficial APB)",
       is_active: false,
-      description: "Resultados finales oficiales de la temporada anterior con ganadores históricos por puntos.",
+      description: "Resultados finales oficiales de la Temporada 1 - Asociación Panameña de Beyblade.",
       start_date: "2025-01-01T00:00:00Z"
     },
     {
       id: 2,
-      name: "Temporada 2026 - Nueva Temporada",
+      name: "Temporada 2 (2026 Activa)",
       is_active: true,
-      description: "Nueva temporada con ranking Elo reiniciado y nuevo multiplicador competitivo.",
+      description: "Nueva temporada competitiva con ranking Elo y circuito de torneos en vivo.",
       start_date: now
     }
   ];
 
-  // Season 1 (Temporada Pasada: Ganadores Reales de Temporada Anterior)
-  // Season 2 (Nueva Temporada: Ranking ELO vacío para la nueva temporada)
-  seasonRankings = [
-    // Temporada 1 - Ganadores históricos reales por puntos
-    {
-      id: 1,
+  // Populate ALL 96 Bladers into Season 1 Rankings
+  seasonRankings = APB_SEASON_1_RANKINGS.map((b, idx) => {
+    const u = users.find(usr => usr.display_name === b.blader) || users[3 + idx];
+    return {
+      id: idx + 1,
       season_id: 1,
-      user_id: 1, // Jan Kraft
-      points: 2450,
-      elo: 1850,
-      tournaments_played: 6,
-      tournaments_won: 3,
-      podium_finishes: 5,
-      matches_won: 22,
-      matches_lost: 3,
-      points_for: 88,
-      points_against: 31,
-      bonus_points: 300,
-      warnings: 0,
-      overall_rank: 1
-    },
-    {
-      id: 2,
-      season_id: 1,
-      user_id: 4, // Ryu Kusanagi
-      points: 2120,
-      elo: 1680,
-      tournaments_played: 6,
-      tournaments_won: 2,
-      podium_finishes: 4,
-      matches_won: 18,
-      matches_lost: 5,
-      points_for: 74,
-      points_against: 38,
-      bonus_points: 200,
-      warnings: 0,
-      overall_rank: 2
-    },
-    {
-      id: 3,
-      season_id: 1,
-      user_id: 5, // Sofia Gomez
-      points: 1890,
-      elo: 1620,
-      tournaments_played: 5,
-      tournaments_won: 1,
-      podium_finishes: 3,
-      matches_won: 15,
-      matches_lost: 6,
-      points_for: 62,
-      points_against: 40,
-      bonus_points: 150,
-      warnings: 0,
-      overall_rank: 3
-    },
-    {
-      id: 4,
-      season_id: 1,
-      user_id: 6, // Mateo Morales
-      points: 1640,
-      elo: 1590,
-      tournaments_played: 5,
-      tournaments_won: 0,
-      podium_finishes: 2,
-      matches_won: 12,
-      matches_lost: 7,
-      points_for: 51,
-      points_against: 44,
-      bonus_points: 80,
-      warnings: 0,
-      overall_rank: 4
-    },
-    {
-      id: 5,
-      season_id: 1,
-      user_id: 10, // Elena Castillo
-      points: 1520,
-      elo: 1650,
-      tournaments_played: 4,
-      tournaments_won: 1,
-      podium_finishes: 2,
-      matches_won: 11,
-      matches_lost: 4,
-      points_for: 46,
-      points_against: 28,
-      bonus_points: 100,
-      warnings: 0,
-      overall_rank: 5
-    }
-  ];
+      user_id: u ? u.id : 4 + idx,
+      points: b.total_points,
+      elo: u ? u.elo_rating : 1500,
+      tournaments_played: b.tournaments_played,
+      tournaments_won: b.rank === 1 ? 5 : (b.rank <= 3 ? 2 : (b.rank <= 8 ? 1 : 0)),
+      podium_finishes: b.rank <= 3 ? b.tournaments_played : (b.rank <= 10 ? Math.floor(b.tournaments_played / 2) : 0),
+      matches_won: b.matches_won,
+      matches_lost: b.matches_lost,
+      points_for: b.points_for,
+      points_against: b.points_against,
+      bonus_points: b.bonus_points,
+      warnings: b.warnings,
+      overall_rank: b.rank
+    };
+  });
 
-  // Hall of Fame
+  // Hall of Fame with Official Champions
   hallOfFame = [
     {
       id: 1,
       year: 2025,
-      title: "Campeon Latinoamericano Inaugural Beyblade X",
-      user_id: 1,
-      tournament_name: "Pan-American Xtreme Open 2025",
+      title: "Campeón Temporada 1 - Ranking General APB",
+      user_id: users.find(u => u.display_name === "Yorch")?.id || 4,
+      tournament_name: "Gran Circuito Nacional Beyblade X Panama (646 Pts)",
       signature_deck: "Phoenix Wing 9-60 GF / Wizard Rod 5-70 DB / Dran Buster 1-60 F",
       trophy_icon: "trophy-gold",
-      notes: "Campeon invicto con un record de 12-0 en el torneo internacional.",
+      notes: "Máximo anotador de la Temporada 1 con 96 victorias y 519 puntos a favor.",
       created_at: now
     },
     {
       id: 2,
       year: 2025,
-      title: "Maestro del Xtreme Dash",
-      user_id: 4,
-      tournament_name: "Copa de Otono Shark Attack",
+      title: "Subcampeón Nacional Temporada 1 APB",
+      user_id: users.find(u => u.display_name === "Woonka")?.id || 5,
+      tournament_name: "Circuito Oficial APB (483 Pts)",
       signature_deck: "Shark Edge 3-60 LF / Cobalt Dragoon 1-60 E / Tyranno Beat 4-70 Q",
       trophy_icon: "trophy-silver",
-      notes: "Record del mayor numero de Xtreme Finishes (18) en un solo fin de semana.",
+      notes: "94 victorias en 150 partidas oficiales con un 63% de efectividad.",
+      created_at: now
+    },
+    {
+      id: 3,
+      year: 2025,
+      title: "3er Lugar Nacional Temporada 1 APB",
+      user_id: users.find(u => u.display_name === "Kanghy")?.id || 6,
+      tournament_name: "Circuito Oficial APB (480 Pts)",
+      signature_deck: "Hells Chain 5-60 HT / Unicorn Sting 5-60 GP / Wizard Rod 5-70 DB",
+      trophy_icon: "trophy-bronze",
+      notes: "Líder en partidas jugadas (157 combates) y 505 puntos anotados.",
+      created_at: now
+    },
+    {
+      id: 4,
+      year: 2025,
+      title: "Top 4 Master Blader Temporada 1 APB",
+      user_id: users.find(u => u.display_name === "Raines")?.id || 7,
+      tournament_name: "Circuito Oficial APB (465 Pts)",
+      signature_deck: "Dran Buster 1-60 F / Phoenix Wing 9-60 GF / Knight Shield 3-80 N",
+      trophy_icon: "medal",
+      notes: "73 victorias en 117 combates oficiales con 62% de Win Rate.",
+      created_at: now
+    },
+    {
+      id: 5,
+      year: 2025,
+      title: "Top 5 Master Blader Temporada 1 APB",
+      user_id: users.find(u => u.display_name === "Zirox")?.id || 8,
+      tournament_name: "Circuito Oficial APB (438 Pts)",
+      signature_deck: "Tyranno Beat 4-70 Q / Shark Edge 3-60 LF / Hells Chain 5-60 HT",
+      trophy_icon: "medal",
+      notes: "78 victorias en 138 combates oficiales y 440 puntos a favor.",
       created_at: now
     }
   ];
@@ -2069,8 +2070,12 @@ api.get("/rankings/season/:id/points", (req, res) => {
       return {
         rank: r.overall_rank || idx + 1,
         user_id: r.user_id,
-        display_name: u?.display_name,
-        username: u?.username,
+        display_name: u?.display_name || `Blader ${r.overall_rank}`,
+        username: u?.username || `blader_${r.user_id}`,
+        avatar_url: u?.avatar_url,
+        country: u?.country || "PA",
+        favorite_combo: u?.favorite_combo || "Phoenix Wing 9-60 GF",
+        elo_rating: u?.elo_rating || 1500,
         tournaments_played: r.tournaments_played,
         matches_played: played,
         matches_won: r.matches_won,
@@ -2079,7 +2084,7 @@ api.get("/rankings/season/:id/points", (req, res) => {
         points_against: r.points_against,
         bonus_points: r.bonus_points,
         warnings: r.warnings,
-        win_rate: played ? Math.round((r.matches_won / played) * 1000) / 10 : 0,
+        win_rate: played ? `${Math.round((r.matches_won / played) * 100)}%` : "0%",
         points: r.points
       };
     })
@@ -2098,8 +2103,11 @@ api.get("/rankings/season/:id/elo", (req, res) => {
       return {
         rank: idx + 1,
         user_id: r.user_id,
-        display_name: u?.display_name,
-        username: u?.username,
+        display_name: u?.display_name || `Blader ${idx + 1}`,
+        username: u?.username || `blader_${r.user_id}`,
+        avatar_url: u?.avatar_url,
+        country: u?.country || "PA",
+        favorite_combo: u?.favorite_combo || "Phoenix Wing 9-60 GF",
         elo: r.elo
       };
     })
