@@ -1,22 +1,23 @@
-﻿# AppBey Production Dockerfile
-FROM python:3.12-slim
+# AppBey Production Dockerfile (Node.js + TypeScript)
+FROM node:20-alpine
 
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+# Install dependencies first for better caching
+COPY package*.json ./
+RUN npm install
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Copy source files
+COPY . .
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Build bundled production server
+RUN npm run build
 
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
+# Expose port
+EXPOSE 3000
+ENV PORT=3000
+ENV NODE_ENV=production
 
-EXPOSE 8000
+# Start the application
+CMD ["npm", "start"]
 
-CMD ["python", "backend/app/main.py"]
