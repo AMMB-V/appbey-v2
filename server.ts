@@ -2100,6 +2100,7 @@ api.get("/rankings/season/:id/elo", (req, res) => {
   res.json(
     rows.map((r, idx) => {
       const u = users.find((user) => user.id === r.user_id);
+      const played = r.matches_won + r.matches_lost;
       return {
         rank: idx + 1,
         user_id: r.user_id,
@@ -2108,7 +2109,18 @@ api.get("/rankings/season/:id/elo", (req, res) => {
         avatar_url: u?.avatar_url,
         country: u?.country || "PA",
         favorite_combo: u?.favorite_combo || "Phoenix Wing 9-60 GF",
-        elo: r.elo
+        elo_rating: r.elo || u?.elo_rating || 1500,
+        elo: r.elo || u?.elo_rating || 1500,
+        tournaments_played: r.tournaments_played,
+        matches_played: played,
+        matches_won: r.matches_won,
+        matches_lost: r.matches_lost,
+        points_for: r.points_for,
+        points_against: r.points_against,
+        bonus_points: r.bonus_points,
+        warnings: r.warnings,
+        win_rate: played ? `${Math.round((r.matches_won / played) * 100)}%` : "0%",
+        points: r.points
       };
     })
   );
