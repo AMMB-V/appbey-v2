@@ -1,0 +1,6 @@
+{
+  "name": "AppBey",
+  "description": "Plataforma de torneos, ranking, deck builder 3on3 y comunidad Beyblade X",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,4 +1,4 @@
-﻿// Tournament Detail View
+// Tournament Detail View
 window.renderTournamentDetailView = async (container, tournamentId) => {
   const user = window.api.user;
   let tournament = null;
@@ -83,6 +83,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               </div>
               <div class="flex flex-wrap gap-2">
                 ${tournament.status === 'registration_open' ? `
+                  <button onclick="openAddParticipantModal(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow flex items-center gap-1">
+                    <span>+</span> Registrar Participante en Mesa
+                  </button>
                   <button onclick="handleStartTournament(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow">
                     ▶ Iniciar Torneo & Generar Ronda 1
                   </button>
@@ -156,11 +159,16 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                 </div>
 
                 <!-- Match Actions / Referee trigger -->
-                <div class="pt-2 flex items-center justify-between text-xs">
-                  <div class="text-slate-500">
-                    ${m.games && m.games.length ? `${m.games.length} asalto(s) jugados` : 'Esperando inicio'}
+                <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div class="text-slate-400 flex items-center gap-1.5">
+                    ${m.referee ? `<span class="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-semibold">⚖️ Árbitro: ${m.referee.display_name}</span>` : `<span class="text-slate-500 italic">Sin árbitro asignado</span>`}
                   </div>
                   <div class="flex items-center gap-2">
+                    ${isOrganizer && !m.is_bye ? `
+                      <button onclick="openAssignRefereeModal(${m.id})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold">
+                        Asignar Árbitro
+                      </button>
+                    ` : ''}
                     ${!m.is_bye && m.status !== 'finished' ? `
                       <button onclick="handleCallMatch(${m.id}, ${m.station_number})" class="px-2.5 py-1 rounded bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 font-semibold">
                         Llamar a Mesa
@@ -284,6 +292,119 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       alert(`¡Combate llamado a Mesa / Stadium ${station}!`);
     } catch(err) {
       alert(err.message || "Error al llamar match");
+    }
+  };
+
+  window.openAddParticipantModal = async (tId) => {
+    const existing = document.getElementById("add-part-modal");
+    if (existing) existing.remove();
+
+    try {
+      const allUsers = await window.api.getUsers({ limit: 100 });
+      const currentPartIds = participants.map(p => p.user_id);
+      const availableUsers = allUsers.filter(u => !currentPartIds.includes(u.id));
+
+      const modal = document.createElement("div");
+      modal.id = "add-part-modal";
+      modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md";
+      modal.innerHTML = `
+        <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-white text-base">Inscribir Blader al Torneo</h3>
+            <button onclick="document.getElementById('add-part-modal').remove()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+          </div>
+          <form onsubmit="handleSubmitAddParticipant(event, ${tId})" class="space-y-4 text-xs">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Seleccionar Usuario Registrado</label>
+              ${availableUsers.length ? `
+                <select name="user_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-cyan-400">
+                  ${availableUsers.map(u => `<option value="${u.id}">${u.display_name} (@${u.username}) - ${u.country} [${u.role}]</option>`).join("")}
+                </select>
+              ` : `
+                <div class="text-slate-400 p-2 bg-slate-900 rounded-lg">Todos los usuarios ya están inscritos en este torneo.</div>
+              `}
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="checkbox" name="checked_in" id="checkin-now" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500"/>
+              <label for="checkin-now" class="text-slate-300 font-semibold">Marcar Check-in de presencia inmediato (Mesa Directa)</label>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="document.getElementById('add-part-modal').remove()" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+              <button type="submit" ${!availableUsers.length ? 'disabled' : ''} class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow">
+                Inscribir Blader
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    } catch(err) {
+      alert("Error al cargar lista de usuarios: " + err.message);
+    }
+  };
+
+  window.handleSubmitAddParticipant = async (e, tId) => {
+    e.preventDefault();
+    const form = e.target;
+    try {
+      await window.api.addTournamentParticipant(tId, form.user_id.value, form.checked_in.checked);
+      alert("¡Blader inscrito exitosamente en el torneo!");
+      document.getElementById("add-part-modal")?.remove();
+      refreshData();
+    } catch(err) {
+      alert(err.message || "Error al inscribir blader");
+    }
+  };
+
+  window.openAssignRefereeModal = async (matchId) => {
+    const existing = document.getElementById("assign-ref-modal");
+    if (existing) existing.remove();
+
+    try {
+      const allUsers = await window.api.getUsers({ limit: 100 });
+      const referees = allUsers.filter(u => ["referee", "admin", "organizer"].includes(u.role));
+
+      const modal = document.createElement("div");
+      modal.id = "assign-ref-modal";
+      modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md";
+      modal.innerHTML = `
+        <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-white text-base">Asignar Árbitro / Juez de Mesa</h3>
+            <button onclick="document.getElementById('assign-ref-modal').remove()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+          </div>
+          <form onsubmit="handleSubmitAssignReferee(event, ${matchId})" class="space-y-4 text-xs">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Seleccionar Árbitro Oficial</label>
+              <select name="referee_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-cyan-400">
+                ${referees.map(r => `<option value="${r.id}">${r.display_name} (@${r.username}) [${r.role.toUpperCase()}]</option>`).join("")}
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" onclick="document.getElementById('assign-ref-modal').remove()" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
+              <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow">
+                Confirmar Asignación
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    } catch(err) {
+      alert("Error al cargar árbitros: " + err.message);
+    }
+  };
+
+  window.handleSubmitAssignReferee = async (e, matchId) => {
+    e.preventDefault();
+    const form = e.target;
+    try {
+      await window.api.assignMatchReferee(matchId, form.referee_id.value);
+      alert("¡Árbitro asignado al match correctamente!");
+      document.getElementById("assign-ref-modal")?.remove();
+      refreshData();
+    } catch(err) {
+      alert(err.message || "Error al asignar árbitro");
     }
   };
 

@@ -1,4 +1,4 @@
-﻿// AppBey API Client
+// AppBey API Client
 const API_BASE = window.location.origin + "/api/v1";
 
 class ApiClient {
@@ -83,6 +83,14 @@ class ApiClient {
     return this.request("/users/me", { method: "PUT", body: profileData });
   }
 
+  adminCreateUser(userData) {
+    return this.request("/users/admin-create", { method: "POST", body: userData });
+  }
+
+  updateUserRole(userId, role) {
+    return this.request(`/users/${userId}/role`, { method: "PUT", body: { role } });
+  }
+
   // Beyblades & Decks
   getParts(category = "") {
     return this.request(`/beyblades/parts?category=${category}`);
@@ -121,6 +129,14 @@ class ApiClient {
 
   checkinParticipant(tId, userId) {
     return this.request(`/tournaments/${tId}/checkin?user_id=${userId}`, { method: "POST" });
+  }
+
+  addTournamentParticipant(tId, userId, checkedIn = true) {
+    return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body: { user_id: userId, checked_in: checkedIn } });
+  }
+
+  assignMatchReferee(matchId, refereeId) {
+    return this.request(`/matches/${matchId}/assign-referee`, { method: "POST", body: { referee_id: refereeId } });
   }
 
   startTournament(id) {
@@ -169,6 +185,18 @@ class ApiClient {
   // Rankings & Social
   getLeaderboard(country = "") {
     return this.request(`/rankings/leaderboard?country=${country}`);
+  }
+
+  getSeasons() {
+    return this.request("/rankings/seasons");
+  }
+
+  getSeasonPoints(seasonId) {
+    return this.request(`/rankings/season/${seasonId}/points`);
+  }
+
+  getSeasonElo(seasonId) {
+    return this.request(`/rankings/season/${seasonId}/elo`);
   }
 
   getHallOfFame() {

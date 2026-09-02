@@ -1,4 +1,4 @@
-﻿// AppBey Core Application Router & Shell
+// AppBey Core Application Router & Shell
 (function() {
   const router = () => {
     const hash = window.location.hash || "#/";
@@ -71,8 +71,15 @@
     if (!authContainer) return;
 
     if (user) {
+      const isAdmin = user.role === "admin";
       authContainer.innerHTML = `
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
+          ${isAdmin ? `
+            <button onclick="window.openAdminUserManagementModal()" title="Panel de Administración" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold flex items-center gap-1">
+              <span>🛡️</span> <span class="hidden sm:inline">Admin</span>
+            </button>
+          ` : ''}
+
           <div onclick="location.hash='#/wallet'" class="cursor-pointer px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold font-mono flex items-center gap-1.5 hover:bg-amber-500/20 transition">
             <span>🪙</span>
             <span id="nav-wallet-balance">... AP</span>

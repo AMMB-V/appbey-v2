@@ -1,4 +1,4 @@
-﻿// Auth Modal & Quick Switcher
+// Auth Modal & Quick Switcher
 window.showAuthModal = (initialMode = "login") => {
   const existing = document.getElementById("auth-modal");
   if (existing) existing.remove();
@@ -12,7 +12,7 @@ window.showAuthModal = (initialMode = "login") => {
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-2xl">⚡</span>
-          <h2 class="text-xl font-extrabold text-white">AppBey <span class="text-cyan-400">2.0</span></h2>
+          <h2 class="text-xl font-extrabold text-white">AppBey</h2>
         </div>
         <button onclick="document.getElementById('auth-modal').remove()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
       </div>
@@ -56,19 +56,10 @@ window.showAuthModal = (initialMode = "login") => {
           <label class="block text-slate-300 font-semibold mb-1">Contraseña</label>
           <input type="password" name="password" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">Rol</label>
-            <select name="role" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400">
-              <option value="blader">Blader Competidor</option>
-              <option value="organizer">Organizador de Torneo</option>
-              <option value="referee">Árbitro de Mesa</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-slate-300 font-semibold mb-1">País</label>
-            <input type="text" name="country" value="PA" maxlength="5" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400 uppercase"/>
-          </div>
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">País (Código ISO)</label>
+          <input type="text" name="country" value="PA" maxlength="5" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400 uppercase"/>
+          <p class="text-[10px] text-slate-400 mt-1">El registro otorga rol inicial de <strong>Blader</strong>. Los roles de Árbitro y Organizador son asignados por un Administrador.</p>
         </div>
         <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 transition active:scale-95">
           Crear Cuenta (+250 AP Bono)
@@ -149,7 +140,7 @@ window.submitRegister = async (e) => {
       display_name: form.display_name.value,
       email: form.email.value,
       password: form.password.value,
-      role: form.role.value,
+      role: "blader",
       country: form.country.value.toUpperCase()
     });
     window.api.setAuth(res.access_token, res.user);

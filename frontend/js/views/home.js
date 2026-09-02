@@ -1,4 +1,4 @@
-﻿// Home / Dashboard View
+// Home / Dashboard View
 window.renderHomeView = async (container) => {
   container.innerHTML = `
     <div class="space-y-6">
@@ -12,7 +12,7 @@ window.renderHomeView = async (container) => {
               En Vivo • Beyblade X Championship
             </div>
             <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
-              AppBey <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-amber-400">2.0</span>
+              AppBey
             </h1>
             <p class="text-slate-300 max-w-xl text-sm md:text-base">
               Plataforma competitiva oficial: Brackets en tiempo real, arbitraje táctil 3on3 Xtreme Stadium, constructor de Decks y sistema de AP Coins.
