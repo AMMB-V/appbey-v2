@@ -13,7 +13,7 @@ type NextFunction = any;
 
 const app = express();
 const server = http.createServer(app);
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const HOST = "0.0.0.0";
 const JWT_SECRET = process.env.SECRET_KEY || process.env.JWT_SECRET || "appbey-super-secret-jwt-key-2026-beyblade";
 
