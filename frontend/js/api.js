@@ -96,6 +96,18 @@ class ApiClient {
     return this.request(`/beyblades/parts?category=${category}`);
   }
 
+  getMetaTierList() {
+    return this.request("/beyblades/meta-tierlist");
+  }
+
+  syncMetaTierList() {
+    return this.request("/beyblades/meta-tierlist/sync", { method: "POST" });
+  }
+
+  updatePartTier(partId, data) {
+    return this.request(`/beyblades/parts/${partId}/tier`, { method: "PUT", body: data });
+  }
+
   getDecks(userId = null) {
     const query = userId ? `?user_id=${userId}` : "";
     return this.request(`/beyblades/decks${query}`);
@@ -167,6 +179,22 @@ class ApiClient {
 
   recordFinish(matchId, finishData) {
     return this.request(`/matches/${matchId}/record-finish`, { method: "POST", body: finishData });
+  }
+
+  undoFinish(matchId) {
+    return this.request(`/matches/${matchId}/undo-finish`, { method: "POST" });
+  }
+
+  reopenMatch(matchId) {
+    return this.request(`/matches/${matchId}/reopen`, { method: "POST" });
+  }
+
+  resetMatch(matchId) {
+    return this.request(`/matches/${matchId}/reset`, { method: "POST" });
+  }
+
+  updateManualScore(matchId, scoreData) {
+    return this.request(`/matches/${matchId}/manual-score`, { method: "PUT", body: scoreData });
   }
 
   // Wallet

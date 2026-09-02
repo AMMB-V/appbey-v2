@@ -25,11 +25,11 @@
     } else if (hash.startsWith("#/tournaments/")) {
       const id = parseInt(hash.replace("#/tournaments/", ""));
       window.renderTournamentDetailView(main, id);
-    } else if (hash.startsWith("#/referee/")) {
-      const id = parseInt(hash.replace("#/referee/", ""));
+    } else if (hash === "#/referee" || hash.startsWith("#/referee/")) {
+      const id = hash.startsWith("#/referee/") ? parseInt(hash.replace("#/referee/", "")) : null;
       window.renderRefereePadView(main, id);
-    } else if (hash.startsWith("#/stadium-display/")) {
-      const id = parseInt(hash.replace("#/stadium-display/", ""));
+    } else if (hash === "#/stadium-display" || hash.startsWith("#/stadium-display/")) {
+      const id = hash.startsWith("#/stadium-display/") ? parseInt(hash.replace("#/stadium-display/", "")) : null;
       window.renderStadiumDisplayView(main, id);
     } else if (hash === "#/deck-builder") {
       window.renderDeckBuilderView(main);

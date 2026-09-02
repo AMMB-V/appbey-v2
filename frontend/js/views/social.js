@@ -1,4 +1,4 @@
-﻿// Community Social Feed View
+// Community Social Feed View
 window.renderSocialView = async (container) => {
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando Feed de la Comunidad...</div>`;
 
@@ -50,8 +50,9 @@ window.renderSocialView = async (container) => {
 
                 <!-- Post Actions & Likes -->
                 <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                  <button onclick="handleLikePost(${p.id}, this)" class="flex items-center gap-1.5 hover:text-rose-400 font-bold transition">
-                    <span>❤️</span> <span>${p.likes_count} Me gusta</span>
+                  <button onclick="handleLikePost(${p.id}, this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${p.has_liked ? 'border-rose-500/50 bg-rose-500/10 text-rose-400' : 'border-slate-800 bg-slate-900/60 hover:text-rose-400 hover:border-slate-700'} font-bold transition">
+                    <span>${p.has_liked ? '❤️' : '🤍'}</span>
+                    <span class="like-count">${p.likes_count} Me gusta</span>
                   </button>
                   <span class="text-slate-500">${p.comments_count || 0} comentarios</span>
                 </div>
@@ -105,10 +106,17 @@ window.renderSocialView = async (container) => {
       window.showAuthModal();
       return;
     }
+    btn.disabled = true;
     try {
       const res = await window.api.likePost(postId);
-      btn.innerHTML = `<span>❤️</span> <span>${res.likes_count} Me gusta</span>`;
-    } catch(e) {}
+      const isLiked = res.liked;
+      btn.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${isLiked ? 'border-rose-500/50 bg-rose-500/10 text-rose-400' : 'border-slate-800 bg-slate-900/60 hover:text-rose-400 hover:border-slate-700'} font-bold transition`;
+      btn.innerHTML = `<span>${isLiked ? '❤️' : '🤍'}</span> <span class="like-count">${res.likes_count} Me gusta</span>`;
+    } catch(e) {
+      alert(e.message || "Error al procesar el like");
+    } finally {
+      btn.disabled = false;
+    }
   };
 
   window.submitComment = async (postId) => {

@@ -1,4 +1,4 @@
-﻿// User Profile & Settings View
+// User Profile & Settings View
 window.renderProfileView = async (container, userId = null) => {
   const currentLoggedIn = window.api.user;
   const targetId = userId || (currentLoggedIn ? currentLoggedIn.id : null);
@@ -80,25 +80,62 @@ window.renderProfileView = async (container, userId = null) => {
           </div>
         </div>
 
-        <!-- Edit Profile Modal Trigger (if Owner) -->
+        <!-- Edit Profile (if Owner) -->
         ${isOwner ? `
           <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 class="font-bold text-white text-base">Editar Perfil</h3>
+            <h3 class="font-bold text-white text-base flex items-center gap-2">
+              <span>⚙️</span> Editar Perfil y Foto
+            </h3>
             <form onsubmit="handleUpdateProfile(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <!-- Avatar Upload / URL / Presets -->
+              <div class="sm:col-span-2 bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <label class="block text-slate-300 font-bold flex items-center justify-between">
+                  <span>Actualizar Foto de Perfil</span>
+                  <span class="text-[10px] text-cyan-400">Subir imagen o cambiar URL</span>
+                </label>
+                <div class="flex items-center gap-4">
+                  <div class="relative shrink-0">
+                    <img id="profile-avatar-preview" src="${userProfile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160'}" class="w-16 h-16 rounded-full border-2 border-cyan-400 object-cover shadow-lg" alt="Avatar Preview"/>
+                    <label for="profile-avatar-file" class="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </label>
+                    <input type="file" id="profile-avatar-file" accept="image/*" class="hidden" onchange="window.handleProfileAvatarUpload(event)"/>
+                  </div>
+                  <div class="flex-1 space-y-1.5">
+                    <input type="text" id="profile-avatar-url" name="avatar_url" value="${userProfile.avatar_url || ''}" placeholder="URL de imagen directa (https://...)" oninput="window.updateProfileAvatarPreview(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400 text-xs"/>
+                    <div class="flex items-center gap-2 overflow-x-auto py-0.5">
+                      <span class="text-[10px] text-slate-500 shrink-0">Presets:</span>
+                      <button type="button" onclick="window.selectProfilePreset('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
+                        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160" class="w-full h-full object-cover"/>
+                      </button>
+                      <button type="button" onclick="window.selectProfilePreset('https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=160')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
+                        <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=160" class="w-full h-full object-cover"/>
+                      </button>
+                      <button type="button" onclick="window.selectProfilePreset('https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=160')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
+                        <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=160" class="w-full h-full object-cover"/>
+                      </button>
+                      <button type="button" onclick="window.selectProfilePreset('https://images.unsplash.com/photo-1580489944761-15a19d654956?w=160')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
+                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=160" class="w-full h-full object-cover"/>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label class="block text-slate-400 font-semibold mb-1">Nombre Visible</label>
-                <input type="text" name="display_name" value="${userProfile.display_name}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-cyan-400"/>
+                <input type="text" name="display_name" value="${userProfile.display_name}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
               </div>
               <div>
                 <label class="block text-slate-400 font-semibold mb-1">Combo Insignia Favorito</label>
-                <input type="text" name="favorite_combo" value="${userProfile.favorite_combo || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-cyan-400"/>
+                <input type="text" name="favorite_combo" value="${userProfile.favorite_combo || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
               </div>
               <div class="sm:col-span-2">
                 <label class="block text-slate-400 font-semibold mb-1">Biografía</label>
-                <input type="text" name="bio" value="${userProfile.bio || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-cyan-400"/>
+                <input type="text" name="bio" value="${userProfile.bio || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
               </div>
               <div class="sm:col-span-2 flex justify-end">
-                <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow">
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 active:scale-95 transition">
                   Guardar Cambios
                 </button>
               </div>
@@ -112,14 +149,42 @@ window.renderProfileView = async (container, userId = null) => {
   }
 };
 
+window.updateProfileAvatarPreview = (url) => {
+  const preview = document.getElementById("profile-avatar-preview");
+  if (preview && url) preview.src = url;
+};
+
+window.selectProfilePreset = (url) => {
+  const input = document.getElementById("profile-avatar-url");
+  if (input) input.value = url;
+  window.updateProfileAvatarPreview(url);
+};
+
+window.handleProfileAvatarUpload = (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    alert("Por favor selecciona un archivo de imagen válido");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target?.result;
+    if (dataUrl) window.selectProfilePreset(dataUrl);
+  };
+  reader.readAsDataURL(file);
+};
+
 window.handleUpdateProfile = async (e) => {
   e.preventDefault();
   const form = e.target;
   try {
+    const avatarVal = form.avatar_url?.value?.trim() || document.getElementById("profile-avatar-preview")?.src || null;
     await window.api.updateProfile({
       display_name: form.display_name.value,
       favorite_combo: form.favorite_combo.value,
-      bio: form.bio.value
+      bio: form.bio.value,
+      avatar_url: avatarVal
     });
     alert("¡Perfil actualizado con éxito!");
     location.reload();

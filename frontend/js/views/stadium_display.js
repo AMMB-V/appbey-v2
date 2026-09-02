@@ -1,5 +1,65 @@
-﻿// Stadium Display / TV Projector Mode View
+// Stadium Display / TV Projector Mode View
 window.renderStadiumDisplayView = async (container, tournamentId) => {
+  if (!tournamentId) {
+    try {
+      const tournaments = await window.api.getTournaments();
+      container.innerHTML = `
+        <div class="fixed inset-0 z-50 bg-[#040817] text-white p-8 overflow-y-auto flex flex-col justify-between select-none">
+          <div class="flex items-center justify-between border-b border-cyan-500/30 pb-4">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-black text-2xl text-white shadow-lg shadow-cyan-500/40">
+                ⚡
+              </div>
+              <div>
+                <div class="text-xs uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-2">
+                  AppBey Arena Display System
+                </div>
+                <h1 class="text-2xl font-black text-white">Selector de Proyector / TV de Estadio</h1>
+              </div>
+            </div>
+            <button onclick="location.hash='#/'" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700">
+              Salir
+            </button>
+          </div>
+
+          <div class="my-auto max-w-2xl mx-auto w-full py-12 text-center space-y-6">
+            <div class="glass-card p-8 rounded-3xl border border-cyan-500/30 space-y-4">
+              <div class="text-4xl">📺</div>
+              <h2 class="text-xl font-black text-white">Elige un Torneo para Proyectar</h2>
+              ${tournaments.length ? `
+                <div class="space-y-3 text-left">
+                  ${tournaments.map(t => `
+                    <div onclick="location.hash='#/stadium-display/${t.id}'" class="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 cursor-pointer flex items-center justify-between transition">
+                      <div>
+                        <div class="font-bold text-white text-base">${t.title}</div>
+                        <div class="text-xs text-cyan-400 font-mono">${t.venue_name} • ${t.format.toUpperCase()}</div>
+                      </div>
+                      <span class="px-3 py-1.5 rounded-xl bg-cyan-600 text-white font-bold text-xs shadow">
+                        Proyectar &rarr;
+                      </span>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : `
+                <p class="text-xs text-slate-400">No hay torneos activos creados en la plataforma en este momento.</p>
+                <button onclick="location.hash='#/tournaments'" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow">
+                  Ir al Administrador de Torneos
+                </button>
+              `}
+            </div>
+          </div>
+
+          <div class="text-center text-xs text-slate-500 border-t border-slate-900 pt-4">
+            AppBey Stadium Display System • Transmisión en Tiempo Real para Pantallas de Arena
+          </div>
+        </div>
+      `;
+      return;
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
   let tournament = null;
   let matches = [];
 

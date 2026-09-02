@@ -38,7 +38,7 @@ window.renderHomeView = async (container) => {
 
       <!-- Quick Action Cards Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div onclick="location.hash='#/referee/1'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-cyan-400 transition transform hover:-translate-y-1 group">
+        <div onclick="location.hash='#/referee'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-cyan-400 transition transform hover:-translate-y-1 group">
           <div class="w-12 h-12 rounded-lg bg-blue-600/20 text-cyan-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
@@ -46,7 +46,7 @@ window.renderHomeView = async (container) => {
           <p class="text-xs text-slate-400">Marcador táctil de 1-toque para registrar Spin, Over, Burst y Xtreme Finishes.</p>
         </div>
 
-        <div onclick="location.hash='#/stadium-display/1'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1 group">
+        <div onclick="location.hash='#/stadium-display'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1 group">
           <div class="w-12 h-12 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           </div>
@@ -160,7 +160,23 @@ window.renderHomeView = async (container) => {
     const tournaments = await window.api.getTournaments();
     const tListEl = document.getElementById("home-tournaments-list");
     if (!tournaments.length) {
-      tListEl.innerHTML = `<div class="text-center py-6 text-slate-500">No hay torneos activos en este momento.</div>`;
+      tListEl.innerHTML = `
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 text-center space-y-3">
+          <div class="text-3xl">🏟️</div>
+          <h3 class="font-bold text-white text-base">No hay torneos activos en curso</h3>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">
+            La plataforma está en blanco y lista para la temporada oficial. Los organizadores y administradores pueden crear nuevos torneos con formato Suizo (WBO) o Eliminación Directa.
+          </p>
+          <div class="pt-1 flex items-center justify-center gap-3">
+            <button onclick="location.hash='#/tournaments'" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xs shadow flex items-center gap-1.5 hover:from-blue-500 hover:to-cyan-500">
+              <span>➕</span> Crear Torneo
+            </button>
+            <button onclick="location.hash='#/rankings'" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 hover:bg-slate-700">
+              Ver Rankings Oficiales
+            </button>
+          </div>
+        </div>
+      `;
     } else {
       tListEl.innerHTML = tournaments.slice(0, 3).map(t => `
         <div onclick="location.hash='#/tournaments/${t.id}'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-cyan-500 transition flex flex-col md:flex-row md:items-center justify-between gap-4">

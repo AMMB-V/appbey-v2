@@ -1,4 +1,4 @@
-﻿// Tournaments List & Creation View
+// Tournaments List & Creation View
 window.renderTournamentsView = async (container) => {
   const user = window.api.user;
   const isOrganizer = user && (user.role === "organizer" || user.role === "admin");
@@ -131,26 +131,41 @@ window.openCreateTournamentModal = () => {
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Formato</label>
             <select name="format" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none">
-              <option value="swiss">Sistema Suizo (WBO)</option>
-              <option value="single_elim">Eliminación Directa</option>
+              <option value="swiss">Sistema Suizo (WBO Oficial)</option>
+              <option value="single_elim">Eliminación Directa (Playoffs)</option>
             </select>
           </div>
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Tipo de Combate</label>
             <select name="battle_type" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none">
-              <option value="3on3_deck">3on3 Deck (4 Puntos)</option>
-              <option value="1on1">1on1 Individual (3 Puntos)</option>
+              <option value="3on3_deck">3on3 Deck Battle</option>
+              <option value="1on1">1on1 Individual Battle</option>
             </select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
+            <label class="block text-slate-300 mb-1 font-semibold">Meta de Puntos para Ganar</label>
+            <select name="match_target_points" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none">
+              <option value="4" selected>4 Puntos (Oficial Beyblade X — Permite 4, 5 o 6 pts)</option>
+              <option value="5">5 Puntos (Semifinales / Match Largo)</option>
+              <option value="7">7 Puntos (Gran Final / Match Pro)</option>
+              <option value="3">3 Puntos (Match Rápido)</option>
+            </select>
+          </div>
+          <div>
             <label class="block text-slate-300 mb-1 font-semibold">Cupo Máximo</label>
             <input type="number" name="max_participants" value="16" min="4" max="128" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
           </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Pozo Premio (AP Coins)</label>
             <input type="number" name="prize_pool_ap" value="1000" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1 font-semibold">Costo Inscripción (AP)</label>
+            <input type="number" name="entry_fee_ap" value="0" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -175,14 +190,16 @@ window.openCreateTournamentModal = () => {
 window.submitNewTournament = async (e) => {
   e.preventDefault();
   const form = e.target;
+  const targetPts = parseInt(form.match_target_points?.value || "4", 10);
   const data = {
     title: form.title.value,
     description: form.description.value,
     format: form.format.value,
     battle_type: form.battle_type.value,
-    match_target_points: form.battle_type.value === "3on3_deck" ? 4 : 3,
-    max_participants: parseInt(form.max_participants.value),
-    prize_pool_ap: parseInt(form.prize_pool_ap.value),
+    match_target_points: targetPts,
+    max_participants: parseInt(form.max_participants.value, 10),
+    prize_pool_ap: parseInt(form.prize_pool_ap.value || "0", 10),
+    entry_fee_ap: parseInt(form.entry_fee_ap?.value || "0", 10),
     venue_name: form.venue_name.value,
     country: form.country.value.toUpperCase(),
     total_rounds: form.format.value === "swiss" ? 4 : 3
@@ -190,7 +207,7 @@ window.submitNewTournament = async (e) => {
 
   try {
     const created = await window.api.createTournament(data);
-    document.getElementById("create-t-modal").remove();
+    document.getElementById("create-t-modal")?.remove();
     alert("¡Torneo creado exitosamente!");
     location.hash = `#/tournaments/${created.id}`;
   } catch(err) {
