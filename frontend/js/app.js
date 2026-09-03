@@ -83,56 +83,73 @@
     });
   };
 
+  const updateActiveNav = (hash) => {
+    document.querySelectorAll(".nav-link").forEach((el) => {
+      const target = el.getAttribute("href");
+      const isActive = target === hash || (target !== "#/" && hash.startsWith(target));
+      el.classList.toggle("text-cyan-400", isActive);
+      el.classList.toggle("font-bold", isActive);
+      el.classList.toggle("text-slate-400", !isActive);
+    });
+  };
+
+  const parseIdFromHash = (hash, prefix) => {
+    if (!hash.startsWith(prefix)) return null;
+    const parsed = parseInt(hash.slice(prefix.length), 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const dispatchRoute = (hash, main) => {
+    if (hash === "#/" || hash === "#") {
+      window.renderHomeView(main);
+      return;
+    }
+    if (hash === "#/tournaments") {
+      window.renderTournamentsView(main);
+      return;
+    }
+    if (hash.startsWith("#/tournaments/")) {
+      window.renderTournamentDetailView(main, parseIdFromHash(hash, "#/tournaments/"));
+      return;
+    }
+    if (hash.startsWith("#/referee")) {
+      window.renderRefereePadView(main, parseIdFromHash(hash, "#/referee/"));
+      return;
+    }
+    if (hash.startsWith("#/stadium-display")) {
+      window.renderStadiumDisplayView(main, parseIdFromHash(hash, "#/stadium-display/"));
+      return;
+    }
+    if (hash.startsWith("#/profile")) {
+      window.renderProfileView(main, parseIdFromHash(hash, "#/profile/"));
+      return;
+    }
+
+    const staticRoutes = {
+      "#/deck-builder": window.renderDeckBuilderView,
+      "#/tier-list": window.renderTierListView,
+      "#/rankings": window.renderRankingsView,
+      "#/hall-of-fame": window.renderHallOfFameView,
+      "#/wallet": window.renderWalletView,
+      "#/social": window.renderSocialView,
+    };
+
+    const handler = staticRoutes[hash];
+    if (handler) {
+      handler(main);
+      return;
+    }
+
+    main.innerHTML = `<div class="text-center py-24 text-slate-500">Página no encontrada (404)</div>`;
+  };
+
   const router = () => {
     const hash = window.location.hash || "#/";
     const main = document.getElementById("main-content");
     if (!main) return;
 
-    // Update active nav links
-    document.querySelectorAll(".nav-link").forEach(el => {
-      const target = el.getAttribute("href");
-      if (target === hash || (hash.startsWith(target) && target !== "#/")) {
-        el.classList.add("text-cyan-400", "font-bold");
-        el.classList.remove("text-slate-400");
-      } else {
-        el.classList.remove("text-cyan-400", "font-bold");
-        el.classList.add("text-slate-400");
-      }
-    });
-
-    // Match Routes
-    if (hash === "#/" || hash === "#") {
-      window.renderHomeView(main);
-    } else if (hash === "#/tournaments") {
-      window.renderTournamentsView(main);
-    } else if (hash.startsWith("#/tournaments/")) {
-      const id = parseInt(hash.replace("#/tournaments/", ""));
-      window.renderTournamentDetailView(main, id);
-    } else if (hash === "#/referee" || hash.startsWith("#/referee/")) {
-      const id = hash.startsWith("#/referee/") ? parseInt(hash.replace("#/referee/", "")) : null;
-      window.renderRefereePadView(main, id);
-    } else if (hash === "#/stadium-display" || hash.startsWith("#/stadium-display/")) {
-      const id = hash.startsWith("#/stadium-display/") ? parseInt(hash.replace("#/stadium-display/", "")) : null;
-      window.renderStadiumDisplayView(main, id);
-    } else if (hash === "#/deck-builder") {
-      window.renderDeckBuilderView(main);
-    } else if (hash === "#/tier-list") {
-      window.renderTierListView(main);
-    } else if (hash === "#/rankings") {
-      window.renderRankingsView(main);
-    } else if (hash === "#/hall-of-fame") {
-      window.renderHallOfFameView(main);
-    } else if (hash === "#/wallet") {
-      window.renderWalletView(main);
-    } else if (hash === "#/social") {
-      window.renderSocialView(main);
-    } else if (hash === "#/profile" || hash.startsWith("#/profile/")) {
-      const id = hash.startsWith("#/profile/") ? parseInt(hash.replace("#/profile/", "")) : null;
-      window.renderProfileView(main, id);
-    } else {
-      main.innerHTML = `<div class="text-center py-24 text-slate-500">Página no encontrada (404)</div>`;
-    }
-
+    updateActiveNav(hash);
+    dispatchRoute(hash, main);
     window.scrollTo(0, 0);
   };
 

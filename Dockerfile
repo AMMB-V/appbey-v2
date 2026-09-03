@@ -7,8 +7,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy source files
-COPY . .
+# Copy required source files explicitly
+COPY tsconfig.json ./
+COPY server.ts ./
+COPY frontend ./frontend
 
 # Build bundled production server
 RUN npm run build

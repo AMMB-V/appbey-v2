@@ -41,6 +41,78 @@ window.renderRankingsView = async (container) => {
       });
     };
 
+    const getPosBadge = (pos) => {
+      if (pos === 1) return '🥇 #1';
+      if (pos === 2) return '🥈 #2';
+      if (pos === 3) return '🥉 #3';
+      return `#${pos}`;
+    };
+
+    const getPosClass = (pos) => {
+      if (pos === 1) return 'text-amber-400 font-black text-sm';
+      if (pos === 2) return 'text-slate-200 font-bold';
+      if (pos === 3) return 'text-amber-600 font-bold';
+      if (pos <= 10) return 'text-cyan-400';
+      return 'text-slate-500';
+    };
+
+    const getWinRateBadgeClass = (val) => {
+      if (val >= 60) return 'bg-emerald-500/20 text-emerald-400';
+      if (val >= 50) return 'bg-cyan-500/20 text-cyan-400';
+      return 'bg-slate-800 text-slate-400';
+    };
+
+    const renderRankingRow = (item, idx, isPoints) => {
+      const bladerName = item.display_name || item.user?.display_name || `Blader #${item.rank || idx + 1}`;
+      const username = item.username || item.user?.username || `blader_${item.user_id || idx + 1}`;
+      const avatar = item.avatar_url || item.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+      const pos = item.rank || idx + 1;
+      const diff = (item.points_for || 0) - (item.points_against || 0);
+      const winRate = item.win_rate || "0%";
+      const winRateVal = parseInt(winRate, 10) || 0;
+      const borderClass = pos <= 3 ? 'border-amber-400' : 'border-slate-700';
+      const diffClass = diff >= 0 ? 'text-emerald-400' : 'text-rose-400';
+      const diffSign = diff >= 0 ? '+' : '';
+      const totalScore = isPoints ? `${item.points || 0} pts` : `${item.elo || item.elo_rating || 1500} elo`;
+      const scoreClass = isPoints ? 'text-amber-400 text-sm sm:text-base' : 'text-cyan-400 text-sm';
+      const totalCombates = item.matches_played || ((item.matches_won || 0) + (item.matches_lost || 0));
+
+      return `
+        <tr onclick="window.openRankingsBladerModal(${idx})" class="hover:bg-slate-800/60 cursor-pointer transition">
+          <td class="py-3 px-2 sm:px-3 text-center font-bold ${getPosClass(pos)}">
+            ${getPosBadge(pos)}
+          </td>
+          <td class="py-3 px-2 sm:px-3 font-sans">
+            <div class="flex items-center gap-2.5">
+              <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border ${borderClass} shrink-0" alt="${bladerName}"/>
+              <div>
+                <div class="font-bold text-white hover:text-cyan-300 transition text-xs sm:text-sm">${bladerName}</div>
+                <div class="text-[10px] text-slate-400 font-mono">@${username} • PA 🇵🇦</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-2 text-center text-slate-300 font-semibold">${item.tournaments_played || 0}</td>
+          <td class="py-3 px-2 text-center text-slate-300">
+            <span class="text-emerald-400 font-bold">${item.matches_won || 0}G</span> - <span class="text-rose-400">${item.matches_lost || 0}P</span>
+            <span class="text-[10px] text-slate-500 block font-sans">(${totalCombates} combates)</span>
+          </td>
+          <td class="py-3 px-2 text-center text-slate-300">
+            <span class="text-cyan-300 font-bold">${item.points_for || 0}</span> / <span class="text-slate-400">${item.points_against || 0}</span>
+            <span class="text-[10px] ${diffClass} block">(${diffSign}${diff})</span>
+          </td>
+          <td class="py-3 px-2 text-center text-amber-300/90">${item.bonus_points || 0}</td>
+          <td class="py-3 px-2 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${getWinRateBadgeClass(winRateVal)}">
+              ${winRate}
+            </span>
+          </td>
+          <td class="py-3 px-2 sm:px-3 text-right font-black ${scoreClass}">
+            ${totalScore}
+          </td>
+        </tr>
+      `;
+    };
+
     const renderTableBodyHtml = (filtered) => {
       const isPoints = selectedRankingType === "points";
       if (!filtered.length) {
@@ -58,65 +130,7 @@ window.renderRankingsView = async (container) => {
         `;
       }
 
-      return filtered.map((item, idx) => {
-        const bladerName = item.display_name || item.user?.display_name || `Blader #${item.rank || idx + 1}`;
-        const username = item.username || item.user?.username || `blader_${item.user_id || idx + 1}`;
-        const avatar = item.avatar_url || item.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
-        const pos = item.rank || idx + 1;
-        const diff = (item.points_for || 0) - (item.points_against || 0);
-        const winRate = item.win_rate || "0%";
-        const winRateVal = parseInt(winRate, 10) || 0;
-
-        return `
-          <tr onclick="window.openRankingsBladerModal(${idx})" class="hover:bg-slate-800/60 cursor-pointer transition">
-            <!-- Pos -->
-            <td class="py-3 px-2 sm:px-3 text-center font-bold ${pos === 1 ? 'text-amber-400 font-black text-sm' : pos === 2 ? 'text-slate-200 font-bold' : pos === 3 ? 'text-amber-600 font-bold' : pos <= 10 ? 'text-cyan-400' : 'text-slate-500'}">
-              ${pos === 1 ? '🥇 #1' : pos === 2 ? '🥈 #2' : pos === 3 ? '🥉 #3' : `#${pos}`}
-            </td>
-
-            <!-- Blader Info -->
-            <td class="py-3 px-2 sm:px-3 font-sans">
-              <div class="flex items-center gap-2.5">
-                <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border ${pos <= 3 ? 'border-amber-400' : 'border-slate-700'} shrink-0" alt="${bladerName}"/>
-                <div>
-                  <div class="font-bold text-white hover:text-cyan-300 transition text-xs sm:text-sm">${bladerName}</div>
-                  <div class="text-[10px] text-slate-400 font-mono">@${username} • PA 🇵🇦</div>
-                </div>
-              </div>
-            </td>
-
-            <!-- Torneos Jugados -->
-            <td class="py-3 px-2 text-center text-slate-300 font-semibold">${item.tournaments_played || 0}</td>
-
-            <!-- Partidas G - P -->
-            <td class="py-3 px-2 text-center text-slate-300">
-              <span class="text-emerald-400 font-bold">${item.matches_won || 0}G</span> - <span class="text-rose-400">${item.matches_lost || 0}P</span>
-              <span class="text-[10px] text-slate-500 block font-sans">(${item.matches_played || ((item.matches_won || 0) + (item.matches_lost || 0))} combates)</span>
-            </td>
-
-            <!-- Puntos (+ / -) -->
-            <td class="py-3 px-2 text-center text-slate-300">
-              <span class="text-cyan-300 font-bold">${item.points_for || 0}</span> / <span class="text-slate-400">${item.points_against || 0}</span>
-              <span class="text-[10px] ${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'} block">(${diff >= 0 ? '+' : ''}${diff})</span>
-            </td>
-
-            <!-- Bonus -->
-            <td class="py-3 px-2 text-center text-amber-300/90">${item.bonus_points || 0}</td>
-
-            <!-- Win Rate -->
-            <td class="py-3 px-2 text-center">
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${winRateVal >= 60 ? 'bg-emerald-500/20 text-emerald-400' : winRateVal >= 50 ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-400'}">
-                ${winRate}
-              </span>
-            </td>
-
-            <!-- Total Points / Elo -->
-            <td class="py-3 px-2 sm:px-3 text-right font-black ${isPoints ? 'text-amber-400 text-sm sm:text-base' : 'text-cyan-400 text-sm'}">
-              ${isPoints ? `${item.points || 0} pts` : `${item.elo || item.elo_rating || 1500} elo`}
-            </td>
-          </tr>
-        `;
-      }).join("");
+      return filtered.map((item, idx) => renderRankingRow(item, idx, isPoints)).join("");
     };
 
     const renderFullView = () => {

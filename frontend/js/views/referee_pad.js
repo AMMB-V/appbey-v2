@@ -120,17 +120,105 @@ window.renderRefereePadView = async (container, matchId) => {
     }
   };
 
+  const formatFinishLabel = (finishType) => {
+    return finishType
+      .replace('_1p', ' (1 pt)')
+      .replace('_2p', ' (2 pts)')
+      .replace('_3p', ' (3 pts)')
+      .replace('_0p', ' (0 pts)')
+      .replace('_', ' ')
+      .toUpperCase();
+  };
+
+  const getMatchWinnerName = (m) => {
+    if (m.score_a > m.score_b) {
+      return m.player_a ? m.player_a.display_name : "Corner Azul";
+    }
+    if (m.score_b > m.score_a) {
+      return m.player_b ? m.player_b.display_name : "Corner Rojo";
+    }
+    return "";
+  };
+
+  const renderFinishBanner = (isFinished, winnerName, m) => {
+    if (!isFinished) return '';
+    return `
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/20 border border-amber-500/50 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">👑</span>
+          <div>
+            <span class="font-extrabold text-amber-300 text-sm">¡Match Point Alcanzado!</span>
+            <span class="text-slate-300 ml-1">Ganador sugerido: <strong>${winnerName}</strong> (${m.score_a} - ${m.score_b})</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="handleUndoLastFinish()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold border border-slate-700 flex items-center gap-1">
+            <span>⏪</span> Deshacer Último
+          </button>
+          <button onclick="handleReopenMatch()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow flex items-center gap-1">
+            <span>🔓</span> Seguir Anotando (+1 Meta)
+          </button>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderRoundHistoryItem = (g, m, actualOrder) => {
+    const isDraw = g.finish_type === "draw_0p" || g.awarded_to === "draw";
+    const finishLabel = formatFinishLabel(g.finish_type);
+    let recipientName = "Empate / Ambos Sin Puntos";
+    let recipientClass = "text-slate-400";
+    if (!isDraw) {
+      if (g.awarded_to === "player_a") {
+        recipientName = m.player_a?.display_name || "Corner Azul";
+        recipientClass = "text-blue-400";
+      } else {
+        recipientName = m.player_b?.display_name || "Corner Rojo";
+        recipientClass = "text-rose-400";
+      }
+    }
+    const pointsClass = isDraw ? 'text-slate-500' : (g.points >= 3 ? 'text-amber-400' : 'text-emerald-400');
+
+    return `
+      <div class="p-2.5 sm:p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs transition">
+        <div class="flex items-center gap-2.5">
+          <span class="w-6 h-6 rounded-lg bg-slate-800 text-cyan-400 flex items-center justify-center font-mono font-bold text-xs border border-slate-700">
+            ${actualOrder}
+          </span>
+          <div>
+            <span class="font-bold ${recipientClass}">
+              ${recipientName}
+            </span>
+            <span class="text-[11px] text-slate-400 font-mono ml-2 font-medium">
+              ${finishLabel}
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 font-mono font-black">
+          <span class="${pointsClass}">
+            +${g.points} pts
+          </span>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderPlayerDeckBadges = (deck, favoriteCombo, colorBg, borderCol, textCol) => {
+    if (deck && deck.length) {
+      return deck.map((b, i) => `
+        <span class="px-2 py-0.5 rounded-md ${colorBg} border ${borderCol} text-[10px] ${textCol} font-mono">
+          ${i+1}. ${b}
+        </span>
+      `).join("");
+    }
+    return `<span class="text-[11px] ${textCol} font-medium truncate">${favoriteCombo || 'Corner • Beyblade X'}</span>`;
+  };
+
   const renderUI = () => {
     const target = match.target_points || (match.tournament ? match.tournament.match_target_points : 4) || 4;
     const isFinished = match.status === "finished" || match.score_a >= target || match.score_b >= target;
     const roundCount = (match.games ? match.games.length : 0) + 1;
-
-    let winnerName = "";
-    if (match.score_a > match.score_b) {
-      winnerName = match.player_a ? match.player_a.display_name : "Corner Azul";
-    } else if (match.score_b > match.score_a) {
-      winnerName = match.player_b ? match.player_b.display_name : "Corner Rojo";
-    }
+    const winnerName = getMatchWinnerName(match);
 
     container.innerHTML = `
       <div class="max-w-4xl mx-auto space-y-4 pb-16 select-none">
@@ -184,26 +272,8 @@ window.renderRefereePadView = async (container, matchId) => {
           3... 2... 1... GO SHOOT! ⚡
         </div>
 
-        <!-- Finished Notification (Non-blocking: Referee can still continue or undo) -->
-        ${isFinished ? `
-          <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/20 border border-amber-500/50 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-2xl">👑</span>
-              <div>
-                <span class="font-extrabold text-amber-300 text-sm">¡Match Point Alcanzado!</span>
-                <span class="text-slate-300 ml-1">Ganador sugerido: <strong>${winnerName}</strong> (${match.score_a} - ${match.score_b})</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="handleUndoLastFinish()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold border border-slate-700 flex items-center gap-1">
-                <span>⏪</span> Deshacer Último
-              </button>
-              <button onclick="handleReopenMatch()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow flex items-center gap-1">
-                <span>🔓</span> Seguir Anotando (+1 Meta)
-              </button>
-            </div>
-          </div>
-        ` : ''}
+        <!-- Finished Notification -->
+        ${renderFinishBanner(isFinished, winnerName, match)}
 
         <!-- WBO BeyScore Main Stage: Blue (Left) vs Red (Right) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -224,13 +294,7 @@ window.renderRefereePadView = async (container, matchId) => {
                     </h3>
                   </div>
                   <div class="mt-1 flex flex-wrap gap-1">
-                    ${match.player_a_deck && match.player_a_deck.length ? match.player_a_deck.map((b, i) => `
-                      <span class="px-2 py-0.5 rounded-md bg-blue-950/80 border border-blue-500/40 text-[10px] text-cyan-300 font-mono">
-                        ${i+1}. ${b}
-                      </span>
-                    `).join("") : `
-                      <span class="text-[11px] text-blue-300/80 font-medium truncate">${match.player_a?.favorite_combo || 'Corner Azul • Beyblade X'}</span>
-                    `}
+                    ${renderPlayerDeckBadges(match.player_a_deck, match.player_a?.favorite_combo, 'bg-blue-950/80', 'border-blue-500/40', 'text-cyan-300')}
                   </div>
                 </div>
               </div>
@@ -256,7 +320,6 @@ window.renderRefereePadView = async (container, matchId) => {
               </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <!-- Spin Finish (+1) -->
                 <button onclick="submitFinish('spin_finish_1p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-xs sm:text-sm border border-cyan-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-extrabold">Spin Finish</div>
@@ -265,7 +328,6 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-cyan-300 font-mono font-black text-xs">+1</span>
                 </button>
 
-                <!-- Over Finish (+2) -->
                 <button onclick="submitFinish('over_finish_2p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-indigo-700 to-blue-600 hover:from-indigo-600 hover:to-blue-500 text-white font-bold text-xs sm:text-sm border border-indigo-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-extrabold">Over Finish</div>
@@ -274,7 +336,6 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-indigo-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <!-- Burst Finish (+2) -->
                 <button onclick="submitFinish('burst_finish_2p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm border border-purple-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-extrabold">Burst Finish</div>
@@ -283,7 +344,6 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-purple-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <!-- Xtreme Finish (+3) -->
                 <button onclick="submitFinish('xtreme_finish_3p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-700 hover:from-cyan-500 hover:to-indigo-600 text-white font-black text-xs sm:text-sm border-2 border-cyan-300 shadow-lg shadow-cyan-500/25 flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-black flex items-center gap-1">⚡ Xtreme</div>
@@ -323,13 +383,7 @@ window.renderRefereePadView = async (container, matchId) => {
                     </h3>
                   </div>
                   <div class="mt-1 flex flex-wrap gap-1">
-                    ${match.player_b_deck && match.player_b_deck.length ? match.player_b_deck.map((b, i) => `
-                      <span class="px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/40 text-[10px] text-rose-300 font-mono">
-                        ${i+1}. ${b}
-                      </span>
-                    `).join("") : `
-                      <span class="text-[11px] text-rose-300/80 font-medium truncate">${match.player_b?.favorite_combo || 'Corner Rojo • Beyblade X'}</span>
-                    `}
+                    ${renderPlayerDeckBadges(match.player_b_deck, match.player_b?.favorite_combo, 'bg-rose-950/80', 'border-rose-500/40', 'text-rose-300')}
                   </div>
                 </div>
               </div>
@@ -355,7 +409,6 @@ window.renderRefereePadView = async (container, matchId) => {
               </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <!-- Spin Finish (+1) -->
                 <button onclick="submitFinish('spin_finish_1p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-600 hover:to-red-500 text-white font-bold text-xs sm:text-sm border border-rose-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-extrabold">Spin Finish</div>
@@ -364,7 +417,6 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-rose-300 font-mono font-black text-xs">+1</span>
                 </button>
 
-                <!-- Over Finish (+2) -->
                 <button onclick="submitFinish('over_finish_2p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-orange-700 to-rose-600 hover:from-orange-600 hover:to-rose-500 text-white font-bold text-xs sm:text-sm border border-orange-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-extrabold">Over Finish</div>
@@ -373,7 +425,6 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-orange-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <!-- Burst Finish (+2) -->
                 <button onclick="submitFinish('burst_finish_2p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-pink-700 to-rose-600 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs sm:text-sm border border-pink-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-extrabold">Burst Finish</div>
@@ -382,7 +433,6 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-pink-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <!-- Xtreme Finish (+3) -->
                 <button onclick="submitFinish('xtreme_finish_3p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-amber-600 via-rose-600 to-red-700 hover:from-amber-500 hover:to-red-600 text-white font-black text-xs sm:text-sm border-2 border-amber-300 shadow-lg shadow-rose-500/25 flex items-center justify-between active:scale-95 transition">
                   <div class="text-left">
                     <div class="font-black flex items-center gap-1">⚡ Xtreme</div>
@@ -411,7 +461,6 @@ window.renderRefereePadView = async (container, matchId) => {
         <!-- Central WBO Control Row: Draw Button & Undo Action -->
         <div class="glass-card rounded-2xl p-3 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-900/90">
           <div class="flex items-center gap-2">
-            <!-- Draw / Empate (0 pts) Button (Crucial WBO BeyScore feature) -->
             <button onclick="submitFinish('draw_0p', 'draw')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 flex items-center gap-1.5 active:scale-95 transition shadow">
               <span>🤝</span> Empate / Draw (0 pts)
             </button>
@@ -445,41 +494,7 @@ window.renderRefereePadView = async (container, matchId) => {
           <div class="space-y-2">
             ${match.games && match.games.length ? match.games.slice().reverse().map((g, idx) => {
               const actualOrder = g.game_order || (match.games.length - idx);
-              const isDraw = g.finish_type === "draw_0p" || g.awarded_to === "draw";
-              const finishLabel = g.finish_type
-                .replace('_1p', ' (1 pt)')
-                .replace('_2p', ' (2 pts)')
-                .replace('_3p', ' (3 pts)')
-                .replace('_0p', ' (0 pts)')
-                .replace('_', ' ')
-                .toUpperCase();
-
-              const recipientName = isDraw
-                ? "Empate / Ambos Sin Puntos"
-                : (g.awarded_to === 'player_a' ? (match.player_a?.display_name || 'Corner Azul') : (match.player_b?.display_name || 'Corner Rojo'));
-
-              return `
-                <div class="p-2.5 sm:p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs transition">
-                  <div class="flex items-center gap-2.5">
-                    <span class="w-6 h-6 rounded-lg bg-slate-800 text-cyan-400 flex items-center justify-center font-mono font-bold text-xs border border-slate-700">
-                      ${actualOrder}
-                    </span>
-                    <div>
-                      <span class="font-bold ${isDraw ? 'text-slate-400' : (g.awarded_to === 'player_a' ? 'text-blue-400' : 'text-rose-400')}">
-                        ${recipientName}
-                      </span>
-                      <span class="text-[11px] text-slate-400 font-mono ml-2 font-medium">
-                        ${finishLabel}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2 font-mono font-black">
-                    <span class="${isDraw ? 'text-slate-500' : (g.points >= 3 ? 'text-amber-400' : 'text-emerald-400')}">
-                      +${g.points} pts
-                    </span>
-                  </div>
-                </div>
-              `;
+              return renderRoundHistoryItem(g, match, actualOrder);
             }).join("") : `
               <div class="text-xs text-slate-500 text-center py-6 border border-dashed border-slate-800 rounded-xl">
                 Aún no se han registrado asaltos en este combate. Presiona cualquier botón de finalización arriba para comenzar.
@@ -492,31 +507,67 @@ window.renderRefereePadView = async (container, matchId) => {
     `;
   };
 
+  const updateStandaloneStatus = () => {
+    const target = localState.target_points;
+    if (localState.score_a >= target || localState.score_b >= target) {
+      localState.status = "finished";
+      localState.winner = localState.score_a > localState.score_b ? "player_a" : "player_b";
+    } else {
+      localState.status = localState.games.length > 0 ? "in_progress" : "pending";
+      localState.winner = null;
+    }
+  };
+
+  const stepStandaloneScore = (player, delta) => {
+    if (player === "player_a") {
+      localState.score_a = Math.max(0, localState.score_a + delta);
+    } else {
+      localState.score_b = Math.max(0, localState.score_b + delta);
+    }
+    updateStandaloneStatus();
+  };
+
+  const applyStandaloneFinish = (finishType, awardedTo, pts) => {
+    const newGame = {
+      id: localState.games.length + 1,
+      match_id: "standalone",
+      game_order: localState.games.length + 1,
+      finish_type: finishType,
+      awarded_to: awardedTo,
+      points: pts,
+      created_at: new Date().toISOString()
+    };
+    localState.games.push(newGame);
+
+    if (awardedTo === "player_a") localState.score_a += pts;
+    if (awardedTo === "player_b") localState.score_b += pts;
+    updateStandaloneStatus();
+  };
+
+  const undoStandaloneFinish = () => {
+    if (!localState.games.length) return;
+    localState.games.pop();
+    let sa = 0;
+    let sb = 0;
+    for (const g of localState.games) {
+      if (g.awarded_to === "player_a") sa += g.points;
+      if (g.awarded_to === "player_b") sb += g.points;
+    }
+    localState.score_a = sa;
+    localState.score_b = sb;
+    updateStandaloneStatus();
+  };
+
   // Step score up or down by 1 point
   window.stepScore = async (player, delta) => {
-    let newScoreA = match.score_a;
-    let newScoreB = match.score_b;
-
-    if (player === "player_a") {
-      newScoreA = Math.max(0, newScoreA + delta);
-    } else {
-      newScoreB = Math.max(0, newScoreB + delta);
-    }
-
     if (isStandalone) {
-      localState.score_a = newScoreA;
-      localState.score_b = newScoreB;
-      const target = localState.target_points;
-      if (newScoreA >= target || newScoreB >= target) {
-        localState.status = "finished";
-        localState.winner = newScoreA > newScoreB ? "player_a" : "player_b";
-      } else {
-        localState.status = "in_progress";
-        localState.winner = null;
-      }
+      stepStandaloneScore(player, delta);
       loadMatch();
       return;
     }
+
+    const newScoreA = player === "player_a" ? Math.max(0, match.score_a + delta) : match.score_a;
+    const newScoreB = player === "player_b" ? Math.max(0, match.score_b + delta) : match.score_b;
 
     try {
       await window.api.updateManualScore(matchId, {
@@ -533,14 +584,7 @@ window.renderRefereePadView = async (container, matchId) => {
   window.setTargetPoints = async (pts) => {
     if (isStandalone) {
       localState.target_points = pts;
-      const target = pts;
-      if (localState.score_a >= target || localState.score_b >= target) {
-        localState.status = "finished";
-        localState.winner = localState.score_a > localState.score_b ? "player_a" : "player_b";
-      } else {
-        localState.status = "in_progress";
-        localState.winner = null;
-      }
+      updateStandaloneStatus();
       loadMatch();
       return;
     }
@@ -569,28 +613,7 @@ window.renderRefereePadView = async (container, matchId) => {
     const pts = pointsMap[finishType] !== undefined ? pointsMap[finishType] : 0;
 
     if (isStandalone) {
-      const newGame = {
-        id: localState.games.length + 1,
-        match_id: "standalone",
-        game_order: localState.games.length + 1,
-        finish_type: finishType,
-        awarded_to: awardedTo,
-        points: pts,
-        created_at: new Date().toISOString()
-      };
-      localState.games.push(newGame);
-
-      if (awardedTo === "player_a") localState.score_a += pts;
-      else if (awardedTo === "player_b") localState.score_b += pts;
-
-      const target = localState.target_points;
-      if (localState.score_a >= target || localState.score_b >= target) {
-        localState.status = "finished";
-        localState.winner = localState.score_a > localState.score_b ? "player_a" : "player_b";
-      } else {
-        localState.status = "in_progress";
-      }
-
+      applyStandaloneFinish(finishType, awardedTo, pts);
       loadMatch();
       return;
     }
@@ -610,24 +633,7 @@ window.renderRefereePadView = async (container, matchId) => {
   // Undo last finish
   window.handleUndoLastFinish = async () => {
     if (isStandalone) {
-      if (!localState.games.length) return;
-      localState.games.pop();
-      let sa = 0;
-      let sb = 0;
-      for (const g of localState.games) {
-        if (g.awarded_to === "player_a") sa += g.points;
-        if (g.awarded_to === "player_b") sb += g.points;
-      }
-      localState.score_a = sa;
-      localState.score_b = sb;
-      const target = localState.target_points;
-      if (sa >= target || sb >= target) {
-        localState.status = "finished";
-        localState.winner = sa > sb ? "player_a" : "player_b";
-      } else {
-        localState.status = localState.games.length > 0 ? "in_progress" : "pending";
-        localState.winner = null;
-      }
+      undoStandaloneFinish();
       loadMatch();
       return;
     }

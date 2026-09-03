@@ -276,106 +276,131 @@ window.renderTierListView = async (container) => {
       return filtered;
     };
 
+    const getTrendBadgeHtml = (trend) => {
+      switch (trend) {
+        case 'up':
+          return '<span class="text-emerald-400 font-bold text-xs">▲ Subiendo</span>';
+        case 'down':
+          return '<span class="text-rose-400 font-bold text-xs">▼ Bajando</span>';
+        case 'new':
+          return '<span class="text-amber-400 font-bold text-xs">✨ Nuevo</span>';
+        default:
+          return '<span class="text-slate-400 text-xs">● Estable</span>';
+      }
+    };
+
+    const getTypeBadgeClass = (typeAttr) => {
+      switch (typeAttr) {
+        case 'Attack':
+          return 'bg-rose-500/10 text-rose-400 border border-rose-500/30';
+        case 'Stamina':
+          return 'bg-amber-500/10 text-amber-400 border border-amber-500/30';
+        case 'Defense':
+          return 'bg-blue-500/10 text-blue-400 border border-blue-500/30';
+        default:
+          return 'bg-purple-500/10 text-purple-400 border border-purple-500/30';
+      }
+    };
+
+    const renderPartCardHtml = (p) => {
+      const trendIcon = getTrendBadgeHtml(p.trend);
+      const typeClass = getTypeBadgeClass(p.type_attr);
+      const winRateClass = p.win_rate_pct >= 60 ? 'text-emerald-400' : p.win_rate_pct >= 50 ? 'text-cyan-400' : 'text-slate-300';
+      const winRateText = p.win_rate_pct ? `${p.win_rate_pct}%` : 'N/A';
+      const pickRateText = p.pick_rate_pct ? `${p.pick_rate_pct}%` : 'N/A';
+
+      return `
+        <div
+          onclick="openPartModal(${p.id})"
+          class="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-2.5 group relative hover:shadow-lg hover:shadow-cyan-950/30"
+        >
+          <div class="flex items-center justify-between gap-1">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
+                ${p.code}
+              </span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                ${p.system}
+              </span>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeClass}">
+              ${p.type_attr}
+            </span>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition truncate">${p.name}</h4>
+            <div class="text-[11px] text-slate-400 flex items-center justify-between mt-0.5">
+              <span class="capitalize font-medium text-slate-300">${p.category}</span>
+              <span class="font-mono text-slate-400">${p.weight_grams}g</span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-1 text-[10px]">
+            <div>
+              <span class="text-slate-500 block">Win Rate</span>
+              <span class="font-extrabold ${winRateClass}">
+                ${winRateText}
+              </span>
+            </div>
+            <div>
+              <span class="text-slate-500 block">Pick Rate</span>
+              <span class="font-extrabold text-amber-400">
+                ${pickRateText}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-[10px] pt-1">
+            <div>${trendIcon}</div>
+            <span class="text-slate-500 group-hover:text-cyan-400 transition flex items-center gap-0.5">
+              Ver detalles <span>→</span>
+            </span>
+          </div>
+        </div>
+      `;
+    };
+
+    const renderTierRowHtml = (tier, filteredParts, metaTiers) => {
+      const tierConfig = metaTiers[tier];
+      const tierParts = filteredParts.filter(p => p.tier === tier);
+      const countLabel = `${tierParts.length} ${tierParts.length === 1 ? 'pieza' : 'piezas'}`;
+
+      return `
+        <div class="glass-card rounded-2xl overflow-hidden border ${tierConfig.border} flex flex-col md:flex-row shadow-lg bg-slate-900/40">
+          <div class="p-5 md:w-36 bg-gradient-to-br ${tierConfig.gradient} flex flex-col items-center justify-center shrink-0 border-b md:border-b-0 md:border-r border-slate-800 text-center relative overflow-hidden">
+            <div class="text-3xl font-black text-white tracking-tight flex items-center gap-1">
+              <span>${tierConfig.label}</span>
+            </div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-100 mt-0.5">
+              ${tierConfig.sub}
+            </span>
+            <span class="text-[10px] text-white/80 mt-1 hidden md:block">
+              ${countLabel}
+            </span>
+          </div>
+
+          <div class="p-4 flex-1 bg-slate-950/40">
+            ${tierParts.length ? `
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                ${tierParts.map(renderPartCardHtml).join("")}
+              </div>
+            ` : `
+              <div class="py-8 text-center text-xs text-slate-500">
+                No hay piezas en ${tierConfig.label} que coincidan con los filtros seleccionados.
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    };
+
     window.renderTierRows = () => {
       const containerEl = document.getElementById("tier-rows-container");
       if (!containerEl) return;
 
       const filteredParts = getFilteredAndSortedParts();
-
-      containerEl.innerHTML = tiers.map(tier => {
-        const tierConfig = tierMeta[tier];
-        const tierParts = filteredParts.filter(p => p.tier === tier);
-
-        return `
-          <div class="glass-card rounded-2xl overflow-hidden border ${tierConfig.border} flex flex-col md:flex-row shadow-lg bg-slate-900/40">
-            <!-- Tier Badge Column -->
-            <div class="p-5 md:w-36 bg-gradient-to-br ${tierConfig.gradient} flex flex-col items-center justify-center shrink-0 border-b md:border-b-0 md:border-r border-slate-800 text-center relative overflow-hidden">
-              <div class="text-3xl font-black text-white tracking-tight flex items-center gap-1">
-                <span>${tierConfig.label}</span>
-              </div>
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-100 mt-0.5">
-                ${tierConfig.sub}
-              </span>
-              <span class="text-[10px] text-white/80 mt-1 hidden md:block">
-                ${tierParts.length} ${tierParts.length === 1 ? 'pieza' : 'piezas'}
-              </span>
-            </div>
-
-            <!-- Parts Grid Container -->
-            <div class="p-4 flex-1 bg-slate-950/40">
-              ${tierParts.length ? `
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  ${tierParts.map(p => {
-                    const trendIcon = p.trend === 'up' ? '<span class="text-emerald-400 font-bold text-xs">▲ Subiendo</span>' :
-                                      p.trend === 'down' ? '<span class="text-rose-400 font-bold text-xs">▼ Bajando</span>' :
-                                      p.trend === 'new' ? '<span class="text-amber-400 font-bold text-xs">✨ Nuevo</span>' :
-                                      '<span class="text-slate-400 text-xs">● Estable</span>';
-
-                    return `
-                      <div
-                        onclick="openPartModal(${p.id})"
-                        class="p-3.5 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/60 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-2.5 group relative hover:shadow-lg hover:shadow-cyan-950/30"
-                      >
-                        <!-- Top Badges -->
-                        <div class="flex items-center justify-between gap-1">
-                          <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
-                              ${p.code}
-                            </span>
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                              ${p.system}
-                            </span>
-                          </div>
-                          <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${p.type_attr === 'Attack' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' : p.type_attr === 'Stamina' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' : p.type_attr === 'Defense' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' : 'bg-purple-500/10 text-purple-400 border border-purple-500/30'}">
-                            ${p.type_attr}
-                          </span>
-                        </div>
-
-                        <!-- Name & Category -->
-                        <div>
-                          <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition truncate">${p.name}</h4>
-                          <div class="text-[11px] text-slate-400 flex items-center justify-between mt-0.5">
-                            <span class="capitalize font-medium text-slate-300">${p.category}</span>
-                            <span class="font-mono text-slate-400">${p.weight_grams}g</span>
-                          </div>
-                        </div>
-
-                        <!-- Meta Metrics (Winrate & Pickrate) -->
-                        <div class="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-1 text-[10px]">
-                          <div>
-                            <span class="text-slate-500 block">Win Rate</span>
-                            <span class="font-extrabold ${p.win_rate_pct >= 60 ? 'text-emerald-400' : p.win_rate_pct >= 50 ? 'text-cyan-400' : 'text-slate-300'}">
-                              ${p.win_rate_pct ? p.win_rate_pct + '%' : 'N/A'}
-                            </span>
-                          </div>
-                          <div>
-                            <span class="text-slate-500 block">Pick Rate</span>
-                            <span class="font-extrabold text-amber-400">
-                              ${p.pick_rate_pct ? p.pick_rate_pct + '%' : 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <!-- Footer: Trend & Ruling -->
-                        <div class="flex items-center justify-between text-[10px] pt-1">
-                          <div>${trendIcon}</div>
-                          <span class="text-slate-500 group-hover:text-cyan-400 transition flex items-center gap-0.5">
-                            Ver detalles <span>→</span>
-                          </span>
-                        </div>
-                      </div>
-                    `;
-                  }).join("")}
-                </div>
-              ` : `
-                <div class="py-8 text-center text-xs text-slate-500">
-                  No hay piezas en ${tierConfig.label} que coincidan con los filtros seleccionados.
-                </div>
-              `}
-            </div>
-          </div>
-        `;
-      }).join("");
+      containerEl.innerHTML = tiers.map(tier => renderTierRowHtml(tier, filteredParts, tierMeta)).join("");
     };
 
     // Live Sync Action

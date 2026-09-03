@@ -23,6 +23,190 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   window.wsHub.on("score_update", () => refreshData());
   window.wsHub.on("match_call", () => refreshData());
 
+  const getMatchStatusBadge = (status) => {
+    switch (status) {
+      case 'in_progress':
+        return '<span class="px-2 py-0.5 rounded font-bold uppercase bg-emerald-500/20 text-emerald-400">En Combate</span>';
+      case 'calling':
+        return '<span class="px-2 py-0.5 rounded font-bold uppercase bg-amber-500/20 text-amber-400">Llamado a Mesa</span>';
+      case 'finished':
+        return '<span class="px-2 py-0.5 rounded font-bold uppercase bg-slate-800 text-slate-400">Finalizado</span>';
+      default:
+        return '<span class="px-2 py-0.5 rounded font-bold uppercase bg-blue-500/20 text-blue-400">Pendiente</span>';
+    }
+  };
+
+  const renderMatchCard = (m, isOrganizer) => {
+    const borderClass = m.status === 'in_progress' ? 'border-cyan-500 glow-cyan' : m.status === 'calling' ? 'border-amber-500 animate-pulse' : 'border-slate-800';
+    const playerAAvatar = m.player_a ? m.player_a.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+    const playerBAvatar = m.player_b ? m.player_b.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+    const playerAName = m.player_a ? m.player_a.display_name : 'TBD';
+    const playerBName = m.player_b ? m.player_b.display_name : (m.is_bye ? 'BYE (Pase Libre)' : 'TBD');
+    const scoreAClass = m.score_a > m.score_b ? 'text-cyan-400' : 'text-slate-300';
+    const scoreBClass = m.score_b > m.score_a ? 'text-rose-400' : 'text-slate-300';
+
+    const playerADeck = m.player_a_deck && m.player_a_deck.length 
+      ? `<div class="text-[10px] text-blue-300/80 truncate font-mono">${m.player_a_deck.join(" • ")}</div>`
+      : `<div class="text-[10px] text-slate-400 truncate">${m.player_a ? m.player_a.favorite_combo || '' : ''}</div>`;
+
+    const playerBDeck = m.player_b_deck && m.player_b_deck.length
+      ? `<div class="text-[10px] text-rose-300/80 truncate font-mono">${m.player_b_deck.join(" • ")}</div>`
+      : `<div class="text-[10px] text-slate-400 truncate">${m.player_b ? m.player_b.favorite_combo || '' : ''}</div>`;
+
+    const refereeBadge = m.referee 
+      ? `<span class="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-semibold">⚖️ ${m.referee.display_name}</span>`
+      : `<span class="text-slate-500 italic text-[11px]">Sin árbitro</span>`;
+
+    let actionsHtml = '';
+    if (isOrganizer && !m.is_bye) {
+      actionsHtml += `<button onclick="openAssignRefereeModal(${m.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold active:scale-95 transition">Árbitro</button>`;
+    }
+    if (!m.is_bye && m.status !== 'finished') {
+      actionsHtml += `
+        <button onclick="handleCallMatch(${m.id}, ${m.station_number})" class="px-2.5 py-1 rounded-lg bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 font-semibold active:scale-95 transition">Llamar</button>
+        <button onclick="location.hash='#/referee/${m.id}'" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow flex items-center gap-1 active:scale-95 transition"><span>⚡</span> Mesa WBO</button>
+      `;
+    } else if (!m.is_bye && m.status === 'finished') {
+      actionsHtml += `
+        <button onclick="location.hash='#/referee/${m.id}'" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 active:scale-95 transition"><span>📊</span> Ver Acta</button>
+      `;
+    }
+
+    return `
+      <div class="glass-card rounded-2xl p-4 sm:p-5 border ${borderClass} space-y-4">
+        <div class="flex items-center justify-between text-xs pb-2 border-b border-slate-800">
+          <span class="font-bold text-slate-300">Ronda ${m.round_number} • Mesa / Stadium #${m.station_number}</span>
+          ${getMatchStatusBadge(m.status)}
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 flex-1 min-w-0">
+            <img src="${playerAAvatar}" class="w-10 h-10 rounded-xl border-2 border-blue-500 object-cover flex-shrink-0" alt="${playerAName}"/>
+            <div class="min-w-0 truncate">
+              <div class="font-bold text-sm text-white truncate ${m.winner_id === m.player_a_id ? 'text-amber-400' : ''}">
+                ${playerAName}
+              </div>
+              ${playerADeck}
+            </div>
+          </div>
+
+          <div class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-extrabold text-lg sm:text-xl flex items-center gap-1.5 flex-shrink-0 shadow-inner">
+            <span class="${scoreAClass}">${m.score_a}</span>
+            <span class="text-slate-600">:</span>
+            <span class="${scoreBClass}">${m.score_b}</span>
+          </div>
+
+          <div class="flex items-center justify-end gap-2.5 flex-1 min-w-0 text-right">
+            <div class="min-w-0 truncate">
+              <div class="font-bold text-sm text-white truncate ${m.winner_id === m.player_b_id ? 'text-amber-400' : ''}">
+                ${playerBName}
+              </div>
+              ${playerBDeck}
+            </div>
+            <img src="${playerBAvatar}" class="w-10 h-10 rounded-xl border-2 border-rose-500 object-cover flex-shrink-0" alt="${playerBName}"/>
+          </div>
+        </div>
+
+        <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs border-t border-slate-800/60">
+          <div class="text-slate-400 flex items-center gap-1.5">
+            ${refereeBadge}
+          </div>
+          <div class="flex items-center gap-2">
+            ${actionsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderStandingsRow = (p, idx) => {
+    const avatar = p.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+    const rankClass = idx === 0 ? 'text-amber-400 font-extrabold' : 'text-slate-300';
+    const checkinBadge = p.checked_in
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">Check-in OK</span>'
+      : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">Pendiente</span>';
+
+    return `
+      <tr class="hover:bg-slate-800/40">
+        <td class="py-3 px-3 font-bold ${rankClass}">${idx + 1}</td>
+        <td class="py-3 px-3">
+          <div class="flex items-center gap-2">
+            <img src="${avatar}" class="w-7 h-7 rounded-full object-cover" alt="${p.user?.display_name || ''}"/>
+            <span class="font-bold text-white">${p.user?.display_name || ''}</span>
+            <span class="text-xs text-slate-400">@${p.user?.username || ''}</span>
+          </div>
+        </td>
+        <td class="py-3 px-3 text-center font-extrabold text-cyan-400">${p.swiss_points}</td>
+        <td class="py-3 px-3 text-center text-slate-300">${p.matches_won} / ${p.matches_drawn} / ${p.matches_lost}</td>
+        <td class="py-3 px-3 text-center text-xs font-mono text-slate-400">${p.points_scored} : ${p.points_conceded}</td>
+        <td class="py-3 px-3 text-center text-xs font-mono text-slate-300">${p.buchholz.toFixed(1)}</td>
+        <td class="py-3 px-3 text-center">${checkinBadge}</td>
+      </tr>
+    `;
+  };
+
+  const renderBladerDeckCard = (p, isOrganizer, u, tour) => {
+    const deck = Array.isArray(p.deck) ? p.deck : [];
+    const canEditDeck = isOrganizer || (u && u.id === p.user_id);
+    const avatar = p.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+    const checkinBadge = p.checked_in
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">Check-in</span>'
+      : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">Pendiente</span>';
+
+    const editDeckBtn = canEditDeck ? `
+      <div class="pt-1 flex justify-end">
+        <button onclick='openEditDeckModal(${tour.id}, ${p.user_id}, "${(p.user?.display_name || '').replace(/"/g, '&quot;')}", ${JSON.stringify(deck)})' class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-cyan-600/30 text-cyan-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          Editar Deck
+        </button>
+      </div>
+    ` : '';
+
+    return `
+      <div class="glass-card rounded-2xl p-4 border border-slate-800 hover:border-cyan-500/40 transition space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <img src="${avatar}" class="w-10 h-10 rounded-xl object-cover border border-slate-700" alt="${p.user?.display_name || ''}"/>
+            <div>
+              <div class="font-bold text-white text-sm">${p.user?.display_name || ''}</div>
+              <div class="text-xs text-slate-400">@${p.user?.username || ''} • ${p.user?.country || 'PA'}</div>
+            </div>
+          </div>
+          ${checkinBadge}
+        </div>
+
+        <div class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold border-b border-slate-800 pb-1">
+            <span>🛡️ Deck Oficial (3on3)</span>
+            <span class="text-cyan-400 font-mono">${deck.length}/3 Beys</span>
+          </div>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+              <span class="font-semibold text-slate-200 truncate ${deck[0] ? '' : 'text-slate-500 italic'}">
+                ${deck[0] || 'Sin registrar (Lead Bey)'}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+              <span class="font-semibold text-slate-200 truncate ${deck[1] ? '' : 'text-slate-500 italic'}">
+                ${deck[1] || 'Sin registrar'}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">3</span>
+              <span class="font-semibold text-slate-200 truncate ${deck[2] ? '' : 'text-slate-500 italic'}">
+                ${deck[2] || 'Sin registrar'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        ${editDeckBtn}
+      </div>
+    `;
+  };
+
   const renderUI = () => {
     const isOrganizer = user && (user.role === "organizer" || user.role === "admin" || user.id === tournament.organizer_id);
     const isParticipant = user && participants.some(p => p.user_id === user.id);
@@ -116,91 +300,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <!-- Matches Tab View -->
         <div id="ttab-matches" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            ${matches.map(m => `
-              <div class="glass-card rounded-2xl p-4 sm:p-5 border ${m.status === 'in_progress' ? 'border-cyan-500 glow-cyan' : m.status === 'calling' ? 'border-amber-500 animate-pulse' : 'border-slate-800'} space-y-4">
-                <div class="flex items-center justify-between text-xs pb-2 border-b border-slate-800">
-                  <span class="font-bold text-slate-300">Ronda ${m.round_number} • Mesa / Stadium #${m.station_number}</span>
-                  <span class="px-2 py-0.5 rounded font-bold uppercase ${
-                    m.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-400' :
-                    m.status === 'calling' ? 'bg-amber-500/20 text-amber-400' :
-                    m.status === 'finished' ? 'bg-slate-800 text-slate-400' : 'bg-blue-500/20 text-blue-400'
-                  }">
-                    ${m.status === 'in_progress' ? 'En Combate' : m.status === 'calling' ? 'Llamado a Mesa' : m.status === 'finished' ? 'Finalizado' : 'Pendiente'}
-                  </span>
-                </div>
-
-                <!-- Competitors Versus -->
-                <div class="flex items-center justify-between gap-2">
-                  <!-- Player A -->
-                  <div class="flex items-center gap-2.5 flex-1 min-w-0">
-                    <img src="${m.player_a ? m.player_a.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-10 h-10 rounded-xl border-2 border-blue-500 object-cover flex-shrink-0"/>
-                    <div class="min-w-0 truncate">
-                      <div class="font-bold text-sm text-white truncate ${m.winner_id === m.player_a_id ? 'text-amber-400' : ''}">
-                        ${m.player_a ? m.player_a.display_name : 'TBD'}
-                      </div>
-                      ${m.player_a_deck && m.player_a_deck.length ? `
-                        <div class="text-[10px] text-blue-300/80 truncate font-mono">
-                          ${m.player_a_deck.join(" • ")}
-                        </div>
-                      ` : `
-                        <div class="text-[10px] text-slate-400 truncate">${m.player_a ? m.player_a.favorite_combo || '' : ''}</div>
-                      `}
-                    </div>
-                  </div>
-
-                  <!-- Score Display -->
-                  <div class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-extrabold text-lg sm:text-xl flex items-center gap-1.5 flex-shrink-0 shadow-inner">
-                    <span class="${m.score_a > m.score_b ? 'text-cyan-400' : 'text-slate-300'}">${m.score_a}</span>
-                    <span class="text-slate-600">:</span>
-                    <span class="${m.score_b > m.score_a ? 'text-rose-400' : 'text-slate-300'}">${m.score_b}</span>
-                  </div>
-
-                  <!-- Player B -->
-                  <div class="flex items-center justify-end gap-2.5 flex-1 min-w-0 text-right">
-                    <div class="min-w-0 truncate">
-                      <div class="font-bold text-sm text-white truncate ${m.winner_id === m.player_b_id ? 'text-amber-400' : ''}">
-                        ${m.player_b ? m.player_b.display_name : (m.is_bye ? 'BYE (Pase Libre)' : 'TBD')}
-                      </div>
-                      ${m.player_b_deck && m.player_b_deck.length ? `
-                        <div class="text-[10px] text-rose-300/80 truncate font-mono">
-                          ${m.player_b_deck.join(" • ")}
-                        </div>
-                      ` : `
-                        <div class="text-[10px] text-slate-400 truncate">${m.player_b ? m.player_b.favorite_combo || '' : ''}</div>
-                      `}
-                    </div>
-                    <img src="${m.player_b ? m.player_b.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-10 h-10 rounded-xl border-2 border-rose-500 object-cover flex-shrink-0"/>
-                  </div>
-                </div>
-
-                <!-- Match Actions / Referee trigger -->
-                <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs border-t border-slate-800/60">
-                  <div class="text-slate-400 flex items-center gap-1.5">
-                    ${m.referee ? `<span class="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-semibold">⚖️ ${m.referee.display_name}</span>` : `<span class="text-slate-500 italic text-[11px]">Sin árbitro</span>`}
-                  </div>
-                  <div class="flex items-center gap-2">
-                    ${isOrganizer && !m.is_bye ? `
-                      <button onclick="openAssignRefereeModal(${m.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold active:scale-95 transition">
-                        Árbitro
-                      </button>
-                    ` : ''}
-                    ${!m.is_bye && m.status !== 'finished' ? `
-                      <button onclick="handleCallMatch(${m.id}, ${m.station_number})" class="px-2.5 py-1 rounded-lg bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 font-semibold active:scale-95 transition">
-                        Llamar
-                      </button>
-                      <button onclick="location.hash='#/referee/${m.id}'" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow flex items-center gap-1 active:scale-95 transition">
-                        <span>⚡</span> Mesa WBO
-                      </button>
-                    ` : ''}
-                    ${!m.is_bye && m.status === 'finished' ? `
-                      <button onclick="location.hash='#/referee/${m.id}'" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 active:scale-95 transition">
-                        <span>📊</span> Ver Acta
-                      </button>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-            `).join("")}
+            ${matches.map(m => renderMatchCard(m, isOrganizer)).join("")}
           </div>
         </div>
 
@@ -219,29 +319,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800">
-              ${participants.map((p, idx) => `
-                <tr class="hover:bg-slate-800/40">
-                  <td class="py-3 px-3 font-bold ${idx === 0 ? 'text-amber-400 font-extrabold' : 'text-slate-300'}">
-                    ${idx + 1}
-                  </td>
-                  <td class="py-3 px-3">
-                    <div class="flex items-center gap-2">
-                      <img src="${p.user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-7 h-7 rounded-full object-cover"/>
-                      <span class="font-bold text-white">${p.user.display_name}</span>
-                      <span class="text-xs text-slate-400">@${p.user.username}</span>
-                    </div>
-                  </td>
-                  <td class="py-3 px-3 text-center font-extrabold text-cyan-400">${p.swiss_points}</td>
-                  <td class="py-3 px-3 text-center text-slate-300">${p.matches_won} / ${p.matches_drawn} / ${p.matches_lost}</td>
-                  <td class="py-3 px-3 text-center text-xs font-mono text-slate-400">${p.points_scored} : ${p.points_conceded}</td>
-                  <td class="py-3 px-3 text-center text-xs font-mono text-slate-300">${p.buchholz.toFixed(1)}</td>
-                  <td class="py-3 px-3 text-center">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.checked_in ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
-                      ${p.checked_in ? 'Check-in OK' : 'Pendiente'}
-                    </span>
-                  </td>
-                </tr>
-              `).join("")}
+              ${participants.map((p, idx) => renderStandingsRow(p, idx)).join("")}
             </tbody>
           </table>
         </div>
@@ -249,63 +327,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <!-- Bladers & Decks Tab View -->
         <div id="ttab-decks" class="hidden space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${participants.map(p => {
-              const deck = Array.isArray(p.deck) ? p.deck : [];
-              const canEditDeck = isOrganizer || (user && user.id === p.user_id);
-              return `
-                <div class="glass-card rounded-2xl p-4 border border-slate-800 hover:border-cyan-500/40 transition space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                      <img src="${p.user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-10 h-10 rounded-xl object-cover border border-slate-700"/>
-                      <div>
-                        <div class="font-bold text-white text-sm">${p.user.display_name}</div>
-                        <div class="text-xs text-slate-400">@${p.user.username} • ${p.user.country || 'WBO'}</div>
-                      </div>
-                    </div>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.checked_in ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
-                      ${p.checked_in ? 'Check-in' : 'Pendiente'}
-                    </span>
-                  </div>
-
-                  <!-- 3 Beys Deck Box -->
-                  <div class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 space-y-2">
-                    <div class="flex items-center justify-between text-[11px] text-slate-400 font-semibold border-b border-slate-800 pb-1">
-                      <span>🛡️ Deck Oficial (3on3)</span>
-                      <span class="text-cyan-400 font-mono">${deck.length}/3 Beys</span>
-                    </div>
-                    <div class="space-y-1.5 text-xs">
-                      <div class="flex items-center gap-2">
-                        <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                        <span class="font-semibold text-slate-200 truncate ${deck[0] ? '' : 'text-slate-500 italic'}">
-                          ${deck[0] || 'Sin registrar (Lead Bey)'}
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="w-4 h-4 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                        <span class="font-semibold text-slate-200 truncate ${deck[1] ? '' : 'text-slate-500 italic'}">
-                          ${deck[1] || 'Sin registrar'}
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">3</span>
-                        <span class="font-semibold text-slate-200 truncate ${deck[2] ? '' : 'text-slate-500 italic'}">
-                          ${deck[2] || 'Sin registrar'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  ${canEditDeck ? `
-                    <div class="pt-1 flex justify-end">
-                      <button onclick='openEditDeckModal(${tournament.id}, ${p.user_id}, "${p.user.display_name.replace(/"/g, '&quot;')}", ${JSON.stringify(deck)})' class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-cyan-600/30 text-cyan-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        Editar Deck
-                      </button>
-                    </div>
-                  ` : ''}
-                </div>
-              `;
-            }).join("")}
+            ${participants.map(p => renderBladerDeckCard(p, isOrganizer, user, tournament)).join("")}
           </div>
         </div>
       </div>
@@ -519,6 +541,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">País / Región</label>
                 <select name="country" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400">
+                  <option value="PA" selected>Panamá (PA)</option>
                   <option value="ES">España (ES)</option>
                   <option value="MX">México (MX)</option>
                   <option value="US">Estados Unidos (US)</option>

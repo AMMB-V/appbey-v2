@@ -1162,6 +1162,34 @@ function advanceSingleElimination(m: TournamentMatch) {
   broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, match_id: m.id, next_match_id: nextMatch.id });
 }
 
+function createWalkinBlader(displayName: string, country?: string, favoriteCombo?: string): User {
+  const baseUsername = displayName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 15) || "blader";
+  let uniqueUsername = baseUsername;
+  let counter = 1;
+  while (users.some((u) => u.username === uniqueUsername)) {
+    uniqueUsername = `${baseUsername}_${counter++}`;
+  }
+  const newUser: User = {
+    id: users.length + 1,
+    username: uniqueUsername,
+    email: `${uniqueUsername}@appbey.local`,
+    password_hash: bcrypt.hashSync("123456", 10),
+    display_name: displayName,
+    avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName)}`,
+    bio: "Blader registrado en mesa de torneo",
+    country: country ? String(country).trim().toUpperCase() : "PA",
+    favorite_combo: favoriteCombo || "Custom Beyblade X",
+    role: "blader",
+    elo_rating: 1200,
+    is_verified: true,
+    is_active: true,
+    created_at: new Date().toISOString()
+  };
+  users.push(newUser);
+  getWallet(newUser.id);
+  return newUser;
+}
+
 // ---------------------------------------------------------------------------
 // API Routes: /api/v1/...
 // ---------------------------------------------------------------------------
@@ -1860,79 +1888,19 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
       ? `${cleanName} #${sameNameInTournament.length + 1}`
       : cleanName;
 
-    const baseUsername = finalDisplayName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 15) || "blader";
-    let uniqueUsername = baseUsername;
-    let counter = 1;
-    while (users.some((u) => u.username === uniqueUsername)) {
-      uniqueUsername = `${baseUsername}_${counter++}`;
-    }
-    const newUser: User = {
-      id: users.length + 1,
-      username: uniqueUsername,
-      email: `${uniqueUsername}@appbey.local`,
-      password_hash: bcrypt.hashSync("123456", 10),
-      display_name: finalDisplayName,
-      avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(finalDisplayName)}`,
-      bio: "Blader registrado presencialmente en mesa de torneo",
-      country: country ? String(country).trim().toUpperCase() : "PA",
-      favorite_combo: deckList[0] || (favorite_combo ? String(favorite_combo).trim() : "Custom Beyblade X"),
-      role: "blader",
-      elo_rating: 1200,
-      is_verified: true,
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-    users.push(newUser);
-    getWallet(newUser.id);
-    targetUser = newUser;
+    targetUser = createWalkinBlader(
+      finalDisplayName,
+      country,
+      deckList[0] || (favorite_combo ? String(favorite_combo).trim() : undefined)
+    );
   } else if (user_id && !isNaN(parseInt(user_id, 10))) {
     targetUser = users.find((u) => u.id === parseInt(user_id, 10));
     if (!targetUser) {
-      // Graceful fallback: create user if requested id wasn't found
-      const fallbackName = `Blader #${users.length + 1}`;
-      const newUser: User = {
-        id: users.length + 1,
-        username: `blader_${users.length + 1}`,
-        email: `blader_${users.length + 1}@appbey.local`,
-        password_hash: bcrypt.hashSync("123456", 10),
-        display_name: fallbackName,
-        avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(fallbackName)}`,
-        bio: "Blader registrado en mesa de torneo",
-        country: country ? String(country).trim().toUpperCase() : "ES",
-        favorite_combo: deckList[0] || "Custom Beyblade X",
-        role: "blader",
-        elo_rating: 1200,
-        is_verified: true,
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-      users.push(newUser);
-      getWallet(newUser.id);
-      targetUser = newUser;
+      targetUser = createWalkinBlader(`Blader #${users.length + 1}`, country, deckList[0]);
     }
   } else {
-    // Neither user_id nor name was provided; create a random walk-in blader
     const count = participants.filter((p) => p.tournament_id === id).length;
-    const walkinName = `Blader Invitado #${count + 1}`;
-    const newUser: User = {
-      id: users.length + 1,
-      username: `blader_invitado_${Date.now()}`,
-      email: `blader_inv_${Date.now()}@appbey.local`,
-      password_hash: bcrypt.hashSync("123456", 10),
-      display_name: walkinName,
-      avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(walkinName)}`,
-      bio: "Blader presencial invitado",
-      country: country ? String(country).trim().toUpperCase() : "ES",
-      favorite_combo: deckList[0] || "Custom Beyblade X",
-      role: "blader",
-      elo_rating: 1200,
-      is_verified: true,
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-    users.push(newUser);
-    getWallet(newUser.id);
-    targetUser = newUser;
+    targetUser = createWalkinBlader(`Blader Invitado #${count + 1}`, country, deckList[0]);
   }
 
   const existing = participants.find((p) => p.tournament_id === id && p.user_id === targetUser!.id);

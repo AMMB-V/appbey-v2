@@ -123,6 +123,48 @@ window.openAdminUserManagementModal = async () => {
 
   document.body.appendChild(modal);
 
+  const getUserRoleBadgeClass = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+      case 'organizer':
+        return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+      case 'referee':
+        return 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30';
+      default:
+        return 'bg-slate-800 text-slate-300';
+    }
+  };
+
+  const renderAdminUserRow = (u) => `
+    <tr class="hover:bg-slate-800/40">
+      <td class="py-2.5 px-2">
+        <div class="flex items-center gap-2">
+          <img src="${u.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-7 h-7 rounded-full object-cover"/>
+          <div>
+            <div class="font-bold text-white">${u.display_name}</div>
+            <div class="text-[10px] text-slate-400 font-mono">@${u.username}</div>
+          </div>
+        </div>
+      </td>
+      <td class="py-2.5 px-2 text-center font-mono font-bold text-cyan-400">${u.country}</td>
+      <td class="py-2.5 px-2 text-center font-mono font-bold text-amber-400">${u.elo_rating}</td>
+      <td class="py-2.5 px-2">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${getUserRoleBadgeClass(u.role)}">
+          ${u.role}
+        </span>
+      </td>
+      <td class="py-2.5 px-2 text-right">
+        <select onchange="handleAdminChangeRole(${u.id}, this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-1 text-[11px] outline-none focus:border-cyan-400">
+          <option value="blader" ${u.role === 'blader' ? 'selected' : ''}>Blader</option>
+          <option value="referee" ${u.role === 'referee' ? 'selected' : ''}>Árbitro</option>
+          <option value="organizer" ${u.role === 'organizer' ? 'selected' : ''}>Organizador</option>
+          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+        </select>
+      </td>
+    </tr>
+  `;
+
   window.loadAdminUsersList = async () => {
     try {
       const users = await window.api.getUsers({ limit: 100 });
@@ -141,39 +183,7 @@ window.openAdminUserManagementModal = async () => {
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
-            ${users.map(u => `
-              <tr class="hover:bg-slate-800/40">
-                <td class="py-2.5 px-2">
-                  <div class="flex items-center gap-2">
-                    <img src="${u.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-7 h-7 rounded-full object-cover"/>
-                    <div>
-                      <div class="font-bold text-white">${u.display_name}</div>
-                      <div class="text-[10px] text-slate-400 font-mono">@${u.username}</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="py-2.5 px-2 text-center font-mono font-bold text-cyan-400">${u.country}</td>
-                <td class="py-2.5 px-2 text-center font-mono font-bold text-amber-400">${u.elo_rating}</td>
-                <td class="py-2.5 px-2">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                    u.role === 'admin' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                    u.role === 'organizer' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                    u.role === 'referee' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
-                    'bg-slate-800 text-slate-300'
-                  }">
-                    ${u.role}
-                  </span>
-                </td>
-                <td class="py-2.5 px-2 text-right">
-                  <select onchange="handleAdminChangeRole(${u.id}, this.value)" class="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-1 text-[11px] outline-none focus:border-cyan-400">
-                    <option value="blader" ${u.role === 'blader' ? 'selected' : ''}>Blader</option>
-                    <option value="referee" ${u.role === 'referee' ? 'selected' : ''}>Árbitro</option>
-                    <option value="organizer" ${u.role === 'organizer' ? 'selected' : ''}>Organizador</option>
-                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
-                  </select>
-                </td>
-              </tr>
-            `).join("")}
+            ${users.map(renderAdminUserRow).join("")}
           </tbody>
         </table>
       `;

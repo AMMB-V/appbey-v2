@@ -34,6 +34,82 @@ window.renderDeckBuilderView = async (container) => {
     currentDeck.slot3 = { blade: blades[2], ratchet: ratchets[3], bit: bits[4] }; // Dran Buster 1-60 F
   }
 
+  const renderSlotCard = (slotNum, slot) => {
+    const beyWeight = ((slot.blade ? slot.blade.weight_grams : 0) + (slot.ratchet ? slot.ratchet.weight_grams : 0) + (slot.bit ? slot.bit.weight_grams : 0)).toFixed(1);
+    const comboName = `${slot.blade ? slot.blade.name : '---'} ${slot.ratchet ? slot.ratchet.name : '---'} ${slot.bit ? slot.bit.name.split(' ')[0] : '---'}`;
+
+    return `
+      <div class="glass-card rounded-2xl p-5 border border-slate-800 flex flex-col justify-between space-y-4 relative">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <span class="px-3 py-1 rounded-full bg-blue-600/30 text-cyan-300 font-bold text-xs">
+            Slot #${slotNum}
+          </span>
+          <span class="text-xs font-mono font-bold text-amber-400">${beyWeight} g</span>
+        </div>
+
+        <div class="text-center space-y-1">
+          <h3 class="font-extrabold text-lg text-white truncate">${comboName}</h3>
+          <div class="text-xs text-slate-400">${slot.blade ? slot.blade.type_attr : 'Tipo'} • Tier ${slot.blade ? slot.blade.tier : '-'}</div>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Blade (Capa de Metal)</label>
+            <select onchange="updatePart(${slotNum}, 'blade', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold">
+              ${blades.map(b => `<option value="${b.id}" ${slot.blade && slot.blade.id === b.id ? 'selected' : ''}>${b.name} (${b.type_attr} • ${b.weight_grams}g • Tier ${b.tier})</option>`).join("")}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Ratchet (Disco Central)</label>
+            <select onchange="updatePart(${slotNum}, 'ratchet', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold">
+              ${ratchets.map(r => `<option value="${r.id}" ${slot.ratchet && slot.ratchet.id === r.id ? 'selected' : ''}>${r.name} (${r.weight_grams}g • Tier ${r.tier})</option>`).join("")}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Bit (Punta de Giro)</label>
+            <select onchange="updatePart(${slotNum}, 'bit', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold">
+              ${bits.map(bt => `<option value="${bt.id}" ${slot.bit && slot.bit.id === bt.id ? 'selected' : ''}>${bt.name} (${bt.type_attr} • Tier ${bt.tier})</option>`).join("")}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-[10px] pt-3 border-t border-slate-800">
+          <div class="p-1.5 rounded bg-slate-900/80">
+            <span class="text-slate-500 block">Ataque</span>
+            <span class="font-bold text-rose-400">${slot.blade ? slot.blade.attack_stat : 0}</span>
+          </div>
+          <div class="p-1.5 rounded bg-slate-900/80">
+            <span class="text-slate-500 block">Defensa</span>
+            <span class="font-bold text-blue-400">${slot.blade ? slot.blade.defense_stat : 0}</span>
+          </div>
+          <div class="p-1.5 rounded bg-slate-900/80">
+            <span class="text-slate-500 block">Resistencia</span>
+            <span class="font-bold text-emerald-400">${slot.blade ? slot.blade.stamina_stat : 0}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderSavedDeckCard = (d) => `
+    <div class="glass-card p-4 rounded-xl border border-slate-800 space-y-2">
+      <div class="flex items-center justify-between">
+        <h4 class="font-bold text-white text-sm truncate">${d.name}</h4>
+        <span class="text-xs font-mono font-bold text-amber-400">${d.total_weight}g</span>
+      </div>
+      <div class="text-[11px] text-slate-400 space-y-0.5">
+        <div>1: <strong class="text-slate-200">${d.slot1_name || '---'}</strong></div>
+        <div>2: <strong class="text-slate-200">${d.slot2_name || '---'}</strong></div>
+        <div>3: <strong class="text-slate-200">${d.slot3_name || '---'}</strong></div>
+      </div>
+      <div class="pt-2 flex items-center justify-end">
+        <button onclick="handleDeleteDeck(${d.id})" class="text-xs text-rose-400 hover:underline">Eliminar</button>
+      </div>
+    </div>
+  `;
+
   const renderUI = () => {
     // Calculate total weight and stats
     const allSelectedParts = [
@@ -141,71 +217,7 @@ window.renderDeckBuilderView = async (container) => {
 
         <!-- 3 Slots Combo Builder Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          ${[1, 2, 3].map(slotNum => {
-            const slot = currentDeck[`slot${slotNum}`];
-            const beyWeight = ((slot.blade ? slot.blade.weight_grams : 0) + (slot.ratchet ? slot.ratchet.weight_grams : 0) + (slot.bit ? slot.bit.weight_grams : 0)).toFixed(1);
-            const comboName = `${slot.blade ? slot.blade.name : '---'} ${slot.ratchet ? slot.ratchet.name : '---'} ${slot.bit ? slot.bit.name.split(' ')[0] : '---'}`;
-
-            return `
-              <div class="glass-card rounded-2xl p-5 border border-slate-800 flex flex-col justify-between space-y-4 relative">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <span class="px-3 py-1 rounded-full bg-blue-600/30 text-cyan-300 font-bold text-xs">
-                    Slot #${slotNum}
-                  </span>
-                  <span class="text-xs font-mono font-bold text-amber-400">${beyWeight} g</span>
-                </div>
-
-                <!-- Combo Title -->
-                <div class="text-center space-y-1">
-                  <h3 class="font-extrabold text-lg text-white truncate">${comboName}</h3>
-                  <div class="text-xs text-slate-400">${slot.blade ? slot.blade.type_attr : 'Tipo'} • Tier ${slot.blade ? slot.blade.tier : '-'}</div>
-                </div>
-
-                <!-- Part Pickers -->
-                <div class="space-y-3 text-xs">
-                  <!-- Blade Picker -->
-                  <div>
-                    <label class="block text-slate-400 font-semibold mb-1">Blade (Capa de Metal)</label>
-                    <select onchange="updatePart(${slotNum}, 'blade', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold">
-                      ${blades.map(b => `<option value="${b.id}" ${slot.blade && slot.blade.id === b.id ? 'selected' : ''}>${b.name} (${b.type_attr} • ${b.weight_grams}g • Tier ${b.tier})</option>`).join("")}
-                    </select>
-                  </div>
-
-                  <!-- Ratchet Picker -->
-                  <div>
-                    <label class="block text-slate-400 font-semibold mb-1">Ratchet (Disco Central)</label>
-                    <select onchange="updatePart(${slotNum}, 'ratchet', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold">
-                      ${ratchets.map(r => `<option value="${r.id}" ${slot.ratchet && slot.ratchet.id === r.id ? 'selected' : ''}>${r.name} (${r.weight_grams}g • Tier ${r.tier})</option>`).join("")}
-                    </select>
-                  </div>
-
-                  <!-- Bit Picker -->
-                  <div>
-                    <label class="block text-slate-400 font-semibold mb-1">Bit (Punta de Giro)</label>
-                    <select onchange="updatePart(${slotNum}, 'bit', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold">
-                      ${bits.map(bt => `<option value="${bt.id}" ${slot.bit && slot.bit.id === bt.id ? 'selected' : ''}>${bt.name} (${bt.type_attr} • Tier ${bt.tier})</option>`).join("")}
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Slot Individual Stats -->
-                <div class="grid grid-cols-3 gap-2 text-center text-[10px] pt-3 border-t border-slate-800">
-                  <div class="p-1.5 rounded bg-slate-900/80">
-                    <span class="text-slate-500 block">Ataque</span>
-                    <span class="font-bold text-rose-400">${slot.blade ? slot.blade.attack_stat : 0}</span>
-                  </div>
-                  <div class="p-1.5 rounded bg-slate-900/80">
-                    <span class="text-slate-500 block">Defensa</span>
-                    <span class="font-bold text-blue-400">${slot.blade ? slot.blade.defense_stat : 0}</span>
-                  </div>
-                  <div class="p-1.5 rounded bg-slate-900/80">
-                    <span class="text-slate-500 block">Resistencia</span>
-                    <span class="font-bold text-emerald-400">${slot.blade ? slot.blade.stamina_stat : 0}</span>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join("")}
+          ${[1, 2, 3].map(slotNum => renderSlotCard(slotNum, currentDeck[`slot${slotNum}`])).join("")}
         </div>
 
         <!-- Saved Decks Section -->
@@ -213,22 +225,7 @@ window.renderDeckBuilderView = async (container) => {
           <div class="space-y-4 pt-6">
             <h3 class="text-lg font-bold text-white">Mis Decks Guardados</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              ${userDecks.map(d => `
-                <div class="glass-card p-4 rounded-xl border border-slate-800 space-y-2">
-                  <div class="flex items-center justify-between">
-                    <h4 class="font-bold text-white text-sm truncate">${d.name}</h4>
-                    <span class="text-xs font-mono font-bold text-amber-400">${d.total_weight}g</span>
-                  </div>
-                  <div class="text-[11px] text-slate-400 space-y-0.5">
-                    <div>1: <strong class="text-slate-200">${d.slot1_name || '---'}</strong></div>
-                    <div>2: <strong class="text-slate-200">${d.slot2_name || '---'}</strong></div>
-                    <div>3: <strong class="text-slate-200">${d.slot3_name || '---'}</strong></div>
-                  </div>
-                  <div class="pt-2 flex items-center justify-end">
-                    <button onclick="handleDeleteDeck(${d.id})" class="text-xs text-rose-400 hover:underline">Eliminar</button>
-                  </div>
-                </div>
-              `).join("")}
+              ${userDecks.map(renderSavedDeckCard).join("")}
             </div>
           </div>
         ` : ''}
