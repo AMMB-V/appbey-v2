@@ -164,7 +164,7 @@ window.handleProfileAvatarUpload = (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
   if (!file.type.startsWith("image/")) {
-    alert("Por favor selecciona un archivo de imagen válido");
+    window.showToast?.("Por favor selecciona un archivo de imagen válido", "error");
     return;
   }
   const reader = new FileReader();
@@ -186,9 +186,9 @@ window.handleUpdateProfile = async (e) => {
       bio: form.bio.value,
       avatar_url: avatarVal
     });
-    alert("¡Perfil actualizado con éxito!");
-    location.reload();
+    window.showToast?.("¡Perfil actualizado con éxito!", "success");
+    setTimeout(() => location.reload(), 400);
   } catch(err) {
-    alert(err.message || "Error al actualizar perfil");
+    window.showToast?.(err.message || "Error al actualizar perfil", "error");
   }
 };

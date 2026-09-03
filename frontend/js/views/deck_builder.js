@@ -1,4 +1,4 @@
-﻿// Beyblade X 3on3 Deck Builder View
+// Beyblade X 3on3 Deck Builder View
 window.renderDeckBuilderView = async (container) => {
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando piezas de Beyblade X...</div>`;
 
@@ -274,22 +274,26 @@ window.renderDeckBuilderView = async (container) => {
 
     try {
       await window.api.createDeck(payload);
-      alert("¡Deck 3on3 guardado exitosamente!");
+      window.showToast?.("¡Deck 3on3 guardado exitosamente!", "success");
       userDecks = await window.api.getDecks(window.api.user.id);
       renderUI();
     } catch(err) {
-      alert(err.message || "Error al guardar deck");
+      window.showToast?.(err.message || "Error al guardar deck", "error");
     }
   };
 
   window.handleDeleteDeck = async (deckId) => {
-    if (!confirm("¿Eliminar este deck guardado?")) return;
+    const confirmed = window.showAppConfirm
+      ? await window.showAppConfirm("Eliminar Deck", "¿Deseas eliminar este deck guardado permanentemente?")
+      : true;
+    if (!confirmed) return;
     try {
       await window.api.deleteDeck(deckId);
+      window.showToast?.("Deck eliminado", "info");
       userDecks = await window.api.getDecks(window.api.user.id);
       renderUI();
     } catch(e) {
-      alert(e.message);
+      window.showToast?.(e.message || "Error al eliminar deck", "error");
     }
   };
 

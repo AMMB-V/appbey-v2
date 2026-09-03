@@ -665,7 +665,7 @@ window.renderRefereePadView = async (container, matchId) => {
   window.handleResetMatchScore = async () => {
     const confirmed = window.showAppConfirm 
       ? await window.showAppConfirm("Reiniciar Marcador", "¿Deseas reiniciar el marcador a 0-0 y vaciar los asaltos de este combate?")
-      : confirm("¿Deseas reiniciar el marcador a 0-0 y vaciar los asaltos?");
+      : true;
     if (!confirmed) return;
 
     if (isStandalone) {

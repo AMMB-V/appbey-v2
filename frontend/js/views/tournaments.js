@@ -216,17 +216,9 @@ window.submitNewTournament = async (e) => {
   try {
     const created = await window.api.createTournament(data);
     document.getElementById("create-t-modal")?.remove();
-    if (window.showToast) {
-      window.showToast("¡Torneo creado exitosamente!", "success");
-    } else {
-      alert("¡Torneo creado exitosamente!");
-    }
+    window.showToast?.("¡Torneo creado exitosamente!", "success");
     location.hash = `#/tournaments/${created.id}`;
   } catch(err) {
-    if (window.showToast) {
-      window.showToast(err.message || "Error al crear torneo", "error");
-    } else {
-      alert(err.message || "Error al crear torneo");
-    }
+    window.showToast?.(err.message || "Error al crear torneo", "error");
   }
 };

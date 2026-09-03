@@ -45,13 +45,26 @@ class ApiClient {
       if (res.status === 401) {
         this.setAuth(null, null);
       }
-      const data = await res.json();
+      
+      const contentType = res.headers.get("content-type");
+      let data = {};
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        data = { message: text };
+      }
+
       if (!res.ok) {
-        throw new Error(data.detail || data.message || "Error en el servidor");
+        const error = new Error(data.detail || data.message || `Error en el servidor (${res.status})`);
+        error.status = res.status;
+        throw error;
       }
       return data;
     } catch (err) {
-      console.error(`API Error on ${endpoint}:`, err);
+      if (err.status !== 401) {
+        console.warn(`API Error on ${endpoint}:`, err.message || err);
+      }
       throw err;
     }
   }
@@ -216,6 +229,9 @@ class ApiClient {
 
   // Wallet
   getMyWallet() {
+    if (!this.token) {
+      return Promise.resolve({ balance: 0, transactions: [] });
+    }
     return this.request("/wallets/me");
   }
 

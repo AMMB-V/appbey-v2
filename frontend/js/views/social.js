@@ -95,9 +95,10 @@ window.renderSocialView = async (container) => {
     try {
       await window.api.createPost(el.value);
       el.value = "";
+      window.showToast?.("Publicación compartida", "success");
       loadFeed();
     } catch(err) {
-      alert(err.message || "Error al publicar");
+      window.showToast?.(err.message || "Error al publicar", "error");
     }
   };
 
@@ -113,7 +114,7 @@ window.renderSocialView = async (container) => {
       btn.className = `flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${isLiked ? 'border-rose-500/50 bg-rose-500/10 text-rose-400' : 'border-slate-800 bg-slate-900/60 hover:text-rose-400 hover:border-slate-700'} font-bold transition`;
       btn.innerHTML = `<span>${isLiked ? '❤️' : '🤍'}</span> <span class="like-count">${res.likes_count} Me gusta</span>`;
     } catch(e) {
-      alert(e.message || "Error al procesar el like");
+      window.showToast?.(e.message || "Error al procesar el like", "error");
     } finally {
       btn.disabled = false;
     }
@@ -125,9 +126,10 @@ window.renderSocialView = async (container) => {
     try {
       await window.api.addComment(postId, input.value);
       input.value = "";
+      window.showToast?.("Comentario agregado", "success");
       loadFeed();
     } catch(err) {
-      alert(err.message || "Error al comentar");
+      window.showToast?.(err.message || "Error al comentar", "error");
     }
   };
 

@@ -200,10 +200,10 @@ window.openAdminUserManagementModal = async () => {
   window.handleAdminChangeRole = async (userId, newRole) => {
     try {
       await window.api.updateUserRole(userId, newRole);
-      alert(`Cargo actualizado exitosamente a: ${newRole}`);
+      window.showToast?.(`Cargo actualizado exitosamente a: ${newRole}`, "success");
       window.loadAdminUsersList();
     } catch(err) {
-      alert(err.message || "Error al actualizar rol");
+      window.showToast?.(err.message || "Error al actualizar rol", "error");
       window.loadAdminUsersList();
     }
   };
@@ -223,7 +223,7 @@ window.openAdminUserManagementModal = async () => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      alert("Por favor selecciona un archivo de imagen válido");
+      window.showToast?.("Por favor selecciona un archivo de imagen válido", "error");
       return;
     }
     const reader = new FileReader();
@@ -248,12 +248,12 @@ window.openAdminUserManagementModal = async () => {
         avatar_url: avatarVal,
         country: form.country.value.toUpperCase()
       });
-      alert("¡Usuario registrado y cargo asignado exitosamente!");
+      window.showToast?.("¡Usuario registrado y cargo asignado exitosamente!", "success");
       form.reset();
       switchAdminUserTab("list");
       window.loadAdminUsersList();
     } catch(err) {
-      alert(err.message || "Error al crear usuario");
+      window.showToast?.(err.message || "Error al crear usuario", "error");
     }
   };
 

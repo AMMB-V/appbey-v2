@@ -1,12 +1,12 @@
-﻿// AP Coins Virtual Wallet View
+// AP Coins Virtual Wallet View
 window.renderWalletView = async (container) => {
-  if (!window.api.user) {
+  if (!window.api.user || !window.api.token) {
     container.innerHTML = `
       <div class="glass-card max-w-md mx-auto my-12 p-8 rounded-2xl text-center space-y-4">
         <div class="text-5xl">🪙</div>
         <h2 class="text-xl font-bold text-white">Inicia Sesión para ver tu Billetera</h2>
         <p class="text-xs text-slate-400">Accede a tu saldo de AP Coins, historial de transacciones y recompensas de torneos.</p>
-        <button onclick="window.showAuthModal()" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow">
+        <button onclick="window.showAuthModal('login')" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow">
           Iniciar Sesión
         </button>
       </div>
@@ -75,17 +75,31 @@ window.renderWalletView = async (container) => {
       </div>
     `;
   } catch(e) {
-    container.innerHTML = `<div class="text-center py-16 text-rose-400">Error: ${e.message}</div>`;
+    if (e.status === 401 || !window.api.token) {
+      window.api.setAuth(null, null);
+      container.innerHTML = `
+        <div class="glass-card max-w-md mx-auto my-12 p-8 rounded-2xl text-center space-y-4">
+          <div class="text-5xl">🪙</div>
+          <h2 class="text-xl font-bold text-white">Inicia Sesión para ver tu Billetera</h2>
+          <p class="text-xs text-slate-400">Tu sesión ha expirado. Inicia sesión nuevamente para acceder a tu saldo.</p>
+          <button onclick="window.showAuthModal('login')" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow">
+            Iniciar Sesión
+          </button>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `<div class="text-center py-16 text-rose-400">Error: ${e.message}</div>`;
+    }
   }
 };
 
 window.claimDailyRewardWallet = async () => {
   try {
     await window.api.claimDailyReward();
-    alert("¡Bono diario reclamado exitosamente!");
+    window.showToast?.("¡Bono diario reclamado exitosamente!", "success");
     window.renderWalletView(document.getElementById("main-content"));
   } catch(err) {
-    alert(err.message || "Error al reclamar bono");
+    window.showToast?.(err.message || "Error al reclamar bono", "error");
   }
 };
 
@@ -126,10 +140,10 @@ window.submitTransferCoins = async (e) => {
   const form = e.target;
   try {
     await window.api.transferCoins(form.recipient.value, parseInt(form.amount.value), form.reason.value);
-    document.getElementById("transfer-modal").remove();
-    alert("¡Transferencia enviada con éxito!");
+    document.getElementById("transfer-modal")?.remove();
+    window.showToast?.("¡Transferencia enviada con éxito!", "success");
     window.renderWalletView(document.getElementById("main-content"));
   } catch(err) {
-    alert(err.message || "Error en la transferencia");
+    window.showToast?.(err.message || "Error en la transferencia", "error");
   }
 };

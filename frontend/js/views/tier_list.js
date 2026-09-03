@@ -410,10 +410,10 @@ window.renderTierListView = async (container) => {
           }
 
           window.renderTierRows();
-          alert("✅ Sincronización oficial completada con World Beyblade Organization y Takara Tomy.");
+          window.showToast?.("✅ Sincronización oficial completada con World Beyblade Organization y Takara Tomy.", "success");
         }
       } catch (err) {
-        alert("Error al sincronizar con la fuente oficial: " + err.message);
+        window.showToast?.("Error al sincronizar con la fuente oficial: " + err.message, "error");
       } finally {
         if (spinner) spinner.classList.remove("animate-spin");
         if (btn) btn.disabled = false;

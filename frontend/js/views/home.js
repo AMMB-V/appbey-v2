@@ -132,10 +132,12 @@ window.renderHomeView = async (container) => {
     `;
 
     // Fetch actual wallet
-    window.api.getMyWallet().then(w => {
-      const el = document.getElementById("home-ap-balance");
-      if (el) el.innerText = `${w.balance} AP`;
-    }).catch(() => {});
+    if (window.api.token) {
+      window.api.getMyWallet().then(w => {
+        const el = document.getElementById("home-ap-balance");
+        if (el) el.innerText = `${w.balance} AP`;
+      }).catch(() => {});
+    }
   } else {
     userCardEl.innerHTML = `
       <div class="col-span-full glass-card p-4 rounded-xl flex items-center justify-between bg-blue-950/40 border border-cyan-500/30">
@@ -241,9 +243,9 @@ window.renderHomeView = async (container) => {
 window.claimDailyRewardHome = async () => {
   try {
     const res = await window.api.claimDailyReward();
-    alert("¡Felicidades! Has reclamado +50 AP Coins.");
-    location.reload();
+    window.showToast?.("¡Felicidades! Has reclamado +50 AP Coins.", "success");
+    setTimeout(() => location.reload(), 400);
   } catch(err) {
-    alert(err.message || "Error al reclamar recompensa");
+    window.showToast?.(err.message || "Error al reclamar recompensa", "error");
   }
 };

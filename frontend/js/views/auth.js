@@ -167,9 +167,10 @@ window.submitLogin = async (e) => {
     const res = await window.api.login(form.email.value, form.password.value);
     window.api.setAuth(res.access_token, res.user);
     document.getElementById("auth-modal")?.remove();
-    location.reload();
+    window.showToast?.("¡Sesión iniciada con éxito!", "success");
+    setTimeout(() => location.reload(), 400);
   } catch(err) {
-    alert(err.message || "Error al iniciar sesión");
+    window.showToast?.(err.message || "Error al iniciar sesión", "error");
   }
 };
 
@@ -191,7 +192,7 @@ window.handleRegisterAvatarUpload = (event) => {
   if (!file) return;
 
   if (!file.type.startsWith("image/")) {
-    alert("Por favor selecciona un archivo de imagen válido (PNG, JPG, WebP)");
+    window.showToast?.("Por favor selecciona un archivo de imagen válido (PNG, JPG, WebP)", "error");
     return;
   }
 
@@ -221,9 +222,9 @@ window.submitRegister = async (e) => {
     });
     window.api.setAuth(res.access_token, res.user);
     document.getElementById("auth-modal")?.remove();
-    alert("¡Cuenta creada exitosamente con bono de 250 AP Coins!");
-    location.reload();
+    window.showToast?.("¡Cuenta creada exitosamente con bono de 250 AP Coins!", "success");
+    setTimeout(() => location.reload(), 400);
   } catch(err) {
-    alert(err.message || "Error al registrarse");
+    window.showToast?.(err.message || "Error al registrarse", "error");
   }
 };

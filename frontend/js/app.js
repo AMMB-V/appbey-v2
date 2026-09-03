@@ -45,7 +45,7 @@
 
   // Safe global override of window.alert to completely prevent browser native alert dialogs
   window.alert = function(msg) {
-    const text = msg == null ? "" : String(msg);
+    const text = (msg === null || msg === undefined) ? "" : String(msg);
     const lower = text.toLowerCase();
     const isError = lower.includes("error") || lower.includes("falló") || lower.includes("no encontrado") || lower.includes("denegad");
     window.showToast(text, isError ? "error" : "success");
@@ -179,10 +179,12 @@
         </div>
       `;
 
-      window.api.getMyWallet().then(w => {
-        const el = document.getElementById("nav-wallet-balance");
-        if (el) el.innerText = `${w.balance} AP`;
-      }).catch(() => {});
+      if (window.api.token) {
+        window.api.getMyWallet().then(w => {
+          const el = document.getElementById("nav-wallet-balance");
+          if (el) el.innerText = `${w.balance} AP`;
+        }).catch(() => {});
+      }
     } else {
       authContainer.innerHTML = `
         <button onclick="window.showAuthModal('login')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs shadow-md transition active:scale-95">

@@ -1,4 +1,4 @@
-﻿// AppBey WebSocket Hub
+// AppBey WebSocket Hub
 class WebSocketHub {
   constructor() {
     this.socket = null;
@@ -9,7 +9,11 @@ class WebSocketHub {
 
   connect(tournamentId = null) {
     if (this.socket) {
-      try { this.socket.close(); } catch(e) {}
+      try {
+        this.socket.close();
+      } catch (_err) {
+        // Ignore socket closure errors during reconnection (SonarQube S2486)
+      }
     }
 
     this.tournamentId = tournamentId;
