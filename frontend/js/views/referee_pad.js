@@ -19,12 +19,12 @@ window.renderRefereePadView = async (container, matchId) => {
                   ⚡
                 </div>
                 <div>
-                  <h2 class="text-xl sm:text-2xl font-black text-white">Marcador WBO BeyScore</h2>
+                  <h2 class="text-xl sm:text-2xl font-black text-white">Marcador BeyScore</h2>
                   <p class="text-xs text-slate-400">Reglamento Oficial Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>
                 </div>
               </div>
               <button onclick="startStandaloneScoreboard()" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
-                🎮 Iniciar Marcador Libre (Modo Práctica / WBO)
+                🎮 Iniciar Marcador Libre (Modo Práctica)
               </button>
             </div>
 
@@ -238,7 +238,7 @@ window.renderRefereePadView = async (container, matchId) => {
             <span class="text-slate-600">|</span>
             <span class="font-bold text-amber-400 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full ${isFinished ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
-              ${isStandalone ? 'Mesa Libre WBO BeyScore' : `Stadium #${match.station_number} • Ronda ${match.round_number}`}
+              ${isStandalone ? 'Marcador Libre BeyScore' : `Stadium #${match.station_number} • Ronda ${match.round_number}`}
             </span>
           </div>
 
@@ -622,7 +622,7 @@ window.renderRefereePadView = async (container, matchId) => {
       await window.api.recordFinish(matchId, {
         finish_type: finishType,
         awarded_to: awardedTo,
-        notes: "Registrado vía Mesa WBO BeyScore"
+        notes: "Registrado vía Marcador BeyScore"
       });
       loadMatch();
     } catch(err) {

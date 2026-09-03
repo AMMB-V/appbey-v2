@@ -64,7 +64,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     if (!m.is_bye && m.status !== 'finished') {
       actionsHtml += `
         <button onclick="handleCallMatch(${m.id}, ${m.station_number})" class="px-2.5 py-1 rounded-lg bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 font-semibold active:scale-95 transition">Llamar</button>
-        <button onclick="location.hash='#/referee/${m.id}'" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow flex items-center gap-1 active:scale-95 transition"><span>⚡</span> Mesa WBO</button>
+        <button onclick="location.hash='#/referee/${m.id}'" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold shadow flex items-center gap-1 active:scale-95 transition"><span>⚡</span> Marcador</button>
       `;
     } else if (!m.is_bye && m.status === 'finished') {
       actionsHtml += `
