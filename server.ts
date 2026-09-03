@@ -1,4 +1,5 @@
 import express, { Response, NextFunction } from "express";
+import compression from "compression";
 import http from "http";
 import path from "path";
 import fs from "fs";
@@ -21,6 +22,15 @@ const JWT_SECRET = process.env.SECRET_KEY || process.env.JWT_SECRET || DEFAULT_D
 
 // Disable technology disclosure header (SonarQube S5689)
 app.disable("x-powered-by");
+
+// High-performance gzip/brotli compression for all text, json and js responses
+app.use(compression({
+  threshold: 512,
+  filter: (req, res) => {
+    if (req.headers["x-no-compression"]) return false;
+    return compression.filter(req, res);
+  }
+}));
 
 // Standard security headers (SonarQube S5689, OWASP Security Headers)
 app.use((_req, res, next) => {
@@ -2303,7 +2313,15 @@ api.get("/matches/:id", (req, res) => {
     winner: users.find((u) => u.id === m.winner_id) || null,
     referee: users.find((u) => u.id === m.referee_id) || null,
     tournament: tournaments.find((t) => t.id === m.tournament_id),
-    games: matchGames.filter((g) => g.match_id === m.id)
+    games: matchGames.filter((g) => g.match_id === m.id),
+    tournament_matches: matches
+      .filter((tm) => tm.tournament_id === m.tournament_id)
+      .map((tm) => ({
+        ...tm,
+        player_a: users.find((u) => u.id === tm.player_a_id) || null,
+        player_b: users.find((u) => u.id === tm.player_b_id) || null,
+        winner: users.find((u) => u.id === tm.winner_id) || null
+      }))
   });
 });
 
@@ -3124,9 +3142,15 @@ app.use("/api", api);
 
 const frontendPath = path.join(process.cwd(), "frontend");
 
-app.use("/assets", express.static(path.join(frontendPath, "assets")));
-app.use("/css", express.static(path.join(frontendPath, "css")));
-app.use("/js", express.static(path.join(frontendPath, "js")));
+const staticCacheConfig = {
+  maxAge: "1d",
+  etag: true,
+  lastModified: true
+};
+
+app.use("/assets", express.static(path.join(frontendPath, "assets"), staticCacheConfig));
+app.use("/css", express.static(path.join(frontendPath, "css"), staticCacheConfig));
+app.use("/js", express.static(path.join(frontendPath, "js"), staticCacheConfig));
 
 app.get("/manifest.json", (req, res) => {
   const manifestFile = path.join(frontendPath, "manifest.json");

@@ -9,7 +9,9 @@
     "start": "node dist/server.cjs"
   },
   "dependencies": {
+    "@types/compression": "^1.8.1",
     "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "esbuild": "^0.28.2",
     "express": "^5.2.1",

@@ -5,11 +5,17 @@ class ApiClient {
   constructor() {
     this.token = localStorage.getItem("appbey_token") || null;
     this.user = JSON.parse(localStorage.getItem("appbey_user") || "null");
+    this.cache = new Map();
+  }
+
+  clearCache() {
+    this.cache.clear();
   }
 
   setAuth(token, user) {
     this.token = token;
     this.user = user;
+    this.clearCache();
     if (token) {
       localStorage.setItem("appbey_token", token);
       localStorage.setItem("appbey_user", JSON.stringify(user));
@@ -29,6 +35,19 @@ class ApiClient {
   }
 
   async request(endpoint, options = {}) {
+    const method = (options.method || "GET").toUpperCase();
+    const isGet = method === "GET";
+
+    // Invalidate cache on mutations
+    if (!isGet) {
+      this.clearCache();
+    } else if (!options.noCache) {
+      const cached = this.cache.get(endpoint);
+      if (cached && (Date.now() - cached.time < 5000)) {
+        return JSON.parse(JSON.stringify(cached.data));
+      }
+    }
+
     const url = `${API_BASE}${endpoint}`;
     const headers = this.getHeaders();
     const config = {
@@ -60,6 +79,14 @@ class ApiClient {
         error.status = res.status;
         throw error;
       }
+
+      if (isGet) {
+        this.cache.set(endpoint, {
+          time: Date.now(),
+          data: JSON.parse(JSON.stringify(data))
+        });
+      }
+
       return data;
     } catch (err) {
       if (err.status !== 401) {

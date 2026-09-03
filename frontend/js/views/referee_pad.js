@@ -5,9 +5,9 @@ window.renderRefereePadView = async (container, matchId) => {
   // If no matchId is provided in URL, allow selecting active tournament match OR launch standalone scoreboard
   if (!matchId) {
     try {
-      const activeTournaments = await window.api.getTournaments("in_progress");
-      const recentTournaments = await window.api.getTournaments();
-      const tournamentsList = [...activeTournaments, ...recentTournaments.filter(t => !activeTournaments.some(a => a.id === t.id))].slice(0, 6);
+      const allTournaments = await window.api.getTournaments();
+      const activeTournaments = allTournaments.filter(t => t.status === "in_progress");
+      const tournamentsList = allTournaments.slice(0, 6);
 
       // Fetch active/pending matches from active tournaments to show direct scoring entry
       let activeMatchesList = [];
@@ -157,14 +157,17 @@ window.renderRefereePadView = async (container, matchId) => {
     try {
       match = await window.api.getMatch(matchId);
       if (match && match.tournament_id) {
-        try {
-          tournamentMatches = await window.api.getMatches(match.tournament_id);
-          // Find next pending or in_progress match (excluding current match)
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
-        } catch (_err) {
-          tournamentMatches = [];
-          nextMatch = null;
+        if (match.tournament_matches && match.tournament_matches.length) {
+          tournamentMatches = match.tournament_matches;
+        } else {
+          try {
+            tournamentMatches = await window.api.getMatches(match.tournament_id);
+          } catch (_err) {
+            tournamentMatches = [];
+          }
         }
+        // Find next pending or in_progress match (excluding current match)
+        nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
       }
       renderUI();
     } catch(err) {
@@ -182,12 +185,14 @@ window.renderRefereePadView = async (container, matchId) => {
   };
 
   const formatFinishLabel = (finishType) => {
+    if (finishType === 'penalty_1p') return 'Punto por Warnings (1 pt)';
+    if (finishType === 'own_finish_1p') return 'Self KO (1 pt)';
     return finishType
       .replace('_1p', ' (1 pt)')
       .replace('_2p', ' (2 pts)')
       .replace('_3p', ' (3 pts)')
       .replace('_0p', ' (0 pts)')
-      .replace('_', ' ')
+      .replace(/_/g, ' ')
       .toUpperCase();
   };
 
@@ -484,12 +489,12 @@ window.renderRefereePadView = async (container, matchId) => {
 
               <!-- Secondary Rules: Own Finish / Penalty -->
               <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="submitFinish('penalty_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 hover:border-blue-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
-                  <span>⚠️ Falta Rival</span>
+                <button onclick="submitFinish('penalty_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[11px] font-semibold border border-slate-800 hover:border-blue-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Punto por Warnings al rival (+1 para Azul)">
+                  <span>⚠️ Punto por Warnings</span>
                   <span class="font-mono text-cyan-400 font-bold">+1 Azul</span>
                 </button>
-                <button onclick="submitFinish('own_finish_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Autoderrota de Rojo da 1 punto a Azul">
-                  <span>🌀 Auto-out Rival</span>
+                <button onclick="submitFinish('own_finish_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Self KO del rival (+1 para Azul)">
+                  <span>🌀 Self KO</span>
                   <span class="font-mono text-cyan-400 font-bold">+1 Azul</span>
                 </button>
               </div>
@@ -573,12 +578,12 @@ window.renderRefereePadView = async (container, matchId) => {
 
               <!-- Secondary Rules: Own Finish / Penalty -->
               <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="submitFinish('penalty_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
-                  <span>⚠️ Falta Rival</span>
+                <button onclick="submitFinish('penalty_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Punto por Warnings al rival (+1 para Rojo)">
+                  <span>⚠️ Punto por Warnings</span>
                   <span class="font-mono text-rose-400 font-bold">+1 Rojo</span>
                 </button>
-                <button onclick="submitFinish('own_finish_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-rose-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Autoderrota de Azul da 1 punto a Rojo">
-                  <span>🌀 Auto-out Rival</span>
+                <button onclick="submitFinish('own_finish_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-rose-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Self KO del rival (+1 para Rojo)">
+                  <span>🌀 Self KO</span>
                   <span class="font-mono text-rose-400 font-bold">+1 Rojo</span>
                 </button>
               </div>

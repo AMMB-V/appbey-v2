@@ -15,9 +15,13 @@
   <title>AppBey — Plataforma Competitiva Beyblade X</title>
 
   <!-- Google Fonts & Tailwind CSS CDN -->
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/js/api.js" as="script">
+  <link rel="preload" href="/js/app.js" as="script">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -75,7 +79,21 @@
 
   <!-- Main Content Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-8" id="main-content">
-    <!-- View rendered by SPA router -->
+    <!-- Instant visual skeleton to eliminate blank white/black screen during initial parse -->
+    <div id="app-initial-skeleton" class="space-y-6 animate-pulse">
+      <div class="h-36 sm:h-44 rounded-3xl bg-slate-900/70 border border-slate-800/80 flex items-center justify-center shadow-lg">
+        <div class="flex items-center gap-3 text-cyan-400 font-bold text-xs sm:text-sm">
+          <div class="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+          <span>Iniciando AppBey...</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div class="h-24 sm:h-28 rounded-2xl bg-slate-900/50 border border-slate-800/60"></div>
+        <div class="h-24 sm:h-28 rounded-2xl bg-slate-900/50 border border-slate-800/60"></div>
+        <div class="h-24 sm:h-28 rounded-2xl bg-slate-900/50 border border-slate-800/60"></div>
+        <div class="h-24 sm:h-28 rounded-2xl bg-slate-900/50 border border-slate-800/60"></div>
+      </div>
+    </div>
   </main>
 
   <!-- Mobile Bottom Navigation Bar (Optimized for Mobile & Tablet Touch) -->
