@@ -311,48 +311,140 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
       const modal = document.createElement("div");
       modal.id = "add-part-modal";
-      modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md";
+      modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md";
       modal.innerHTML = `
-        <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+        <div class="glass-card max-w-lg w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 class="font-bold text-white text-base">Inscribir Blader al Torneo</h3>
-            <button onclick="document.getElementById('add-part-modal').remove()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+            <div class="flex items-center gap-2">
+              <span class="text-xl">✍️</span>
+              <h3 class="font-extrabold text-white text-base">Inscripción en Mesa de Torneo</h3>
+            </div>
+            <button onclick="document.getElementById('add-part-modal').remove()" class="text-slate-400 hover:text-white text-xl px-2">&times;</button>
           </div>
-          <form onsubmit="handleSubmitAddParticipant(event, ${tId})" class="space-y-4 text-xs">
+
+          <!-- Tabs: Nuevo Blader vs Usuario Registrado -->
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs">
+            <button type="button" id="tab-new-blader" onclick="switchAddTab('new')" class="py-2 px-3 rounded-lg font-bold bg-cyan-600 text-white transition">
+              ➕ Blader Nuevo / Presencial
+            </button>
+            <button type="button" id="tab-registered-blader" onclick="switchAddTab('registered')" class="py-2 px-3 rounded-lg font-bold text-slate-400 hover:text-white transition">
+              👥 Usuario de la Web
+            </button>
+          </div>
+
+          <!-- Form 1: Nuevo Blader -->
+          <form id="form-new-blader" onsubmit="handleSubmitAddParticipant(event, ${tId}, 'new')" class="space-y-3.5 text-xs">
             <div>
-              <label class="block text-slate-300 font-semibold mb-1">Seleccionar Usuario Registrado</label>
+              <label class="block text-slate-300 font-semibold mb-1">Nombre o Alias del Blader *</label>
+              <input type="text" name="new_blader_name" required placeholder="Ej: Jan Kraft, Carlos Bey, Alex..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"/>
+              <p class="text-[11px] text-slate-400 mt-1">Crea un perfil de competidor al instante para este torneo.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">País / Región</label>
+                <select name="country" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400">
+                  <option value="ES">España (ES)</option>
+                  <option value="MX">México (MX)</option>
+                  <option value="US">Estados Unidos (US)</option>
+                  <option value="CL">Chile (CL)</option>
+                  <option value="AR">Argentina (AR)</option>
+                  <option value="PE">Perú (PE)</option>
+                  <option value="CO">Colombia (CO)</option>
+                  <option value="FR">Francia (FR)</option>
+                  <option value="JP">Japón (JP)</option>
+                  <option value="WBO">WBO / Internacional</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Combo Favorito (Opcional)</label>
+                <input type="text" name="favorite_combo" placeholder="Ej: Phoenix Wing 9-60 GF" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white placeholder-slate-500 outline-none focus:border-cyan-400"/>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input type="checkbox" name="checked_in" id="checkin-now-new" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500"/>
+              <label for="checkin-now-new" class="text-slate-300 font-semibold cursor-pointer">Marcar Check-in presencial confirmado (Listo para emparejar)</label>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button type="button" onclick="document.getElementById('add-part-modal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+              <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold shadow-lg shadow-cyan-500/25 transition">
+                ⚡ Inscribir Nuevo Blader
+              </button>
+            </div>
+          </form>
+
+          <!-- Form 2: Usuario Registrado -->
+          <form id="form-registered-blader" onsubmit="handleSubmitAddParticipant(event, ${tId}, 'registered')" class="space-y-3.5 text-xs hidden">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Seleccionar Usuario de la Plataforma</label>
               ${availableUsers.length ? `
-                <select name="user_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white outline-none focus:border-cyan-400">
+                <select name="user_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400">
                   ${availableUsers.map(u => `<option value="${u.id}">${u.display_name} (@${u.username}) - ${u.country} [${u.role}]</option>`).join("")}
                 </select>
               ` : `
-                <div class="text-slate-400 p-2 bg-slate-900 rounded-lg">Todos los usuarios ya están inscritos en este torneo.</div>
+                <div class="text-slate-400 p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-center">
+                  Todos los usuarios registrados de la web ya están en el torneo.
+                </div>
               `}
             </div>
-            <div class="flex items-center gap-2">
-              <input type="checkbox" name="checked_in" id="checkin-now" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500"/>
-              <label for="checkin-now" class="text-slate-300 font-semibold">Marcar Check-in de presencia inmediato (Mesa Directa)</label>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input type="checkbox" name="checked_in" id="checkin-now-reg" checked class="rounded bg-slate-900 border-slate-700 text-cyan-500"/>
+              <label for="checkin-now-reg" class="text-slate-300 font-semibold cursor-pointer">Marcar Check-in de presencia confirmado</label>
             </div>
-            <div class="flex justify-end gap-2 pt-2">
-              <button type="button" onclick="document.getElementById('add-part-modal').remove()" class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300">Cancelar</button>
-              <button type="submit" ${!availableUsers.length ? 'disabled' : ''} class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow">
-                Inscribir Blader
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <button type="button" onclick="document.getElementById('add-part-modal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+              <button type="submit" ${!availableUsers.length ? 'disabled' : ''} class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow transition">
+                Inscribir Usuario
               </button>
             </div>
           </form>
         </div>
       `;
       document.body.appendChild(modal);
+
+      window.switchAddTab = (tab) => {
+        const btnNew = document.getElementById("tab-new-blader");
+        const btnReg = document.getElementById("tab-registered-blader");
+        const formNew = document.getElementById("form-new-blader");
+        const formReg = document.getElementById("form-registered-blader");
+        if (tab === "new") {
+          btnNew.className = "py-2 px-3 rounded-lg font-bold bg-cyan-600 text-white transition";
+          btnReg.className = "py-2 px-3 rounded-lg font-bold text-slate-400 hover:text-white transition";
+          formNew.classList.remove("hidden");
+          formReg.classList.add("hidden");
+        } else {
+          btnReg.className = "py-2 px-3 rounded-lg font-bold bg-cyan-600 text-white transition";
+          btnNew.className = "py-2 px-3 rounded-lg font-bold text-slate-400 hover:text-white transition";
+          formReg.classList.remove("hidden");
+          formNew.classList.add("hidden");
+        }
+      };
     } catch(err) {
-      alert("Error al cargar lista de usuarios: " + err.message);
+      alert("Error al cargar participantes: " + err.message);
     }
   };
 
-  window.handleSubmitAddParticipant = async (e, tId) => {
+  window.handleSubmitAddParticipant = async (e, tId, mode) => {
     e.preventDefault();
     const form = e.target;
     try {
-      await window.api.addTournamentParticipant(tId, form.user_id.value, form.checked_in.checked);
+      if (mode === "new") {
+        await window.api.addTournamentParticipant(tId, {
+          new_blader_name: form.new_blader_name.value,
+          country: form.country.value,
+          favorite_combo: form.favorite_combo.value,
+          checked_in: form.checked_in.checked
+        });
+      } else {
+        await window.api.addTournamentParticipant(tId, {
+          user_id: form.user_id.value,
+          checked_in: form.checked_in.checked
+        });
+      }
       alert("¡Blader inscrito exitosamente en el torneo!");
       document.getElementById("add-part-modal")?.remove();
       refreshData();

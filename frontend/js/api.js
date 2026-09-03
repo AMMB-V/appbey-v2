@@ -143,8 +143,14 @@ class ApiClient {
     return this.request(`/tournaments/${tId}/checkin?user_id=${userId}`, { method: "POST" });
   }
 
-  addTournamentParticipant(tId, userId, checkedIn = true) {
-    return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body: { user_id: userId, checked_in: checkedIn } });
+  addTournamentParticipant(tId, data, checkedIn = true) {
+    let body = {};
+    if (typeof data === "object" && data !== null) {
+      body = data;
+    } else {
+      body = { user_id: data, checked_in: checkedIn };
+    }
+    return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body });
   }
 
   assignMatchReferee(matchId, refereeId) {
@@ -195,6 +201,10 @@ class ApiClient {
 
   updateManualScore(matchId, scoreData) {
     return this.request(`/matches/${matchId}/manual-score`, { method: "PUT", body: scoreData });
+  }
+
+  updateMatchTarget(matchId, targetPoints) {
+    return this.request(`/matches/${matchId}/target-points`, { method: "POST", body: { target_points: targetPoints } });
   }
 
   // Wallet
