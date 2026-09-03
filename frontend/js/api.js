@@ -153,6 +153,13 @@ class ApiClient {
     return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body });
   }
 
+  updateParticipantDeck(tId, userId, deck, deckNotes = "") {
+    return this.request(`/tournaments/${tId}/participants/${userId}/deck`, {
+      method: "PUT",
+      body: { deck, deck_notes: deckNotes }
+    });
+  }
+
   assignMatchReferee(matchId, refereeId) {
     return this.request(`/matches/${matchId}/assign-referee`, { method: "POST", body: { referee_id: refereeId } });
   }

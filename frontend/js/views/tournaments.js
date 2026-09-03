@@ -82,10 +82,12 @@ window.renderTournamentsView = async (container) => {
           </div>
 
           <div class="p-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-400">
-              <strong class="text-cyan-400">${t.participants_count}</strong> / ${t.max_participants} Bladers
+            <span class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+              <span>👥</span>
+              <strong class="text-cyan-400 font-bold">${t.participants_count}</strong>
+              <span>${t.participants_count === 1 ? 'Blader inscrito' : 'Bladers inscritos'}</span>
             </span>
-            <button onclick="location.hash='#/tournaments/${t.id}'" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition">
+            <button onclick="location.hash='#/tournaments/${t.id}'" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition active:scale-95">
               Ver Bracket & Detalles &rarr;
             </button>
           </div>
@@ -111,76 +113,82 @@ window.renderTournamentsView = async (container) => {
 window.openCreateTournamentModal = () => {
   const modal = document.createElement("div");
   modal.id = "create-t-modal";
-  modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm";
+  modal.className = "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto";
   modal.innerHTML = `
-    <div class="glass-card max-w-lg w-full rounded-2xl p-6 border border-cyan-500/40 space-y-4 max-h-[90vh] overflow-y-auto">
+    <div class="glass-card max-w-lg w-full max-h-[92vh] overflow-y-auto rounded-3xl p-5 sm:p-6 border border-cyan-500/40 space-y-4 shadow-2xl my-auto">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h2 class="text-xl font-bold text-white">Crear Nuevo Torneo</h2>
-        <button onclick="document.getElementById('create-t-modal').remove()" class="text-slate-400 hover:text-white">&times;</button>
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏆</span>
+          <h2 class="text-lg sm:text-xl font-bold text-white">Crear Nuevo Torneo Oficial</h2>
+        </div>
+        <button onclick="document.getElementById('create-t-modal').remove()" class="text-slate-400 hover:text-white text-2xl px-2">&times;</button>
       </div>
-      <form id="create-t-form" onsubmit="submitNewTournament(event)" class="space-y-4 text-sm">
+      <form id="create-t-form" onsubmit="submitNewTournament(event)" class="space-y-3.5 text-xs">
         <div>
-          <label class="block text-slate-300 mb-1 font-semibold">Título del Torneo</label>
-          <input type="text" name="title" required placeholder="Ej: Torneo Regional Xtreme Dash" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
+          <label class="block text-slate-300 mb-1 font-semibold">Título del Torneo *</label>
+          <input type="text" name="title" required placeholder="Ej: Torneo Regional Beyblade X — WBO Cup" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-cyan-500 outline-none text-sm"/>
         </div>
         <div>
-          <label class="block text-slate-300 mb-1 font-semibold">Descripción / Reglas</label>
-          <textarea name="description" rows="2" placeholder="Detalles de la competencia..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"></textarea>
+          <label class="block text-slate-300 mb-1 font-semibold">Descripción / Reglas Especiales</label>
+          <textarea name="description" rows="2" placeholder="Detalles de la competencia, reglamento Takara Tomy / WBO..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none"></textarea>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Formato</label>
-            <select name="format" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none">
+            <select name="format" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
               <option value="swiss">Sistema Suizo (WBO Oficial)</option>
               <option value="single_elim">Eliminación Directa (Playoffs)</option>
             </select>
           </div>
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Tipo de Combate</label>
-            <select name="battle_type" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none">
-              <option value="3on3_deck">3on3 Deck Battle</option>
+            <select name="battle_type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
+              <option value="3on3_deck">3on3 Deck Battle (3 Beys)</option>
               <option value="1on1">1on1 Individual Battle</option>
             </select>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Meta de Puntos para Ganar</label>
-            <select name="match_target_points" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none">
-              <option value="4" selected>4 Puntos (Oficial Beyblade X — Permite 4, 5 o 6 pts)</option>
+            <select name="match_target_points" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
+              <option value="4" selected>4 Puntos (Oficial Beyblade X)</option>
               <option value="5">5 Puntos (Semifinales / Match Largo)</option>
-              <option value="7">7 Puntos (Gran Final / Match Pro)</option>
+              <option value="7">7 Puntos (Gran Final WBO)</option>
               <option value="3">3 Puntos (Match Rápido)</option>
             </select>
           </div>
           <div>
-            <label class="block text-slate-300 mb-1 font-semibold">Cupo Máximo</label>
-            <input type="number" name="max_participants" value="16" min="4" max="128" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
             <label class="block text-slate-300 mb-1 font-semibold">Pozo Premio (AP Coins)</label>
-            <input type="number" name="prize_pool_ap" value="1000" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
-          </div>
-          <div>
-            <label class="block text-slate-300 mb-1 font-semibold">Costo Inscripción (AP)</label>
-            <input type="number" name="entry_fee_ap" value="0" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
+            <input type="number" name="prize_pool_ap" value="1000" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none"/>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 mb-1 font-semibold">Lugar / Venue</label>
-            <input type="text" name="venue_name" value="Arena Central Beyblade" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none"/>
+            <label class="block text-slate-300 mb-1 font-semibold">Lugar / Sede / Venue</label>
+            <input type="text" name="venue_name" value="Arena Central Beyblade" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none"/>
           </div>
           <div>
-            <label class="block text-slate-300 mb-1 font-semibold">País (Código)</label>
-            <input type="text" name="country" value="PA" maxlength="5" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white focus:border-cyan-500 outline-none uppercase"/>
+            <label class="block text-slate-300 mb-1 font-semibold">País / Región</label>
+            <select name="country" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
+              <option value="ES">España (ES)</option>
+              <option value="PA" selected>Panamá (PA)</option>
+              <option value="MX">México (MX)</option>
+              <option value="CL">Chile (CL)</option>
+              <option value="AR">Argentina (AR)</option>
+              <option value="PE">Perú (PE)</option>
+              <option value="CO">Colombia (CO)</option>
+              <option value="US">Estados Unidos (US)</option>
+              <option value="JP">Japón (JP)</option>
+              <option value="WBO">WBO Internacional</option>
+            </select>
           </div>
         </div>
-        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold shadow-lg shadow-cyan-500/25 transition active:scale-98">
-          Publicar Torneo
-        </button>
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/25 transition active:scale-95">
+            ⚡ Publicar Torneo Oficial
+          </button>
+        </div>
       </form>
     </div>
   `;
@@ -197,9 +205,9 @@ window.submitNewTournament = async (e) => {
     format: form.format.value,
     battle_type: form.battle_type.value,
     match_target_points: targetPts,
-    max_participants: parseInt(form.max_participants.value, 10),
-    prize_pool_ap: parseInt(form.prize_pool_ap.value || "0", 10),
-    entry_fee_ap: parseInt(form.entry_fee_ap?.value || "0", 10),
+    max_participants: 128,
+    prize_pool_ap: parseInt(form.prize_pool_ap?.value || "1000", 10),
+    entry_fee_ap: 0,
     venue_name: form.venue_name.value,
     country: form.country.value.toUpperCase(),
     total_rounds: form.format.value === "swiss" ? 4 : 3
@@ -208,9 +216,17 @@ window.submitNewTournament = async (e) => {
   try {
     const created = await window.api.createTournament(data);
     document.getElementById("create-t-modal")?.remove();
-    alert("¡Torneo creado exitosamente!");
+    if (window.showToast) {
+      window.showToast("¡Torneo creado exitosamente!", "success");
+    } else {
+      alert("¡Torneo creado exitosamente!");
+    }
     location.hash = `#/tournaments/${created.id}`;
   } catch(err) {
-    alert(err.message || "Error al crear torneo");
+    if (window.showToast) {
+      window.showToast(err.message || "Error al crear torneo", "error");
+    } else {
+      alert(err.message || "Error al crear torneo");
+    }
   }
 };

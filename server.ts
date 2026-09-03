@@ -159,6 +159,8 @@ interface TournamentParticipant {
   matches_drawn: number;
   matches_lost: number;
   final_rank?: number | null;
+  deck?: string[];
+  deck_notes?: string;
 }
 
 interface MatchGame {
@@ -1681,7 +1683,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
   const format = data.format === "single_elim" ? "single_elim" : "swiss";
   const battleType = data.battle_type === "1on1" ? "1on1" : "3on3_deck";
   const targetPoints = Math.max(1, Math.min(10, parseInt(data.match_target_points, 10) || 4));
-  const maxParticipants = Math.max(2, Math.min(128, parseInt(data.max_participants, 10) || 16));
+  const maxParticipants = Math.max(2, Math.min(256, parseInt(data.max_participants, 10) || 128));
   const entryFee = Math.max(0, Math.min(50000, parseInt(data.entry_fee_ap, 10) || 0));
   const prizePool = Math.max(0, Math.min(500000, parseInt(data.prize_pool_ap, 10) || 1000));
   const totalRounds = Math.max(1, Math.min(10, parseInt(data.total_rounds, 10) || 4));
@@ -1803,11 +1805,24 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     return;
   }
 
-  const { user_id, new_blader_name, country, favorite_combo, checked_in } = req.body;
+  const { user_id, new_blader_name, name, blader_name, display_name, country, favorite_combo, deck, deck_notes, checked_in } = req.body;
   let targetUser: User | undefined;
 
-  if (new_blader_name && String(new_blader_name).trim()) {
-    const cleanName = String(new_blader_name).trim();
+  // Resolve raw name from any common field
+  const candidateName = (new_blader_name || name || blader_name || display_name || "").toString().trim();
+
+  // Parse deck (3 beys for the tournament day)
+  let deckList: string[] = [];
+  if (Array.isArray(deck)) {
+    deckList = deck.map((d: any) => String(d).trim()).filter(Boolean);
+  } else if (typeof deck === "string" && deck.trim()) {
+    deckList = deck.split(",").map((s) => s.trim()).filter(Boolean);
+  } else if (favorite_combo && String(favorite_combo).trim()) {
+    deckList = [String(favorite_combo).trim()];
+  }
+
+  if (candidateName) {
+    const cleanName = candidateName;
     const baseUsername = cleanName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 15) || "blader";
     let uniqueUsername = baseUsername;
     let counter = 1;
@@ -1823,7 +1838,7 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
       avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanName)}`,
       bio: "Blader registrado presencialmente en mesa de torneo",
       country: country ? String(country).trim().toUpperCase() : "ES",
-      favorite_combo: favorite_combo ? String(favorite_combo).trim() : "Custom Beyblade X",
+      favorite_combo: deckList[0] || (favorite_combo ? String(favorite_combo).trim() : "Custom Beyblade X"),
       role: "blader",
       elo_rating: 1200,
       is_verified: true,
@@ -1833,20 +1848,62 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     users.push(newUser);
     getWallet(newUser.id);
     targetUser = newUser;
-  } else if (user_id) {
+  } else if (user_id && !isNaN(parseInt(user_id, 10))) {
     targetUser = users.find((u) => u.id === parseInt(user_id, 10));
     if (!targetUser) {
-      res.status(404).json({ detail: "Usuario no encontrado" });
-      return;
+      // Graceful fallback: create user if requested id wasn't found
+      const fallbackName = `Blader #${users.length + 1}`;
+      const newUser: User = {
+        id: users.length + 1,
+        username: `blader_${users.length + 1}`,
+        email: `blader_${users.length + 1}@appbey.local`,
+        password_hash: bcrypt.hashSync("123456", 10),
+        display_name: fallbackName,
+        avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(fallbackName)}`,
+        bio: "Blader registrado en mesa de torneo",
+        country: country ? String(country).trim().toUpperCase() : "ES",
+        favorite_combo: deckList[0] || "Custom Beyblade X",
+        role: "blader",
+        elo_rating: 1200,
+        is_verified: true,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      users.push(newUser);
+      getWallet(newUser.id);
+      targetUser = newUser;
     }
   } else {
-    res.status(400).json({ detail: "Se requiere un ID de usuario o un Nombre de Blader nuevo" });
-    return;
+    // Neither user_id nor name was provided; create a random walk-in blader
+    const count = participants.filter((p) => p.tournament_id === id).length;
+    const walkinName = `Blader Invitado #${count + 1}`;
+    const newUser: User = {
+      id: users.length + 1,
+      username: `blader_invitado_${Date.now()}`,
+      email: `blader_inv_${Date.now()}@appbey.local`,
+      password_hash: bcrypt.hashSync("123456", 10),
+      display_name: walkinName,
+      avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(walkinName)}`,
+      bio: "Blader presencial invitado",
+      country: country ? String(country).trim().toUpperCase() : "ES",
+      favorite_combo: deckList[0] || "Custom Beyblade X",
+      role: "blader",
+      elo_rating: 1200,
+      is_verified: true,
+      is_active: true,
+      created_at: new Date().toISOString()
+    };
+    users.push(newUser);
+    getWallet(newUser.id);
+    targetUser = newUser;
   }
 
   const existing = participants.find((p) => p.tournament_id === id && p.user_id === targetUser!.id);
   if (existing) {
-    res.status(400).json({ detail: "El usuario ya está registrado en este torneo" });
+    if (deckList.length > 0) existing.deck = deckList;
+    if (deck_notes) existing.deck_notes = String(deck_notes).trim();
+    if (checked_in !== undefined) existing.checked_in = checked_in !== false;
+    res.json({ message: "Participante ya registrado; deck y estado actualizados", participant: { ...existing, user: targetUser } });
     return;
   }
 
@@ -1866,10 +1923,58 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     matches_won: 0,
     matches_drawn: 0,
     matches_lost: 0,
-    final_rank: null
+    final_rank: null,
+    deck: deckList.length > 0 ? deckList : (targetUser.favorite_combo ? [targetUser.favorite_combo] : []),
+    deck_notes: deck_notes ? String(deck_notes).trim() : undefined
   };
   participants.push(newPart);
   res.json({ message: "Participante agregado exitosamente", participant: { ...newPart, user: targetUser } });
+});
+
+// Update Participant Tournament Deck (for bladers or organizers)
+api.put("/tournaments/:id/participants/:userId/deck", requireAuth, (req: AuthRequest, res) => {
+  const tId = parseInt(req.params.id, 10);
+  const userId = parseInt(req.params.userId, 10);
+  const t = tournaments.find((tour) => tour.id === tId);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+
+  const isAuthorized = req.user && (
+    req.user.id === userId ||
+    ["admin", "organizer"].includes(req.user.role) ||
+    t.organizer_id === req.user.id
+  );
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "No tienes permisos para modificar el deck de este participante" });
+    return;
+  }
+
+  const part = participants.find((p) => p.tournament_id === tId && p.user_id === userId);
+  if (!part) {
+    res.status(404).json({ detail: "El participante no está inscrito en este torneo" });
+    return;
+  }
+
+  const { deck, deck_notes } = req.body;
+  let deckList: string[] = [];
+  if (Array.isArray(deck)) {
+    deckList = deck.map((d: any) => String(d).trim()).filter(Boolean);
+  } else if (typeof deck === "string" && deck.trim()) {
+    deckList = deck.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
+  part.deck = deckList;
+  if (deck_notes !== undefined) part.deck_notes = String(deck_notes).trim();
+
+  // Also update user's primary combo if provided
+  const user = users.find((u) => u.id === userId);
+  if (user && deckList[0]) {
+    user.favorite_combo = deckList[0];
+  }
+
+  res.json({ message: "Deck de torneo actualizado exitosamente", deck: part.deck, deck_notes: part.deck_notes });
 });
 
 // Admin / Organizer assign referee to match or station
@@ -1940,14 +2045,22 @@ api.get("/tournaments/:id/matches", (req, res) => {
   list.sort((a, b) => a.round_number - b.round_number || a.bracket_position - b.bracket_position);
 
   res.json(
-    list.map((m) => ({
-      ...m,
-      player_a: users.find((u) => u.id === m.player_a_id) || null,
-      player_b: users.find((u) => u.id === m.player_b_id) || null,
-      winner: users.find((u) => u.id === m.winner_id) || null,
-      referee: users.find((u) => u.id === m.referee_id) || null,
-      games: matchGames.filter((g) => g.match_id === m.id)
-    }))
+    list.map((m) => {
+      const partA = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_a_id);
+      const partB = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_b_id);
+      const playerA = users.find((u) => u.id === m.player_a_id) || null;
+      const playerB = users.find((u) => u.id === m.player_b_id) || null;
+      return {
+        ...m,
+        player_a: playerA,
+        player_b: playerB,
+        player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
+        player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
+        winner: users.find((u) => u.id === m.winner_id) || null,
+        referee: users.find((u) => u.id === m.referee_id) || null,
+        games: matchGames.filter((g) => g.match_id === m.id)
+      };
+    })
   );
 });
 
@@ -2126,10 +2239,17 @@ api.get("/matches/:id", (req, res) => {
     res.status(404).json({ detail: "Match no encontrado" });
     return;
   }
+  const partA = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_a_id);
+  const partB = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_b_id);
+  const playerA = users.find((u) => u.id === m.player_a_id) || null;
+  const playerB = users.find((u) => u.id === m.player_b_id) || null;
+
   res.json({
     ...m,
-    player_a: users.find((u) => u.id === m.player_a_id) || null,
-    player_b: users.find((u) => u.id === m.player_b_id) || null,
+    player_a: playerA,
+    player_b: playerB,
+    player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
+    player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
     winner: users.find((u) => u.id === m.winner_id) || null,
     referee: users.find((u) => u.id === m.referee_id) || null,
     tournament: tournaments.find((t) => t.id === m.tournament_id),

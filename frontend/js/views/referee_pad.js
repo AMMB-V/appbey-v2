@@ -72,6 +72,8 @@ window.renderRefereePadView = async (container, matchId) => {
   let localState = {
     player_a_name: "Blader 1 (Azul)",
     player_b_name: "Blader 2 (Rojo)",
+    player_a_deck: ["Dran Sword 3-60F", "Hells Scythe 4-60B", "Wizard Rod 9-60B"],
+    player_b_deck: ["Phoenix Wing 5-60GF", "Cobalt Drake 4-60F", "Shark Edge 3-60LF"],
     score_a: 0,
     score_b: 0,
     target_points: 4,
@@ -88,6 +90,8 @@ window.renderRefereePadView = async (container, matchId) => {
         round_number: localState.games.length + 1,
         player_a: { display_name: localState.player_a_name, favorite_combo: "Corner Azul" },
         player_b: { display_name: localState.player_b_name, favorite_combo: "Corner Rojo" },
+        player_a_deck: localState.player_a_deck,
+        player_b_deck: localState.player_b_deck,
         score_a: localState.score_a,
         score_b: localState.score_b,
         target_points: localState.target_points,
@@ -161,6 +165,11 @@ window.renderRefereePadView = async (container, matchId) => {
           </div>
 
           <div class="flex items-center gap-2">
+            ${isStandalone ? `
+              <button onclick="openStandaloneEditModal()" title="Personalizar Nombres y Decks 3on3" class="px-2.5 py-1 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-500/30 font-bold text-xs flex items-center gap-1">
+                <span>⚙️</span> <span class="hidden sm:inline">Bladers & Decks</span>
+              </button>
+            ` : ''}
             <button onclick="handleLaunchChant()" title="Iniciar Cuenta Oficial 3-2-1 Go Shoot!" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs flex items-center gap-1">
               <span>📢</span> <span class="hidden sm:inline">Go Shoot!</span>
             </button>
@@ -214,8 +223,14 @@ window.renderRefereePadView = async (container, matchId) => {
                       ${match.player_a ? match.player_a.display_name : 'Blader 1 (Azul)'}
                     </h3>
                   </div>
-                  <div class="text-[11px] text-blue-300/80 font-medium truncate">
-                    ${match.player_a?.favorite_combo || 'Corner Azul • Beyblade X'}
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    ${match.player_a_deck && match.player_a_deck.length ? match.player_a_deck.map((b, i) => `
+                      <span class="px-2 py-0.5 rounded-md bg-blue-950/80 border border-blue-500/40 text-[10px] text-cyan-300 font-mono">
+                        ${i+1}. ${b}
+                      </span>
+                    `).join("") : `
+                      <span class="text-[11px] text-blue-300/80 font-medium truncate">${match.player_a?.favorite_combo || 'Corner Azul • Beyblade X'}</span>
+                    `}
                   </div>
                 </div>
               </div>
@@ -307,8 +322,14 @@ window.renderRefereePadView = async (container, matchId) => {
                       ${match.player_b ? match.player_b.display_name : 'Blader 2 (Rojo)'}
                     </h3>
                   </div>
-                  <div class="text-[11px] text-rose-300/80 font-medium truncate">
-                    ${match.player_b?.favorite_combo || 'Corner Rojo • Beyblade X'}
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    ${match.player_b_deck && match.player_b_deck.length ? match.player_b_deck.map((b, i) => `
+                      <span class="px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/40 text-[10px] text-rose-300 font-mono">
+                        ${i+1}. ${b}
+                      </span>
+                    `).join("") : `
+                      <span class="text-[11px] text-rose-300/80 font-medium truncate">${match.player_b?.favorite_combo || 'Corner Rojo • Beyblade X'}</span>
+                    `}
                   </div>
                 </div>
               </div>
@@ -504,7 +525,7 @@ window.renderRefereePadView = async (container, matchId) => {
       });
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al actualizar marcador");
+      window.showToast?.(err.message || "Error al actualizar marcador", "error");
     }
   };
 
@@ -528,7 +549,7 @@ window.renderRefereePadView = async (container, matchId) => {
       await window.api.updateMatchTarget(matchId, pts);
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al cambiar meta de puntos");
+      window.showToast?.(err.message || "Error al cambiar meta de puntos", "error");
     }
   };
 
@@ -582,7 +603,7 @@ window.renderRefereePadView = async (container, matchId) => {
       });
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al registrar resultado");
+      window.showToast?.(err.message || "Error al registrar resultado", "error");
     }
   };
 
@@ -615,7 +636,7 @@ window.renderRefereePadView = async (container, matchId) => {
       await window.api.undoFinish(matchId);
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al deshacer asalto");
+      window.showToast?.(err.message || "Error al deshacer asalto", "error");
     }
   };
 
@@ -636,13 +657,16 @@ window.renderRefereePadView = async (container, matchId) => {
       await window.api.reopenMatch(matchId);
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al reabrir combate");
+      window.showToast?.(err.message || "Error al reabrir combate", "error");
     }
   };
 
   // Reset match score to 0-0
   window.handleResetMatchScore = async () => {
-    if (!confirm("¿Deseas reiniciar el marcador a 0-0 y vaciar los asaltos?")) return;
+    const confirmed = window.showAppConfirm 
+      ? await window.showAppConfirm("Reiniciar Marcador", "¿Deseas reiniciar el marcador a 0-0 y vaciar los asaltos de este combate?")
+      : confirm("¿Deseas reiniciar el marcador a 0-0 y vaciar los asaltos?");
+    if (!confirmed) return;
 
     if (isStandalone) {
       localState.score_a = 0;
@@ -658,7 +682,7 @@ window.renderRefereePadView = async (container, matchId) => {
       await window.api.resetMatch(matchId);
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al reiniciar marcador");
+      window.showToast?.(err.message || "Error al reiniciar marcador", "error");
     }
   };
 
@@ -786,8 +810,113 @@ window.renderRefereePadView = async (container, matchId) => {
       document.getElementById("manual-score-modal")?.remove();
       loadMatch();
     } catch(err) {
-      alert(err.message || "Error al actualizar marcador");
+      window.showToast?.(err.message || "Error al actualizar marcador", "error");
     }
+  };
+
+  // Standalone Bladers and Decks Editor Modal
+  window.openStandaloneEditModal = () => {
+    const existing = document.getElementById("standalone-edit-modal");
+    if (existing) existing.remove();
+
+    const deckA = localState.player_a_deck || [];
+    const deckB = localState.player_b_deck || [];
+
+    const modal = document.createElement("div");
+    modal.id = "standalone-edit-modal";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto";
+    modal.innerHTML = `
+      <div class="glass-card max-w-lg w-full rounded-3xl p-5 sm:p-6 border border-cyan-500/40 space-y-4 shadow-2xl my-auto">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">⚙️</span>
+            <div>
+              <h3 class="font-bold text-white text-base">Configurar Bladers y Decks 3on3</h3>
+              <p class="text-[11px] text-slate-400">Personaliza los nombres y los 3 Beys de cada esquina</p>
+            </div>
+          </div>
+          <button onclick="document.getElementById('standalone-edit-modal').remove()" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+        </div>
+
+        <form id="standalone-edit-form" class="space-y-4 text-xs">
+          <!-- Corner Azul -->
+          <div class="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Corner Azul (Blader 1)
+              </span>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-300 font-semibold mb-1">Nombre del Blader</label>
+              <input type="text" name="name_a" value="${localState.player_a_name}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold outline-none focus:border-cyan-400"/>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-0.5">Bey 1</label>
+                <input type="text" name="a_bey1" value="${deckA[0] || 'Dran Sword 3-60F'}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-cyan-300 font-mono outline-none focus:border-cyan-400"/>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-0.5">Bey 2</label>
+                <input type="text" name="a_bey2" value="${deckA[1] || 'Hells Scythe 4-60B'}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-cyan-300 font-mono outline-none focus:border-cyan-400"/>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-0.5">Bey 3</label>
+                <input type="text" name="a_bey3" value="${deckA[2] || 'Wizard Rod 9-60B'}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-cyan-300 font-mono outline-none focus:border-cyan-400"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Corner Rojo -->
+          <div class="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/30 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Corner Rojo (Blader 2)
+              </span>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-300 font-semibold mb-1">Nombre del Blader</label>
+              <input type="text" name="name_b" value="${localState.player_b_name}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold outline-none focus:border-rose-400"/>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-0.5">Bey 1</label>
+                <input type="text" name="b_bey1" value="${deckB[0] || 'Phoenix Wing 5-60GF'}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-rose-300 font-mono outline-none focus:border-rose-400"/>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-0.5">Bey 2</label>
+                <input type="text" name="b_bey2" value="${deckB[1] || 'Cobalt Drake 4-60F'}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-rose-300 font-mono outline-none focus:border-rose-400"/>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-0.5">Bey 3</label>
+                <input type="text" name="b_bey3" value="${deckB[2] || 'Shark Edge 3-60LF'}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-rose-300 font-mono outline-none focus:border-rose-400"/>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
+            <button type="button" onclick="document.getElementById('standalone-edit-modal').remove()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">
+              Cancelar
+            </button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white font-bold shadow">
+              Guardar Configuración
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("standalone-edit-form").onsubmit = (e) => {
+      e.preventDefault();
+      const form = e.target;
+      localState.player_a_name = form.name_a.value.trim() || "Blader 1 (Azul)";
+      localState.player_b_name = form.name_b.value.trim() || "Blader 2 (Rojo)";
+      localState.player_a_deck = [form.a_bey1.value.trim(), form.a_bey2.value.trim(), form.a_bey3.value.trim()].filter(Boolean);
+      localState.player_b_deck = [form.b_bey1.value.trim(), form.b_bey2.value.trim(), form.b_bey3.value.trim()].filter(Boolean);
+      document.getElementById("standalone-edit-modal")?.remove();
+      window.showToast?.("Bladers y Decks actualizados con éxito", "success");
+      loadMatch();
+    };
   };
 
   // Real-time updates via broadcast socket if available
