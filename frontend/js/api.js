@@ -227,6 +227,10 @@ class ApiClient {
     return this.request(`/matches/${matchId}/target-points`, { method: "POST", body: { target_points: targetPoints } });
   }
 
+  declareWinner(matchId, winnerData) {
+    return this.request(`/matches/${matchId}/declare-winner`, { method: "POST", body: winnerData });
+  }
+
   // Wallet
   getMyWallet() {
     if (!this.token) {

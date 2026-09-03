@@ -690,14 +690,52 @@ function seedDatabase() {
     }
   ];
 
-  // Tournaments (Clean state for administrators and organizers to create official tournaments)
-  tournaments = [];
+  // Tournaments (Seeded official tournament with active mesas)
+  tournaments = [
+    {
+      id: 1,
+      slug: "copa-inaugural-xtreme-2026",
+      title: "Copa Inaugural Beyblade X 2026",
+      description: "Torneo Oficial Apertura Temporada 2 con formato Eliminación Directa y reglamento BeyScore.",
+      organizer_id: 1,
+      format: "single_elim",
+      battle_type: "3on3",
+      match_target_points: 4,
+      stadium_type: "Xtreme Stadium Standard (BX-10)",
+      max_participants: 8,
+      entry_fee_ap: 0,
+      prize_pool_ap: 500,
+      status: "in_progress",
+      venue_name: "Estadio Central Albrook Mall",
+      venue_address: "Plaza Central, Ciudad de Panamá",
+      country: "PA",
+      start_date: now,
+      current_round: 1,
+      total_rounds: 3,
+      is_official: true,
+      created_at: now
+    }
+  ];
 
   // Participants
-  participants = [];
+  participants = [
+    { id: 1, tournament_id: 1, user_id: 1, seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Phoenix Wing 9-60 GF", "Wizard Rod 5-70 DB", "Dran Buster 1-60 F"] },
+    { id: 2, tournament_id: 1, user_id: 2, seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Wizard Rod 5-70 DB", "Whale Wave 7-60 R", "Silver Wolf 3-60 B"] },
+    { id: 3, tournament_id: 1, user_id: 4, seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Cobalt Dragoon 1-60 E", "Impact Drake 7-60 LF", "Samurai Saber 2-70 L"] },
+    { id: 4, tournament_id: 1, user_id: 5, seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Tyranno Beat 4-60 GP", "Shark Edge 3-60 LF", "Dran Dagger 4-60 R"] },
+    { id: 5, tournament_id: 1, user_id: 6, seed: 5, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Hells Chain 5-60 O", "Phoenix Rudder 9-70 G", "Weiss Tiger 3-60 U"] },
+    { id: 6, tournament_id: 1, user_id: 7, seed: 6, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Leon Crest 7-60 HN", "Knight Mail 3-85 BS", "Black Shell 4-70 D"] },
+    { id: 7, tournament_id: 1, user_id: 8, seed: 7, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Dran Buster 4-50 LF", "Cobalt Drake 4-60 F", "Unicorn Sting 5-60 P"] },
+    { id: 8, tournament_id: 1, user_id: 9, seed: 8, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Aero Pegasus 3-70 A", "Hells Hammer 3-70 H", "Viper Tail 5-80 O"] }
+  ];
 
   // Matches
-  matches = [];
+  matches = [
+    { id: 1, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 1, station_number: 1, player_a_id: 1, player_b_id: 9, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
+    { id: 2, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 2, station_number: 2, player_a_id: 2, player_b_id: 8, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
+    { id: 3, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 3, station_number: 3, player_a_id: 4, player_b_id: 7, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
+    { id: 4, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 4, station_number: 4, player_a_id: 5, player_b_id: 6, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now }
+  ];
 
   // Match Games
   matchGames = [];
@@ -1160,6 +1198,13 @@ function advanceSingleElimination(m: TournamentMatch) {
   }
 
   broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, match_id: m.id, next_match_id: nextMatch.id });
+  broadcastTournament(t.id, "score_update", {
+    match_id: m.id,
+    tournament_id: t.id,
+    status: m.status,
+    winner_id: m.winner_id,
+    next_match_id: nextMatch.id
+  });
 }
 
 function createWalkinBlader(displayName: string, country?: string, favoriteCombo?: string): User {
@@ -2609,6 +2654,16 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
     m.winner_id = null;
   }
 
+  if (m.status === "finished") {
+    updateStatsAfterMatch(m);
+    if (m.player_a_id && m.player_b_id && m.winner_id) {
+      updateEloRatings(m.player_a_id, m.player_b_id, m.winner_id);
+    }
+    if (t && t.format === "single_elim") {
+      advanceSingleElimination(m);
+    }
+  }
+
   recalcTournamentStats(m.tournament_id);
 
   broadcastTournament(m.tournament_id, "score_update", {
@@ -2619,6 +2674,78 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
     target_points: target,
     status: m.status,
     winner_id: m.winner_id
+  });
+
+  res.json({
+    ...m,
+    player_a: users.find((u) => u.id === m.player_a_id) || null,
+    player_b: users.find((u) => u.id === m.player_b_id) || null,
+    winner: users.find((u) => u.id === m.winner_id) || null,
+    referee: users.find((u) => u.id === m.referee_id) || null,
+    games: matchGames.filter((g) => g.match_id === m.id)
+  });
+});
+
+api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const m = matches.find((match) => match.id === id);
+  if (!m) {
+    res.status(404).json({ detail: "Match no encontrado" });
+    return;
+  }
+
+  const t = tournaments.find((tour) => tour.id === m.tournament_id);
+  const isAuthorized = req.user && (
+    ["admin", "organizer", "referee"].includes(req.user.role) ||
+    m.referee_id === req.user.id ||
+    (t && t.organizer_id === req.user.id) ||
+    !m.referee_id
+  );
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Permisos insuficientes para declarar ganador" });
+    return;
+  }
+
+  const { winner_id, notes, finish_reason } = req.body;
+  const parsedWinnerId = parseInt(winner_id, 10);
+  if (!parsedWinnerId || (parsedWinnerId !== m.player_a_id && parsedWinnerId !== m.player_b_id)) {
+    res.status(400).json({ detail: "ID de ganador no válido para este combate" });
+    return;
+  }
+
+  m.status = "finished";
+  m.winner_id = parsedWinnerId;
+  if (!m.referee_id && req.user) m.referee_id = req.user.id;
+
+  matchGames.push({
+    id: matchGames.length + 1,
+    match_id: m.id,
+    game_order: matchGames.filter((g) => g.match_id === m.id).length + 1,
+    finish_type: finish_reason || "decision_official",
+    awarded_to: parsedWinnerId === m.player_a_id ? "player_a" : "player_b",
+    points: 0,
+    created_at: new Date().toISOString()
+  });
+
+  updateStatsAfterMatch(m);
+  if (m.player_a_id && m.player_b_id && m.winner_id) {
+    updateEloRatings(m.player_a_id, m.player_b_id, m.winner_id);
+  }
+  if (t && t.format === "single_elim") {
+    advanceSingleElimination(m);
+  }
+  recalcTournamentStats(m.tournament_id);
+
+  broadcastTournament(m.tournament_id, "score_update", {
+    match_id: m.id,
+    station_number: m.station_number,
+    score_a: m.score_a,
+    score_b: m.score_b,
+    target_points: m.target_points || t?.match_target_points || 4,
+    status: m.status,
+    winner_id: m.winner_id,
+    last_finish: finish_reason || "decision_official",
+    awarded_to: parsedWinnerId === m.player_a_id ? "player_a" : "player_b"
   });
 
   res.json({
@@ -2989,6 +3116,7 @@ api.get("/health", (req, res) => {
 });
 
 app.use("/api/v1", api);
+app.use("/api", api);
 
 // ---------------------------------------------------------------------------
 // Static Assets & Frontend Serving

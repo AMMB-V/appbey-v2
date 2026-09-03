@@ -19,9 +19,12 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   };
 
   // Connect WebSocket for live tournament sync
+  window.wsHub.clear();
   window.wsHub.connect(tournamentId);
   window.wsHub.on("score_update", () => refreshData());
   window.wsHub.on("match_call", () => refreshData());
+  window.wsHub.on("tournament_updated", () => refreshData());
+  window.wsHub.on("match_referee_assigned", () => refreshData());
 
   const getMatchStatusBadge = (status) => {
     switch (status) {
@@ -69,6 +72,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     } else if (!m.is_bye && m.status === 'finished') {
       actionsHtml += `
         <button onclick="location.hash='#/referee/${m.id}'" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 active:scale-95 transition"><span>📊</span> Ver Acta</button>
+        ${isOrganizer ? `<button onclick="handleReopenMatchFromDetail(${m.id})" class="px-2 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 text-xs font-semibold active:scale-95 transition" title="Reabrir combate para continuar anotando">Reabrir</button>` : ''}
       `;
     }
 
@@ -404,6 +408,16 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       window.showToast(`¡Combate llamado a Mesa / Stadium ${station}!`, "info");
     } catch(err) {
       window.showToast(err.message || "Error al llamar match", "error");
+    }
+  };
+
+  window.handleReopenMatchFromDetail = async (mId) => {
+    try {
+      await window.api.reopenMatch(mId);
+      window.showToast("Combate reabierto para anotación", "info");
+      refreshData();
+    } catch(err) {
+      window.showToast(err.message || "Error al reabrir combate", "error");
     }
   };
 

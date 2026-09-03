@@ -1,17 +1,37 @@
-// Official WBO BeyScore Compatible Referee Pad & Live Scoreboard
-// Replicates official WBO BeyScore mechanics: https://beyscore.worldbeyblade.org/game/
+// Official BeyScore Compatible Referee Pad & Live Scoreboard
+// Replicates official WBO BeyScore mechanics: Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p
 
 window.renderRefereePadView = async (container, matchId) => {
-  // If no matchId is provided in URL, allow selecting active tournament match OR launch standalone WBO scoreboard
+  // If no matchId is provided in URL, allow selecting active tournament match OR launch standalone scoreboard
   if (!matchId) {
     try {
       const activeTournaments = await window.api.getTournaments("in_progress");
       const recentTournaments = await window.api.getTournaments();
       const tournamentsList = [...activeTournaments, ...recentTournaments.filter(t => !activeTournaments.some(a => a.id === t.id))].slice(0, 6);
 
+      // Fetch active/pending matches from active tournaments to show direct scoring entry
+      let activeMatchesList = [];
+      try {
+        const matchesArrays = await Promise.all(
+          activeTournaments.slice(0, 3).map(t => window.api.getMatches(t.id).catch(() => []))
+        );
+        matchesArrays.forEach((mArr, idx) => {
+          const t = activeTournaments[idx];
+          if (mArr && mArr.length) {
+            mArr.forEach(m => {
+              if (m.status === "in_progress" || m.status === "calling" || m.status === "pending") {
+                activeMatchesList.push({ ...m, tournament_title: t.title });
+              }
+            });
+          }
+        });
+      } catch (_e) {
+        activeMatchesList = [];
+      }
+
       container.innerHTML = `
         <div class="max-w-4xl mx-auto space-y-6 py-6 select-none">
-          <!-- Standalone WBO Quick Board Card -->
+          <!-- Standalone BeyScore Quick Board Card -->
           <div class="glass-card rounded-3xl p-6 sm:p-8 border-2 border-cyan-500/50 bg-gradient-to-b from-slate-900/90 to-slate-950/95 space-y-5 shadow-2xl">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5">
               <div class="flex items-center gap-3 text-center sm:text-left">
@@ -23,15 +43,46 @@ window.renderRefereePadView = async (container, matchId) => {
                   <p class="text-xs text-slate-400">Reglamento Oficial Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>
                 </div>
               </div>
-              <button onclick="startStandaloneScoreboard()" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
+              <button onclick="location.hash='#/referee/standalone'" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
                 🎮 Iniciar Marcador Libre (Modo Práctica)
               </button>
             </div>
 
+            <!-- Direct Active Tournament Matches -->
+            ${activeMatchesList.length ? `
+              <div class="space-y-3">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                  <span>⚡</span> Combates Listos para Arbitrar y Puntuar:
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  ${activeMatchesList.map(m => `
+                    <div onclick="location.hash='#/referee/${m.id}'" class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700 hover:border-cyan-400 cursor-pointer transition flex items-center justify-between group shadow-md">
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                          <span class="px-2 py-0.5 rounded bg-blue-600/30 border border-cyan-400/40 text-cyan-300 font-mono font-bold text-[11px]">
+                            Mesa #${m.station_number || m.bracket_position}
+                          </span>
+                          <span class="text-[11px] text-slate-400 truncate max-w-[140px]">${m.tournament_title}</span>
+                        </div>
+                        <div class="font-bold text-white text-sm flex items-center gap-2">
+                          <span class="truncate max-w-[80px]">${m.player_a ? m.player_a.display_name : 'TBD'}</span>
+                          <span class="text-xs font-mono text-cyan-400 font-bold">${m.score_a}-${m.score_b}</span>
+                          <span class="truncate max-w-[80px]">${m.player_b ? m.player_b.display_name : 'TBD'}</span>
+                        </div>
+                      </div>
+                      <button class="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs group-hover:bg-cyan-400 transition">
+                        Arbitrar &rarr;
+                      </button>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Active Tournaments Mesas -->
-            <div class="space-y-3">
+            <div class="space-y-3 pt-2">
               <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <span>🏆</span> O seleccionar un combate de torneo activo:
+                <span>🏆</span> Seleccionar Torneo para Ver Todas las Mesas:
               </h3>
               ${tournamentsList.length ? `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -39,7 +90,7 @@ window.renderRefereePadView = async (container, matchId) => {
                     <div onclick="location.hash='#/tournaments/${t.id}'" class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition flex items-center justify-between">
                       <div>
                         <div class="font-bold text-white text-sm">${t.title}</div>
-                        <div class="text-[11px] text-slate-400">${t.location || 'Online'} • Ronda ${t.current_round}</div>
+                        <div class="text-[11px] text-slate-400">${t.location || 'Online'} • Ronda ${t.current_round} / ${t.total_rounds || 1}</div>
                       </div>
                       <span class="px-3 py-1 rounded-full text-[10px] font-bold ${t.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
                         ${t.status === 'in_progress' ? 'En Curso' : t.status}
@@ -54,10 +105,6 @@ window.renderRefereePadView = async (container, matchId) => {
           </div>
         </div>
       `;
-
-      window.startStandaloneScoreboard = () => {
-        window.renderRefereePadView(container, "standalone");
-      };
       return;
     } catch(err) {
       container.innerHTML = `<div class="text-center py-16 text-slate-400">Error al cargar mesa: ${err.message}</div>`;
@@ -67,6 +114,8 @@ window.renderRefereePadView = async (container, matchId) => {
 
   const isStandalone = matchId === "standalone";
   let match = null;
+  let tournamentMatches = [];
+  let nextMatch = null;
 
   // Standalone local state
   let localState = {
@@ -99,12 +148,24 @@ window.renderRefereePadView = async (container, matchId) => {
         winner_id: localState.winner,
         games: localState.games
       };
+      tournamentMatches = [];
+      nextMatch = null;
       renderUI();
       return;
     }
 
     try {
       match = await window.api.getMatch(matchId);
+      if (match && match.tournament_id) {
+        try {
+          tournamentMatches = await window.api.getMatches(match.tournament_id);
+          // Find next pending or in_progress match (excluding current match)
+          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+        } catch (_err) {
+          tournamentMatches = [];
+          nextMatch = null;
+        }
+      }
       renderUI();
     } catch(err) {
       container.innerHTML = `
@@ -131,33 +192,89 @@ window.renderRefereePadView = async (container, matchId) => {
   };
 
   const getMatchWinnerName = (m) => {
+    if (m.winner) return m.winner.display_name;
+    if (m.winner_id === m.player_a_id) return m.player_a?.display_name || "Corner Azul";
+    if (m.winner_id === m.player_b_id) return m.player_b?.display_name || "Corner Rojo";
     if (m.score_a > m.score_b) {
       return m.player_a ? m.player_a.display_name : "Corner Azul";
     }
     if (m.score_b > m.score_a) {
       return m.player_b ? m.player_b.display_name : "Corner Rojo";
     }
-    return "";
+    return "Ganador por Decisión";
   };
 
-  const renderFinishBanner = (isFinished, winnerName, m) => {
+  const renderFinishBanner = (isFinished, winnerName, m, next) => {
     if (!isFinished) return '';
     return `
-      <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/20 border border-amber-500/50 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">👑</span>
+      <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-500/20 border-2 border-amber-500/60 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl shadow-inner shrink-0">
+            👑
+          </div>
           <div>
-            <span class="font-extrabold text-amber-300 text-sm">¡Match Point Alcanzado!</span>
-            <span class="text-slate-300 ml-1">Ganador sugerido: <strong>${winnerName}</strong> (${m.score_a} - ${m.score_b})</span>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider">Combate Finalizado</span>
+              <span class="font-extrabold text-amber-300 text-sm sm:text-base">Ganador Oficial: <strong>${winnerName}</strong></span>
+            </div>
+            <p class="text-slate-300 text-xs mt-0.5">
+              Marcador definitivo: <span class="font-mono font-bold text-white">${m.score_a} - ${m.score_b}</span> (Meta: ${m.target_points || 4} pts).
+            </p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="handleUndoLastFinish()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold border border-slate-700 flex items-center gap-1">
+
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+          ${next ? `
+            <button onclick="location.hash='#/referee/${next.id}'" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 active:scale-95 transition">
+              <span>➡️</span> Siguiente Combate (Mesa #${next.station_number || next.bracket_position})
+            </button>
+          ` : ''}
+          ${!isStandalone && m.tournament_id ? `
+            <button onclick="location.hash='#/tournaments/${m.tournament_id}'" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold border border-slate-700 flex items-center gap-1 active:scale-95 transition">
+              <span>📋</span> Ver Cuadro del Torneo
+            </button>
+          ` : ''}
+          <button onclick="handleUndoLastFinish()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold border border-slate-700 flex items-center gap-1 active:scale-95 transition" title="Corregir o revertir último punto">
             <span>⏪</span> Deshacer Último
           </button>
-          <button onclick="handleReopenMatch()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow flex items-center gap-1">
-            <span>🔓</span> Seguir Anotando (+1 Meta)
+          <button onclick="handleReopenMatch()" class="px-3 py-2 rounded-xl bg-indigo-600/40 hover:bg-indigo-600 text-indigo-200 hover:text-white font-bold border border-indigo-500/30 flex items-center gap-1 active:scale-95 transition" title="Aumentar meta de puntos y continuar anotando">
+            <span>🔓</span> Reabrir (+1 Meta)
           </button>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderMatchSwitcherBar = (matchesList, currentMatchId) => {
+    if (!matchesList || matchesList.length <= 1) return '';
+    return `
+      <div class="bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
+        <span class="text-[11px] uppercase font-bold text-slate-400 shrink-0 flex items-center gap-1 px-1">
+          <span>🏟️</span> Mesas:
+        </span>
+        <div class="flex items-center gap-2 shrink-0">
+          ${matchesList.map(m => {
+            const isCurrent = m.id === currentMatchId;
+            const isFin = m.status === 'finished';
+            const nameA = m.player_a ? m.player_a.display_name.split(' ')[0] : 'TBD';
+            const nameB = m.player_b ? m.player_b.display_name.split(' ')[0] : 'TBD';
+            const badgeBg = isCurrent 
+              ? 'bg-cyan-500 text-slate-950 font-black border-cyan-400 shadow-md shadow-cyan-500/30 ring-2 ring-cyan-400/40'
+              : (isFin 
+                ? 'bg-slate-800/80 text-slate-400 hover:text-slate-200 border-slate-700 hover:border-slate-600'
+                : 'bg-blue-950/60 text-cyan-300 hover:bg-blue-900/60 border-blue-500/30 hover:border-cyan-500/50');
+            
+            return `
+              <button onclick="location.hash='#/referee/${m.id}'" class="px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition active:scale-95 ${badgeBg}">
+                <span>Mesa #${m.station_number || m.bracket_position}:</span>
+                <span class="font-bold">${nameA} vs ${nameB}</span>
+                <span class="font-mono text-[10px] px-1.5 py-0.5 rounded ${isCurrent ? 'bg-slate-950 text-cyan-300' : 'bg-slate-900 text-slate-300'}">
+                  ${m.score_a}-${m.score_b}
+                </span>
+                ${isFin ? '<span class="text-amber-400 font-bold">✓</span>' : (isCurrent ? '<span class="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping"></span>' : '')}
+              </button>
+            `;
+          }).join("")}
         </div>
       </div>
     `;
@@ -238,26 +355,35 @@ window.renderRefereePadView = async (container, matchId) => {
             <span class="text-slate-600">|</span>
             <span class="font-bold text-amber-400 flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full ${isFinished ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
-              ${isStandalone ? 'Marcador Libre BeyScore' : `Stadium #${match.station_number} • Ronda ${match.round_number}`}
+              ${isStandalone ? 'Marcador Libre BeyScore' : `Stadium #${match.station_number || match.bracket_position} • Ronda ${match.round_number || 1}`}
             </span>
+            ${nextMatch ? `
+              <button onclick="location.hash='#/referee/${nextMatch.id}'" class="hidden sm:flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition font-bold">
+                <span>➡️ Sig. Mesa #${nextMatch.station_number || nextMatch.bracket_position}</span>
+              </button>
+            ` : ''}
           </div>
 
-          <!-- Target Points Quick Selector (WBO BeyScore Standard) -->
+          <!-- Target Points Quick Selector -->
           <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
             <span class="text-[10px] uppercase font-bold text-slate-400 px-2">Meta:</span>
             ${[3, 4, 5, 7].map(pts => `
               <button onclick="setTargetPoints(${pts})" class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition ${target === pts ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">
-                ${pts}p ${pts === 4 ? '(WBO)' : (pts === 5 ? '(Final)' : '')}
+                ${pts}p ${pts === 4 ? '(Oficial)' : (pts === 5 ? '(Final)' : '')}
               </button>
             `).join("")}
           </div>
 
           <div class="flex items-center gap-2">
-            ${isStandalone ? `
+            ${!isStandalone ? `
+              <button onclick="openDeclareWinnerModal()" title="Finalizar combate o declarar ganador oficial" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center gap-1 active:scale-95 transition">
+                <span>🏁</span> <span class="hidden sm:inline">Finalizar Combate</span>
+              </button>
+            ` : `
               <button onclick="openStandaloneEditModal()" title="Personalizar Nombres y Decks 3on3" class="px-2.5 py-1 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-500/30 font-bold text-xs flex items-center gap-1">
                 <span>⚙️</span> <span class="hidden sm:inline">Bladers & Decks</span>
               </button>
-            ` : ''}
+            `}
             <button onclick="handleLaunchChant()" title="Iniciar Cuenta Oficial 3-2-1 Go Shoot!" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs flex items-center gap-1">
               <span>📢</span> <span class="hidden sm:inline">Go Shoot!</span>
             </button>
@@ -267,15 +393,18 @@ window.renderRefereePadView = async (container, matchId) => {
           </div>
         </div>
 
+        <!-- Quick Match Switcher Bar (All Tournament Mesas) -->
+        ${renderMatchSwitcherBar(tournamentMatches, match.id)}
+
         <!-- Launch Audio / Voice Chime Banner (Dynamic) -->
         <div id="chant-banner" class="hidden py-2 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-center text-sm uppercase tracking-widest shadow-lg animate-pulse">
           3... 2... 1... GO SHOOT! ⚡
         </div>
 
-        <!-- Finished Notification -->
-        ${renderFinishBanner(isFinished, winnerName, match)}
+        <!-- Finished Notification Banner -->
+        ${renderFinishBanner(isFinished, winnerName, match, nextMatch)}
 
-        <!-- WBO BeyScore Main Stage: Blue (Left) vs Red (Right) -->
+        <!-- BeyScore Main Stage: Blue (Left) vs Red (Right) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           <!-- CORNER AZUL (PLAYER A / 1) -->
@@ -283,7 +412,7 @@ window.renderRefereePadView = async (container, matchId) => {
             <!-- Player Info & Score Header -->
             <div class="flex items-center justify-between border-b border-blue-900/40 pb-3">
               <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl text-white shadow-md border-2 border-blue-400">
+                <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl text-white shadow-md border-2 border-blue-400 shrink-0">
                   ${match.player_a?.display_name ? match.player_a.display_name.charAt(0).toUpperCase() : '1'}
                 </div>
                 <div>
@@ -320,7 +449,7 @@ window.renderRefereePadView = async (container, matchId) => {
               </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <button onclick="submitFinish('spin_finish_1p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-xs sm:text-sm border border-cyan-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('spin_finish_1p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-xs sm:text-sm border border-cyan-400/40 shadow-md flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-extrabold">Spin Finish</div>
                     <div class="text-[10px] text-cyan-200 font-normal">Supervivencia</div>
@@ -328,23 +457,23 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-cyan-300 font-mono font-black text-xs">+1</span>
                 </button>
 
-                <button onclick="submitFinish('over_finish_2p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-indigo-700 to-blue-600 hover:from-indigo-600 hover:to-blue-500 text-white font-bold text-xs sm:text-sm border border-indigo-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('over_finish_2p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-sky-700 to-blue-600 hover:from-sky-600 hover:to-blue-500 text-white font-bold text-xs sm:text-sm border border-sky-400/40 shadow-md flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-extrabold">Over Finish</div>
-                    <div class="text-[10px] text-indigo-200 font-normal">Zona Over</div>
+                    <div class="text-[10px] text-sky-200 font-normal">Zona de Salida</div>
+                  </div>
+                  <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-sky-300 font-mono font-black text-xs">+2</span>
+                </button>
+
+                <button onclick="submitFinish('burst_finish_2p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-indigo-700 to-blue-600 hover:from-indigo-600 hover:to-blue-500 text-white font-bold text-xs sm:text-sm border border-indigo-400/40 shadow-md flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
+                  <div class="text-left">
+                    <div class="font-extrabold">Burst Finish</div>
+                    <div class="text-[10px] text-indigo-200 font-normal">Estallido</div>
                   </div>
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-indigo-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <button onclick="submitFinish('burst_finish_2p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm border border-purple-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
-                  <div class="text-left">
-                    <div class="font-extrabold">Burst Finish</div>
-                    <div class="text-[10px] text-purple-200 font-normal">Desarme / Piezas</div>
-                  </div>
-                  <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-purple-300 font-mono font-black text-xs">+2</span>
-                </button>
-
-                <button onclick="submitFinish('xtreme_finish_3p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-700 hover:from-cyan-500 hover:to-indigo-600 text-white font-black text-xs sm:text-sm border-2 border-cyan-300 shadow-lg shadow-cyan-500/25 flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('xtreme_finish_3p', 'player_a')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-amber-600 via-blue-600 to-cyan-600 hover:from-amber-500 hover:to-cyan-500 text-white font-black text-xs sm:text-sm border-2 border-amber-300 shadow-lg shadow-cyan-500/25 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-black flex items-center gap-1">⚡ Xtreme</div>
                     <div class="text-[10px] text-amber-300 font-normal">Zona Xtreme</div>
@@ -353,13 +482,13 @@ window.renderRefereePadView = async (container, matchId) => {
                 </button>
               </div>
 
-              <!-- Secondary WBO Rules: Own Finish / Penalty -->
+              <!-- Secondary Rules: Own Finish / Penalty -->
               <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="submitFinish('penalty_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 hover:border-blue-500/40 flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('penalty_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 hover:border-blue-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <span>⚠️ Falta Rival</span>
                   <span class="font-mono text-cyan-400 font-bold">+1 Azul</span>
                 </button>
-                <button onclick="submitFinish('own_finish_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-rose-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition" title="Autoderrota de Rojo da 1 punto a Azul">
+                <button onclick="submitFinish('own_finish_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-300 text-[11px] font-semibold border border-slate-800 hover:border-cyan-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Autoderrota de Rojo da 1 punto a Azul">
                   <span>🌀 Auto-out Rival</span>
                   <span class="font-mono text-cyan-400 font-bold">+1 Azul</span>
                 </button>
@@ -372,7 +501,7 @@ window.renderRefereePadView = async (container, matchId) => {
             <!-- Player Info & Score Header -->
             <div class="flex items-center justify-between border-b border-rose-900/40 pb-3">
               <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-rose-600 flex items-center justify-center font-black text-xl text-white shadow-md border-2 border-rose-400">
+                <div class="w-12 h-12 rounded-2xl bg-rose-600 flex items-center justify-center font-black text-xl text-white shadow-md border-2 border-rose-400 shrink-0">
                   ${match.player_b?.display_name ? match.player_b.display_name.charAt(0).toUpperCase() : '2'}
                 </div>
                 <div>
@@ -409,7 +538,7 @@ window.renderRefereePadView = async (container, matchId) => {
               </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <button onclick="submitFinish('spin_finish_1p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-600 hover:to-red-500 text-white font-bold text-xs sm:text-sm border border-rose-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('spin_finish_1p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-600 hover:to-red-500 text-white font-bold text-xs sm:text-sm border border-rose-400/40 shadow-md flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-extrabold">Spin Finish</div>
                     <div class="text-[10px] text-rose-200 font-normal">Supervivencia</div>
@@ -417,23 +546,23 @@ window.renderRefereePadView = async (container, matchId) => {
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-rose-300 font-mono font-black text-xs">+1</span>
                 </button>
 
-                <button onclick="submitFinish('over_finish_2p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-orange-700 to-rose-600 hover:from-orange-600 hover:to-rose-500 text-white font-bold text-xs sm:text-sm border border-orange-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('over_finish_2p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-orange-700 to-rose-600 hover:from-orange-600 hover:to-rose-500 text-white font-bold text-xs sm:text-sm border border-orange-400/40 shadow-md flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-extrabold">Over Finish</div>
-                    <div class="text-[10px] text-orange-200 font-normal">Zona Over</div>
+                    <div class="text-[10px] text-orange-200 font-normal">Zona de Salida</div>
                   </div>
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-orange-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <button onclick="submitFinish('burst_finish_2p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-pink-700 to-rose-600 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs sm:text-sm border border-pink-400/40 shadow-md flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('burst_finish_2p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-pink-700 to-rose-600 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs sm:text-sm border border-pink-400/40 shadow-md flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-extrabold">Burst Finish</div>
-                    <div class="text-[10px] text-pink-200 font-normal">Desarme / Piezas</div>
+                    <div class="text-[10px] text-pink-200 font-normal">Estallido</div>
                   </div>
                   <span class="px-2 py-1 rounded-xl bg-slate-950/70 text-pink-300 font-mono font-black text-xs">+2</span>
                 </button>
 
-                <button onclick="submitFinish('xtreme_finish_3p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-amber-600 via-rose-600 to-red-700 hover:from-amber-500 hover:to-red-600 text-white font-black text-xs sm:text-sm border-2 border-amber-300 shadow-lg shadow-rose-500/25 flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('xtreme_finish_3p', 'player_b')" class="referee-btn p-3 rounded-2xl bg-gradient-to-r from-amber-600 via-rose-600 to-red-700 hover:from-amber-500 hover:to-red-600 text-white font-black text-xs sm:text-sm border-2 border-amber-300 shadow-lg shadow-rose-500/25 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <div class="text-left">
                     <div class="font-black flex items-center gap-1">⚡ Xtreme</div>
                     <div class="text-[10px] text-amber-200 font-normal">Zona Xtreme</div>
@@ -442,13 +571,13 @@ window.renderRefereePadView = async (container, matchId) => {
                 </button>
               </div>
 
-              <!-- Secondary WBO Rules: Own Finish / Penalty -->
+              <!-- Secondary Rules: Own Finish / Penalty -->
               <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="submitFinish('penalty_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition">
+                <button onclick="submitFinish('penalty_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}">
                   <span>⚠️ Falta Rival</span>
                   <span class="font-mono text-rose-400 font-bold">+1 Rojo</span>
                 </button>
-                <button onclick="submitFinish('own_finish_1p', 'player_a')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-blue-300 text-[11px] font-semibold border border-slate-800 hover:border-blue-500/40 flex items-center justify-between active:scale-95 transition" title="Autoderrota de Azul da 1 punto a Rojo">
+                <button onclick="submitFinish('own_finish_1p', 'player_b')" class="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-rose-300 text-[11px] font-semibold border border-slate-800 hover:border-rose-500/40 flex items-center justify-between active:scale-95 transition ${isFinished ? 'opacity-70' : ''}" title="Autoderrota de Azul da 1 punto a Rojo">
                   <span>🌀 Auto-out Rival</span>
                   <span class="font-mono text-rose-400 font-bold">+1 Rojo</span>
                 </button>
@@ -458,13 +587,13 @@ window.renderRefereePadView = async (container, matchId) => {
 
         </div>
 
-        <!-- Central WBO Control Row: Draw Button & Undo Action -->
-        <div class="glass-card rounded-2xl p-3 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-900/90">
+        <!-- Central Action Bar: Draw 0p, Undo, Manual Adjust, Reset -->
+        <div class="glass-card rounded-2xl p-3 sm:p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div class="flex items-center gap-2">
-            <button onclick="submitFinish('draw_0p', 'draw')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 flex items-center gap-1.5 active:scale-95 transition shadow">
-              <span>🤝</span> Empate / Draw (0 pts)
+            <button onclick="submitFinish('draw_0p', 'draw')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700 active:scale-95 transition flex items-center gap-1.5 shadow-sm">
+              <span>🤝</span> Empate / Sin Puntos (0p)
             </button>
-            <span class="text-slate-500 font-mono text-[11px]">Asalto actual: #${roundCount}</span>
+            <span class="text-slate-500 text-[11px] hidden sm:inline">Asalto #${roundCount} en curso</span>
           </div>
 
           <div class="flex items-center gap-2">
@@ -482,7 +611,7 @@ window.renderRefereePadView = async (container, matchId) => {
           </div>
         </div>
 
-        <!-- Chronological Round History (Historial de Asaltos WBO) -->
+        <!-- Chronological Round History -->
         <div class="glass-card rounded-2xl p-4 space-y-3 border border-slate-800 bg-slate-900/70">
           <div class="flex items-center justify-between">
             <h4 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-2">
@@ -558,7 +687,7 @@ window.renderRefereePadView = async (container, matchId) => {
     updateStandaloneStatus();
   };
 
-  // Step score up or down by 1 point
+  // Step score manual +/-
   window.stepScore = async (player, delta) => {
     if (isStandalone) {
       stepStandaloneScore(player, delta);
@@ -599,6 +728,14 @@ window.renderRefereePadView = async (container, matchId) => {
 
   // Submit BeyScore finish
   window.submitFinish = async (finishType, awardedTo) => {
+    const target = match.target_points || 4;
+    const isFinished = match.status === "finished" || match.score_a >= target || match.score_b >= target;
+    
+    if (isFinished) {
+      window.showToast?.("Este combate ya finalizó. Pulsa 'Reabrir (+1 Meta)' si necesitas continuar anotando asaltos.", "info");
+      return;
+    }
+
     const pointsMap = {
       spin_finish_1p: 1,
       over_finish_2p: 2,
@@ -698,7 +835,6 @@ window.renderRefereePadView = async (container, matchId) => {
     if (!banner) return;
     banner.classList.remove("hidden");
 
-    // Audio cue using Web Audio API synthesis
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const playBeep = (freq, duration, delay) => {
@@ -720,7 +856,7 @@ window.renderRefereePadView = async (container, matchId) => {
       playBeep(440, 0.15, 1000); // 2
       playBeep(440, 0.15, 2000); // 1
       playBeep(880, 0.4, 3000);  // GO SHOOT!
-    } catch(e) {
+    } catch(_e) {
       // Audio synthesis fallback
     }
 
@@ -738,12 +874,106 @@ window.renderRefereePadView = async (container, matchId) => {
     }
   };
 
+  // Modal to Declare Official Winner
+  window.openDeclareWinnerModal = () => {
+    const existing = document.getElementById("declare-winner-modal");
+    if (existing) existing.remove();
+
+    const playerAName = match.player_a?.display_name || 'Corner Azul (Blader 1)';
+    const playerBName = match.player_b?.display_name || 'Corner Rojo (Blader 2)';
+
+    const modal = document.createElement("div");
+    modal.id = "declare-winner-modal";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm";
+    modal.innerHTML = `
+      <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-amber-500/40 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🏁</span>
+            <div>
+              <h3 class="font-bold text-white text-base">Declarar Ganador Oficial</h3>
+              <p class="text-[11px] text-slate-400">Finalizar combate y avanzar llave del torneo</p>
+            </div>
+          </div>
+          <button onclick="document.getElementById('declare-winner-modal').remove()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+        </div>
+
+        <form id="declare-winner-form" class="space-y-4 text-xs">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-2">Selecciona el Ganador:</label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/40 hover:border-blue-400 cursor-pointer flex flex-col items-center text-center gap-1.5 transition">
+                <input type="radio" name="winner_choice" value="player_a" ${match.score_a >= match.score_b ? 'checked' : ''} class="text-blue-500"/>
+                <span class="font-extrabold text-blue-300 text-sm truncate w-full">${playerAName}</span>
+                <span class="text-[10px] text-blue-400 font-mono">Corner Azul (${match.score_a} pts)</span>
+              </label>
+              <label class="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 hover:border-rose-400 cursor-pointer flex flex-col items-center text-center gap-1.5 transition">
+                <input type="radio" name="winner_choice" value="player_b" ${match.score_b > match.score_a ? 'checked' : ''} class="text-rose-500"/>
+                <span class="font-extrabold text-rose-300 text-sm truncate w-full">${playerBName}</span>
+                <span class="text-[10px] text-rose-400 font-mono">Corner Rojo (${match.score_b} pts)</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Motivo de Conclusión:</label>
+            <select name="finish_reason" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-amber-400">
+              <option value="decision_official">Victoria por Marcador Oficial (${match.score_a} - ${match.score_b})</option>
+              <option value="forfeit_conceded">Abandono / Forfeit del Rival</option>
+              <option value="disqualification">Descalificación Arbitral (DQ)</option>
+              <option value="walkover">Walkover (No presentación)</option>
+              <option value="referee_decision">Decisión Técnica del Árbitro</option>
+            </select>
+          </div>
+
+          <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
+            <button type="button" onclick="document.getElementById('declare-winner-modal').remove()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">
+              Cancelar
+            </button>
+            <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow">
+              Confirmar y Cerrar Acta
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("declare-winner-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const choice = form.winner_choice.value;
+      const reason = form.finish_reason.value;
+      const winnerId = choice === "player_a" ? match.player_a_id : match.player_b_id;
+
+      if (isStandalone) {
+        localState.status = "finished";
+        localState.winner = choice;
+        document.getElementById("declare-winner-modal")?.remove();
+        window.showToast?.("Combate finalizado exitosamente", "success");
+        loadMatch();
+        return;
+      }
+
+      try {
+        await window.api.declareWinner(matchId, {
+          winner_id: winnerId,
+          finish_reason: reason
+        });
+        document.getElementById("declare-winner-modal")?.remove();
+        window.showToast?.("¡Ganador oficial declarado y combate finalizado!", "success");
+        loadMatch();
+      } catch(err) {
+        window.showToast?.(err.message || "Error al declarar ganador", "error");
+      }
+    };
+  };
+
   // Manual Score Adjustment Modal
   window.openManualScoreModal = () => {
     const existing = document.getElementById("manual-score-modal");
     if (existing) existing.remove();
 
-    const target = match.target_points || 4;
     const modal = document.createElement("div");
     modal.id = "manual-score-modal";
     modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm";
@@ -925,13 +1155,16 @@ window.renderRefereePadView = async (container, matchId) => {
     };
   };
 
-  // Real-time updates via broadcast socket if available
-  if (window.api.onTournamentUpdate && matchId && !isStandalone) {
-    window.api.onTournamentUpdate((data) => {
-      if (data.event === "score_update" && data.payload.match_id === parseInt(matchId, 10)) {
+  // Real-time synchronization via WebSocket
+  if (!isStandalone && matchId) {
+    const parsedId = parseInt(matchId, 10);
+    const wsHandler = (data) => {
+      if (data && (data.match_id === parsedId || (match && data.tournament_id === match.tournament_id))) {
         loadMatch();
       }
-    });
+    };
+    window.wsHub.on("score_update", wsHandler);
+    window.wsHub.on("tournament_updated", wsHandler);
   }
 
   loadMatch();

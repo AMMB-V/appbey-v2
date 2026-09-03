@@ -63,6 +63,14 @@ class WebSocketHub {
     this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
   }
 
+  clear(event = null) {
+    if (event) {
+      delete this.listeners[event];
+    } else {
+      this.listeners = {};
+    }
+  }
+
   emit(event, data) {
     if (this.listeners[event]) {
       this.listeners[event].forEach(cb => {

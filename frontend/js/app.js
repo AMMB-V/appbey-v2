@@ -95,7 +95,9 @@
 
   const parseIdFromHash = (hash, prefix) => {
     if (!hash.startsWith(prefix)) return null;
-    const parsed = parseInt(hash.slice(prefix.length), 10);
+    const rest = hash.slice(prefix.length);
+    if (rest === "standalone") return "standalone";
+    const parsed = parseInt(rest, 10);
     return Number.isNaN(parsed) ? null : parsed;
   };
 
