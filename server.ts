@@ -2292,27 +2292,24 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
 });
 
 // --- Matches & Referee Pad ---
-api.get("/matches/:id", (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const m = matches.find((match) => match.id === id);
-  if (!m) {
-    res.status(404).json({ detail: "Match no encontrado" });
-    return;
-  }
+function formatMatchDetails(m: TournamentMatch) {
   const partA = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_a_id);
   const partB = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_b_id);
   const playerA = users.find((u) => u.id === m.player_a_id) || null;
   const playerB = users.find((u) => u.id === m.player_b_id) || null;
+  const t = tournaments.find((tour) => tour.id === m.tournament_id);
+  const target = m.target_points || t?.match_target_points || 4;
 
-  res.json({
+  return {
     ...m,
+    target_points: target,
     player_a: playerA,
     player_b: playerB,
     player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
     player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
     winner: users.find((u) => u.id === m.winner_id) || null,
     referee: users.find((u) => u.id === m.referee_id) || null,
-    tournament: tournaments.find((t) => t.id === m.tournament_id),
+    tournament: t,
     games: matchGames.filter((g) => g.match_id === m.id),
     tournament_matches: matches
       .filter((tm) => tm.tournament_id === m.tournament_id)
@@ -2322,7 +2319,17 @@ api.get("/matches/:id", (req, res) => {
         player_b: users.find((u) => u.id === tm.player_b_id) || null,
         winner: users.find((u) => u.id === tm.winner_id) || null
       }))
-  });
+  };
+}
+
+api.get("/matches/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const m = matches.find((match) => match.id === id);
+  if (!m) {
+    res.status(404).json({ detail: "Match no encontrado" });
+    return;
+  }
+  res.json(formatMatchDetails(m));
 });
 
 api.post("/matches/:id/call", requireAuth, (req: AuthRequest, res) => {
@@ -2435,15 +2442,7 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
     awarded_to
   });
 
-  res.json({
-    ...m,
-    target_points: target,
-    player_a: users.find((u) => u.id === m.player_a_id) || null,
-    player_b: users.find((u) => u.id === m.player_b_id) || null,
-    winner: users.find((u) => u.id === m.winner_id) || null,
-    referee: users.find((u) => u.id === m.referee_id) || null,
-    games: matchGames.filter((g) => g.match_id === m.id)
-  });
+  res.json(formatMatchDetails(m));
 });
 
 api.post("/matches/:id/undo-finish", requireAuth, (req: AuthRequest, res) => {
@@ -2499,15 +2498,7 @@ api.post("/matches/:id/undo-finish", requireAuth, (req: AuthRequest, res) => {
     winner_id: m.winner_id
   });
 
-  res.json({
-    ...m,
-    target_points: target,
-    player_a: users.find((u) => u.id === m.player_a_id) || null,
-    player_b: users.find((u) => u.id === m.player_b_id) || null,
-    winner: users.find((u) => u.id === m.winner_id) || null,
-    referee: users.find((u) => u.id === m.referee_id) || null,
-    games: matchGames.filter((g) => g.match_id === m.id)
-  });
+  res.json(formatMatchDetails(m));
 });
 
 api.post("/matches/:id/reopen", requireAuth, (req: AuthRequest, res) => {
@@ -2551,7 +2542,7 @@ api.post("/matches/:id/reopen", requireAuth, (req: AuthRequest, res) => {
     winner_id: null
   });
 
-  res.json({ message: "Combate reabierto exitosamente", match: m });
+  res.json(formatMatchDetails(m));
 });
 
 api.post("/matches/:id/target-points", requireAuth, (req: AuthRequest, res) => {
@@ -2585,7 +2576,7 @@ api.post("/matches/:id/target-points", requireAuth, (req: AuthRequest, res) => {
     winner_id: m.winner_id
   });
 
-  res.json({ message: `Meta de puntos actualizada a ${target} pts`, match: m, target_points: target });
+  res.json(formatMatchDetails(m));
 });
 
 api.post("/matches/:id/reset", requireAuth, (req: AuthRequest, res) => {
@@ -2625,7 +2616,7 @@ api.post("/matches/:id/reset", requireAuth, (req: AuthRequest, res) => {
     winner_id: null
   });
 
-  res.json({ message: "Marcador reiniciado a 0-0", match: m });
+  res.json(formatMatchDetails(m));
 });
 
 api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
@@ -2694,14 +2685,7 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
     winner_id: m.winner_id
   });
 
-  res.json({
-    ...m,
-    player_a: users.find((u) => u.id === m.player_a_id) || null,
-    player_b: users.find((u) => u.id === m.player_b_id) || null,
-    winner: users.find((u) => u.id === m.winner_id) || null,
-    referee: users.find((u) => u.id === m.referee_id) || null,
-    games: matchGames.filter((g) => g.match_id === m.id)
-  });
+  res.json(formatMatchDetails(m));
 });
 
 api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => {
@@ -2766,14 +2750,7 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
     awarded_to: parsedWinnerId === m.player_a_id ? "player_a" : "player_b"
   });
 
-  res.json({
-    ...m,
-    player_a: users.find((u) => u.id === m.player_a_id) || null,
-    player_b: users.find((u) => u.id === m.player_b_id) || null,
-    winner: users.find((u) => u.id === m.winner_id) || null,
-    referee: users.find((u) => u.id === m.referee_id) || null,
-    games: matchGames.filter((g) => g.match_id === m.id)
-  });
+  res.json(formatMatchDetails(m));
 });
 
 // --- Wallets ---

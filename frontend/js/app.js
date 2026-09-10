@@ -150,6 +150,11 @@
     const main = document.getElementById("main-content");
     if (!main) return;
 
+    // Clear stale websocket listeners from previous view so they never overwrite DOM
+    if (window.wsHub) {
+      window.wsHub.clear();
+    }
+
     updateActiveNav(hash);
     dispatchRoute(hash, main);
     window.scrollTo(0, 0);

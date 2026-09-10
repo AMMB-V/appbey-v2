@@ -7,13 +7,20 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando datos del torneo #${tournamentId}...</div>`;
 
+  const isCurrentView = () => window.location.hash.startsWith(`#/tournaments/${tournamentId}`);
+
   const refreshData = async () => {
+    if (!isCurrentView()) return;
     try {
       tournament = await window.api.getTournament(tournamentId);
+      if (!isCurrentView()) return;
       matches = await window.api.getMatches(tournamentId);
+      if (!isCurrentView()) return;
       participants = await window.api.getParticipants(tournamentId);
+      if (!isCurrentView()) return;
       renderUI();
     } catch(err) {
+      if (!isCurrentView()) return;
       container.innerHTML = `<div class="text-center py-16 text-rose-400">Error al cargar torneo: ${err.message}</div>`;
     }
   };
@@ -21,10 +28,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   // Connect WebSocket for live tournament sync
   window.wsHub.clear();
   window.wsHub.connect(tournamentId);
-  window.wsHub.on("score_update", () => refreshData());
-  window.wsHub.on("match_call", () => refreshData());
-  window.wsHub.on("tournament_updated", () => refreshData());
-  window.wsHub.on("match_referee_assigned", () => refreshData());
+  window.wsHub.on("score_update", () => { if (isCurrentView()) refreshData(); });
+  window.wsHub.on("match_call", () => { if (isCurrentView()) refreshData(); });
+  window.wsHub.on("tournament_updated", () => { if (isCurrentView()) refreshData(); });
+  window.wsHub.on("match_referee_assigned", () => { if (isCurrentView()) refreshData(); });
 
   const getMatchStatusBadge = (status) => {
     switch (status) {
