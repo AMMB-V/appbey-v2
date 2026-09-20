@@ -83,7 +83,7 @@ window.renderRankingsView = async (container) => {
           </td>
           <td class="py-3 px-2 sm:px-3 font-sans">
             <div class="flex items-center gap-2.5">
-              ${window.renderAvatar(item, "w-8 h-8", "text-xs", "border " + borderClass)}
+              <img src="/assets/images/appbey_logo.jpg" class="w-8 h-8 rounded-full object-cover border ${borderClass} shrink-0 shadow" alt="${bladerName}"/>
               <div>
                 <div class="font-bold text-white hover:text-cyan-300 transition text-xs sm:text-sm">${bladerName}</div>
                 <div class="text-[10px] text-slate-400 font-mono">@${username} • PA 🇵🇦</div>
@@ -193,7 +193,7 @@ window.renderRankingsView = async (container) => {
                   <span>🥈</span> 2do Lugar Nacional
                 </div>
                 <div class="relative inline-block mx-auto">
-                  ${window.renderAvatar(top3[1], "w-20 h-20", "text-2xl", "border-4 border-slate-400 mx-auto shadow-lg")}
+                  <img src="/assets/images/appbey_logo.jpg" class="w-20 h-20 rounded-full border-4 border-slate-400 mx-auto object-cover shadow-lg" alt="${top3[1].display_name || '2do Lugar'}"/>
                   <span class="absolute -bottom-2 right-1/2 translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-200 text-xs font-black shadow">#2</span>
                 </div>
                 <div>
@@ -212,7 +212,7 @@ window.renderRankingsView = async (container) => {
                   <span>👑</span> Campeón de Temporada 1
                 </div>
                 <div class="relative inline-block mx-auto">
-                  ${window.renderAvatar(top3[0], "w-24 h-24", "text-3xl", "border-4 border-amber-400 mx-auto shadow-2xl")}
+                  <img src="/assets/images/appbey_logo.jpg" class="w-24 h-24 rounded-full border-4 border-amber-400 mx-auto object-cover shadow-2xl" alt="${top3[0].display_name || '1er Lugar'}"/>
                   <span class="absolute -bottom-2.5 right-1/2 translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-500 text-black text-xs font-black shadow-lg">#1</span>
                 </div>
                 <div>
@@ -231,7 +231,7 @@ window.renderRankingsView = async (container) => {
                   <span>🥉</span> 3er Lugar Nacional
                 </div>
                 <div class="relative inline-block mx-auto">
-                  ${window.renderAvatar(top3[2], "w-20 h-20", "text-2xl", "border-4 border-amber-700 mx-auto shadow-lg")}
+                  <img src="/assets/images/appbey_logo.jpg" class="w-20 h-20 rounded-full border-4 border-amber-700 mx-auto object-cover shadow-lg" alt="${top3[2].display_name || '3er Lugar'}"/>
                   <span class="absolute -bottom-2 right-1/2 translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-800 text-amber-200 text-xs font-black shadow">#3</span>
                 </div>
                 <div>
@@ -355,7 +355,7 @@ window.renderRankingsView = async (container) => {
 
           <div class="flex items-center gap-4">
             <div class="relative">
-              ${window.renderAvatar(b, "w-16 h-16", "text-2xl", "border-2 border-amber-400 shadow-lg")}
+              <img src="/assets/images/appbey_logo.jpg" class="w-16 h-16 rounded-full border-2 border-amber-400 object-cover shadow-lg" alt="${name}"/>
               <span class="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black shadow">#${b.rank || index + 1}</span>
             </div>
             <div>

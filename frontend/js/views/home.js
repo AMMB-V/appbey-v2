@@ -11,9 +11,12 @@ window.renderHomeView = async (container) => {
               <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
               En Vivo • Beyblade X Championship
             </div>
-            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
-              AppBey
-            </h1>
+            <div class="flex items-center gap-3.5 mb-2">
+              <img src="/assets/images/appbey_logo.jpg" class="w-12 h-12 rounded-2xl object-cover shadow-xl border border-cyan-400/40 shrink-0" alt="AppBey Logo"/>
+              <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
+                AppBey
+              </h1>
+            </div>
             <p class="text-slate-300 max-w-xl text-sm md:text-base">
               Plataforma competitiva oficial: Brackets en tiempo real, arbitraje táctil 3on3 Xtreme Stadium, constructor de Decks y sistema de AP Coins.
             </p>

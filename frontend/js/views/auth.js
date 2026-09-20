@@ -10,8 +10,8 @@ window.showAuthModal = (initialMode = "login") => {
   modal.innerHTML = `
     <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">⚡</span>
+        <div class="flex items-center gap-2.5">
+          <img src="/assets/images/appbey_logo.jpg" class="w-7 h-7 rounded-lg object-cover shadow" alt="AppBey Logo"/>
           <h2 class="text-xl font-extrabold text-white">AppBey</h2>
         </div>
         <button onclick="document.getElementById('auth-modal').remove()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
