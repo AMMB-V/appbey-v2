@@ -53,40 +53,48 @@ body {
 
 /* Score Buttons for Mobile & iPad Referee Pad */
 .referee-btn, .referee-sub-btn, .referee-step-btn {
-  transition: transform 0.08s ease-out, filter 0.08s ease-out, box-shadow 0.08s ease-out;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
+  transition: transform 0.06s ease-out, filter 0.06s ease-out, box-shadow 0.06s ease-out;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
   cursor: pointer;
+  -webkit-appearance: none;
 }
 
-.referee-btn:active, .referee-sub-btn:active, .referee-step-btn:active {
-  transform: scale(0.94);
-  filter: brightness(1.25);
+.referee-btn:active, .referee-sub-btn:active, .referee-step-btn:active,
+.referee-btn.is-active, .referee-sub-btn.is-active, .referee-step-btn.is-active {
+  transform: scale(0.95) !important;
+  filter: brightness(1.28) !important;
+}
+
+.referee-btn.btn-busy {
+  pointer-events: none;
+  filter: brightness(1.2);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.6) !important;
 }
 
 /* Instant pop animation on score update */
 @keyframes scorePop {
   0% { transform: scale(1); }
-  40% { transform: scale(1.28); filter: brightness(1.3); }
+  35% { transform: scale(1.32); filter: brightness(1.35); }
   100% { transform: scale(1); filter: brightness(1); }
 }
 
 .score-pop {
-  animation: scorePop 0.28s ease-out;
+  animation: scorePop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Quick button ripple flash */
 @keyframes buttonFlash {
-  0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
-  70% { box-shadow: 0 0 0 12px rgba(6, 182, 212, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.85); transform: scale(0.96); }
+  50% { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); transform: scale(1); }
   100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
 }
 
 .btn-flash {
-  animation: buttonFlash 0.35s ease-out;
+  animation: buttonFlash 0.3s ease-out forwards;
 }
 
 /* Custom Scrollbar */

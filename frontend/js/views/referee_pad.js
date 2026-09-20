@@ -151,7 +151,11 @@ window.renderRefereePadView = async (container, matchId) => {
       };
       tournamentMatches = [];
       nextMatch = null;
-      renderUI();
+      if (document.getElementById("score-display-a") && document.getElementById("score-display-b")) {
+        updateLiveScoreboardDOM();
+      } else {
+        renderUI();
+      }
       return;
     }
 
@@ -170,7 +174,11 @@ window.renderRefereePadView = async (container, matchId) => {
         // Find next pending or in_progress match (excluding current match)
         nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
       }
-      renderUI();
+      if (document.getElementById("score-display-a") && document.getElementById("score-display-b")) {
+        updateLiveScoreboardDOM();
+      } else {
+        renderUI();
+      }
     } catch(err) {
       container.innerHTML = `
         <div class="max-w-md mx-auto my-12 glass-card p-6 rounded-3xl text-center space-y-4 border border-slate-800">
@@ -374,7 +382,7 @@ window.renderRefereePadView = async (container, matchId) => {
           <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
             <span class="text-[10px] uppercase font-bold text-slate-400 px-2">Meta:</span>
             ${[3, 4, 5, 7].map(pts => `
-              <button onclick="setTargetPoints(${pts})" class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition ${target === pts ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">
+              <button data-target-pts="${pts}" onclick="setTargetPoints(${pts})" class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition ${target === pts ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">
                 ${pts}p ${pts === 4 ? '(Oficial)' : (pts === 5 ? '(Final)' : '')}
               </button>
             `).join("")}
@@ -408,13 +416,13 @@ window.renderRefereePadView = async (container, matchId) => {
         </div>
 
         <!-- Finished Notification Banner -->
-        ${renderFinishBanner(isFinished, winnerName, match, nextMatch)}
+        <div id="finish-banner-container">${renderFinishBanner(isFinished, winnerName, match, nextMatch)}</div>
 
         <!-- BeyScore Main Stage: Blue (Left) vs Red (Right) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           <!-- CORNER AZUL (PLAYER A / 1) -->
-          <div class="glass-card rounded-3xl p-5 border-2 ${match.score_a >= target ? 'border-amber-400 glow-gold' : 'border-blue-500/40'} bg-gradient-to-b from-blue-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
+          <div id="corner-card-a" class="glass-card rounded-3xl p-5 border-2 ${match.score_a >= target ? 'border-amber-400 glow-gold' : 'border-blue-500/40'} bg-gradient-to-b from-blue-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
             <!-- Player Info & Score Header -->
             <div class="flex items-center justify-between border-b border-blue-900/40 pb-3">
               <div class="flex items-center gap-3">
@@ -503,7 +511,7 @@ window.renderRefereePadView = async (container, matchId) => {
           </div>
 
           <!-- CORNER ROJO (PLAYER B / 2) -->
-          <div class="glass-card rounded-3xl p-5 border-2 ${match.score_b >= target ? 'border-amber-400 glow-gold' : 'border-rose-500/40'} bg-gradient-to-b from-rose-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
+          <div id="corner-card-b" class="glass-card rounded-3xl p-5 border-2 ${match.score_b >= target ? 'border-amber-400 glow-gold' : 'border-rose-500/40'} bg-gradient-to-b from-rose-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
             <!-- Player Info & Score Header -->
             <div class="flex items-center justify-between border-b border-rose-900/40 pb-3">
               <div class="flex items-center gap-3">
@@ -599,15 +607,17 @@ window.renderRefereePadView = async (container, matchId) => {
             <button onclick="submitFinish('draw_0p', 'draw', this)" class="referee-sub-btn min-h-[46px] sm:min-h-[50px] px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 active:scale-95 transition flex items-center gap-1.5 shadow-sm">
               <span>🤝</span> Empate / Sin Puntos (0p)
             </button>
-            <span class="text-slate-500 text-[11px] hidden sm:inline">Asalto #${roundCount} en curso</span>
+            <span id="round-current-order" class="text-slate-500 text-[11px] hidden sm:inline">Asalto #${roundCount} en curso</span>
           </div>
 
           <div class="flex items-center gap-2">
-            ${match.games && match.games.length ? `
-              <button onclick="handleUndoLastFinish()" class="referee-sub-btn min-h-[44px] px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1.5 active:scale-95 transition">
-                <span>⏪</span> Deshacer Último Asalto
-              </button>
-            ` : ''}
+            <div id="undo-button-container" class="inline-flex">
+              ${match.games && match.games.length ? `
+                <button onclick="handleUndoLastFinish()" class="referee-sub-btn min-h-[44px] px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1.5 active:scale-95 transition">
+                  <span>⏪</span> Deshacer Último Asalto
+                </button>
+              ` : ''}
+            </div>
             <button onclick="openManualScoreModal()" class="referee-sub-btn min-h-[44px] px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold border border-slate-700 flex items-center gap-1 active:scale-95 transition">
               <span>✏️</span> Ajustar
             </button>
@@ -621,12 +631,12 @@ window.renderRefereePadView = async (container, matchId) => {
         <div class="glass-card rounded-2xl p-4 space-y-3 border border-slate-800 bg-slate-900/70">
           <div class="flex items-center justify-between">
             <h4 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <span>📋</span> Registro de Asaltos (${match.games ? match.games.length : 0})
+              <span>📋</span> <span id="rounds-count-label">Registro de Asaltos (${match.games ? match.games.length : 0})</span>
             </h4>
             <span class="text-[10px] text-slate-500">Orden de combate Beyblade X</span>
           </div>
 
-          <div class="space-y-2">
+          <div id="rounds-history-list" class="space-y-2">
             ${match.games && match.games.length ? match.games.slice().reverse().map((g, idx) => {
               const actualOrder = g.game_order || (match.games.length - idx);
               return renderRoundHistoryItem(g, match, actualOrder);
@@ -640,6 +650,132 @@ window.renderRefereePadView = async (container, matchId) => {
 
       </div>
     `;
+  };
+
+  // Micro-targeted surgical DOM update for zero-lag responsiveness on iPad
+  const updateLiveScoreboardDOM = (animatedPlayer = null) => {
+    const scoreAEl = document.getElementById("score-display-a");
+    const scoreBEl = document.getElementById("score-display-b");
+    if (!scoreAEl || !scoreBEl) {
+      renderUI();
+      return;
+    }
+
+    const currentMatch = isStandalone ? {
+      ...match,
+      score_a: localState.score_a,
+      score_b: localState.score_b,
+      target_points: localState.target_points,
+      status: localState.status,
+      winner: localState.winner,
+      games: localState.games
+    } : match;
+
+    const target = currentMatch.target_points || (currentMatch.tournament ? currentMatch.tournament.match_target_points : 4) || 4;
+    const isFinished = currentMatch.status === "finished" || currentMatch.score_a >= target || currentMatch.score_b >= target;
+    const roundCount = (currentMatch.games ? currentMatch.games.length : 0) + 1;
+    const winnerName = getMatchWinnerName(currentMatch);
+
+    // 1. Instant numbers update without rebuilding DOM
+    if (scoreAEl.textContent.trim() !== String(currentMatch.score_a)) {
+      scoreAEl.textContent = currentMatch.score_a;
+    }
+    if (scoreBEl.textContent.trim() !== String(currentMatch.score_b)) {
+      scoreBEl.textContent = currentMatch.score_b;
+    }
+
+    // 2. Score Pop animation
+    if (animatedPlayer === "player_a") {
+      scoreAEl.classList.remove("score-pop");
+      void scoreAEl.offsetWidth;
+      scoreAEl.classList.add("score-pop");
+    } else if (animatedPlayer === "player_b") {
+      scoreBEl.classList.remove("score-pop");
+      void scoreBEl.offsetWidth;
+      scoreBEl.classList.add("score-pop");
+    }
+
+    // 3. Highlight winning corner cards
+    const cardA = document.getElementById("corner-card-a");
+    if (cardA) {
+      if (currentMatch.score_a >= target) {
+        cardA.classList.add("border-amber-400", "glow-gold");
+        cardA.classList.remove("border-blue-500/40");
+      } else {
+        cardA.classList.remove("border-amber-400", "glow-gold");
+        cardA.classList.add("border-blue-500/40");
+      }
+    }
+
+    const cardB = document.getElementById("corner-card-b");
+    if (cardB) {
+      if (currentMatch.score_b >= target) {
+        cardB.classList.add("border-amber-400", "glow-gold");
+        cardB.classList.remove("border-rose-500/40");
+      } else {
+        cardB.classList.remove("border-amber-400", "glow-gold");
+        cardB.classList.add("border-rose-500/40");
+      }
+    }
+
+    // 4. Finish banner
+    const bannerContainer = document.getElementById("finish-banner-container");
+    if (bannerContainer) {
+      bannerContainer.innerHTML = renderFinishBanner(isFinished, winnerName, currentMatch, nextMatch);
+    }
+
+    // 5. Round counters
+    const roundOrderEl = document.getElementById("round-current-order");
+    if (roundOrderEl) {
+      roundOrderEl.textContent = `Asalto #${roundCount} en curso`;
+    }
+
+    const roundsCountEl = document.getElementById("rounds-count-label");
+    if (roundsCountEl) {
+      roundsCountEl.textContent = `Registro de Asaltos (${currentMatch.games ? currentMatch.games.length : 0})`;
+    }
+
+    // 6. Undo button toggle
+    const undoContainer = document.getElementById("undo-button-container");
+    if (undoContainer) {
+      if (currentMatch.games && currentMatch.games.length) {
+        undoContainer.innerHTML = `
+          <button onclick="handleUndoLastFinish()" class="referee-sub-btn min-h-[44px] px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1.5 active:scale-95 transition">
+            <span>⏪</span> Deshacer Último Asalto
+          </button>
+        `;
+      } else {
+        undoContainer.innerHTML = '';
+      }
+    }
+
+    // 7. Chronological round history
+    const historyList = document.getElementById("rounds-history-list");
+    if (historyList) {
+      if (currentMatch.games && currentMatch.games.length) {
+        historyList.innerHTML = currentMatch.games.slice().reverse().map((g, idx) => {
+          const actualOrder = g.game_order || (currentMatch.games.length - idx);
+          return renderRoundHistoryItem(g, currentMatch, actualOrder);
+        }).join("");
+      } else {
+        historyList.innerHTML = `
+          <div class="text-xs text-slate-500 text-center py-6 border border-dashed border-slate-800 rounded-xl">
+            Aún no se han registrado asaltos en este combate. Presiona cualquier botón de finalización arriba para comenzar.
+          </div>
+        `;
+      }
+    }
+
+    // 8. Target quick selector active buttons
+    const targetButtons = document.querySelectorAll("[data-target-pts]");
+    targetButtons.forEach(btn => {
+      const p = parseInt(btn.getAttribute("data-target-pts"), 10);
+      if (p === target) {
+        btn.className = "px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20";
+      } else {
+        btn.className = "px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition text-slate-400 hover:text-white hover:bg-slate-800";
+      }
+    });
   };
 
   const updateStandaloneStatus = () => {
@@ -697,16 +833,9 @@ window.renderRefereePadView = async (container, matchId) => {
   window.stepScore = async (player, delta) => {
     try { navigator.vibrate?.(20); } catch(_) {}
 
-    const scoreElem = player === "player_a" ? document.getElementById("score-display-a") : document.getElementById("score-display-b");
-    if (scoreElem) {
-      scoreElem.classList.remove("score-pop");
-      void scoreElem.offsetWidth;
-      scoreElem.classList.add("score-pop");
-    }
-
     if (isStandalone) {
       stepStandaloneScore(player, delta);
-      loadMatch();
+      updateLiveScoreboardDOM(player);
       return;
     }
 
@@ -727,7 +856,8 @@ window.renderRefereePadView = async (container, matchId) => {
       match.winner_id = null;
     }
 
-    renderUI();
+    // Instant local DOM update
+    updateLiveScoreboardDOM(player);
 
     try {
       const serverUpdated = await window.api.updateManualScore(matchId, {
@@ -741,11 +871,11 @@ window.renderRefereePadView = async (container, matchId) => {
           tournamentMatches = serverUpdated.tournament_matches;
           nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
         }
-        renderUI();
+        updateLiveScoreboardDOM();
       }
     } catch(err) {
       match = prevMatchState;
-      renderUI();
+      updateLiveScoreboardDOM();
       window.showToast?.(err.message || "Error al actualizar marcador", "error");
     }
   };
@@ -757,7 +887,7 @@ window.renderRefereePadView = async (container, matchId) => {
     if (isStandalone) {
       localState.target_points = pts;
       updateStandaloneStatus();
-      loadMatch();
+      updateLiveScoreboardDOM();
       return;
     }
 
@@ -771,7 +901,7 @@ window.renderRefereePadView = async (container, matchId) => {
       match.status = 'in_progress';
       match.winner_id = null;
     }
-    renderUI();
+    updateLiveScoreboardDOM();
 
     try {
       const serverUpdated = await window.api.updateMatchTarget(matchId, pts);
@@ -782,19 +912,27 @@ window.renderRefereePadView = async (container, matchId) => {
           tournamentMatches = serverUpdated.tournament_matches;
           nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
         }
-        renderUI();
+        updateLiveScoreboardDOM();
       } else {
         loadMatch();
       }
     } catch(err) {
       match = prevMatchState;
-      renderUI();
+      updateLiveScoreboardDOM();
       window.showToast?.(err.message || "Error al cambiar meta de puntos", "error");
     }
   };
 
   // Submit BeyScore finish (Instant 0ms Feedback + Optimistic Update)
+  let lastFinishTapTime = 0;
   window.submitFinish = async (finishType, awardedTo, btnElement) => {
+    const now = Date.now();
+    // Micro debounce (120ms) to ignore capacitive double-tap glitches on iPad
+    if (now - lastFinishTapTime < 120) {
+      return;
+    }
+    lastFinishTapTime = now;
+
     const target = match.target_points || 4;
     const isFinished = match.status === "finished" || match.score_a >= target || match.score_b >= target;
     
@@ -806,8 +944,8 @@ window.renderRefereePadView = async (container, matchId) => {
     // Immediate tactile feedback on touch / iPad
     try { navigator.vibrate?.(25); } catch(_) {}
     if (btnElement) {
-      btnElement.classList.add("btn-flash");
-      setTimeout(() => btnElement.classList.remove("btn-flash"), 300);
+      btnElement.classList.add("btn-flash", "is-active");
+      setTimeout(() => btnElement.classList.remove("btn-flash", "is-active"), 280);
     }
 
     const pointsMap = {
@@ -823,17 +961,9 @@ window.renderRefereePadView = async (container, matchId) => {
 
     const pts = pointsMap[finishType] !== undefined ? pointsMap[finishType] : 0;
 
-    // Trigger score pop animation immediately
-    const scoreElem = awardedTo === 'player_a' ? document.getElementById('score-display-a') : (awardedTo === 'player_b' ? document.getElementById('score-display-b') : null);
-    if (scoreElem) {
-      scoreElem.classList.remove('score-pop');
-      void scoreElem.offsetWidth;
-      scoreElem.classList.add('score-pop');
-    }
-
     if (isStandalone) {
       applyStandaloneFinish(finishType, awardedTo, pts);
-      loadMatch();
+      updateLiveScoreboardDOM(awardedTo);
       return;
     }
 
@@ -864,7 +994,8 @@ window.renderRefereePadView = async (container, matchId) => {
       match.status = 'in_progress';
     }
 
-    renderUI();
+    // Instant local DOM update
+    updateLiveScoreboardDOM(awardedTo);
 
     try {
       const serverUpdated = await window.api.recordFinish(matchId, {
@@ -879,12 +1010,12 @@ window.renderRefereePadView = async (container, matchId) => {
           tournamentMatches = serverUpdated.tournament_matches;
           nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
         }
-        renderUI();
+        updateLiveScoreboardDOM();
       }
     } catch(err) {
       // Rollback on network failure
       match = prevMatchState;
-      renderUI();
+      updateLiveScoreboardDOM();
       window.showToast?.(err.message || "Error al registrar resultado", "error");
     }
   };
@@ -895,7 +1026,7 @@ window.renderRefereePadView = async (container, matchId) => {
 
     if (isStandalone) {
       undoStandaloneFinish();
-      loadMatch();
+      updateLiveScoreboardDOM();
       return;
     }
 
@@ -920,7 +1051,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match.status = match.games.length > 0 ? 'in_progress' : 'pending';
         match.winner_id = null;
       }
-      renderUI();
+      updateLiveScoreboardDOM();
     }
 
     try {
@@ -932,13 +1063,13 @@ window.renderRefereePadView = async (container, matchId) => {
           tournamentMatches = serverUpdated.tournament_matches;
           nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
         }
-        renderUI();
+        updateLiveScoreboardDOM();
       } else {
         loadMatch();
       }
     } catch(err) {
       match = prevMatchState;
-      renderUI();
+      updateLiveScoreboardDOM();
       window.showToast?.(err.message || "Error al deshacer asalto", "error");
     }
   };
@@ -954,7 +1085,7 @@ window.renderRefereePadView = async (container, matchId) => {
       if (localState.score_a >= currentTarget || localState.score_b >= currentTarget) {
         localState.target_points = Math.max(currentTarget + 1, Math.max(localState.score_a, localState.score_b) + 1);
       }
-      loadMatch();
+      updateLiveScoreboardDOM();
       return;
     }
 
@@ -968,7 +1099,7 @@ window.renderRefereePadView = async (container, matchId) => {
           tournamentMatches = serverUpdated.tournament_matches;
           nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
         }
-        renderUI();
+        updateLiveScoreboardDOM();
       } else {
         loadMatch();
       }
@@ -992,7 +1123,7 @@ window.renderRefereePadView = async (container, matchId) => {
       localState.games = [];
       localState.status = "in_progress";
       localState.winner = null;
-      loadMatch();
+      updateLiveScoreboardDOM();
       return;
     }
 
@@ -1002,7 +1133,7 @@ window.renderRefereePadView = async (container, matchId) => {
     match.games = [];
     match.status = 'in_progress';
     match.winner_id = null;
-    renderUI();
+    updateLiveScoreboardDOM();
 
     try {
       const serverUpdated = await window.api.resetMatch(matchId);
@@ -1013,7 +1144,7 @@ window.renderRefereePadView = async (container, matchId) => {
           tournamentMatches = serverUpdated.tournament_matches;
           nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
         }
-        renderUI();
+        updateLiveScoreboardDOM();
       } else {
         loadMatch();
       }

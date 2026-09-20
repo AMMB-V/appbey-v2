@@ -150,7 +150,11 @@ interface Tournament {
   title: string;
   description: string;
   organizer_id: number;
-  format: "swiss" | "single_elim";
+  format: "groups_elim" | "swiss" | "single_elim";
+  stage_type?: "group_stage" | "knockout" | "completed";
+  group_count?: number;
+  advancers_per_group?: number;
+  knockout_round_name?: string;
   battle_type: string;
   match_target_points: number;
   stadium_type: string;
@@ -176,6 +180,17 @@ interface TournamentParticipant {
   tournament_id: number;
   user_id: number;
   seed: number;
+  group_id?: string | null;
+  group_seed?: number | null;
+  group_points?: number;
+  group_matches_won?: number;
+  group_matches_drawn?: number;
+  group_matches_lost?: number;
+  group_points_scored?: number;
+  group_points_conceded?: number;
+  group_diff?: number;
+  group_rank?: number | null;
+  is_qualified_playoffs?: boolean;
   checked_in: boolean;
   checked_in_at?: string | null;
   swiss_points: number;
@@ -207,6 +222,7 @@ interface TournamentMatch {
   tournament_id: number;
   round_number: number;
   stage: string;
+  group_id?: string | null;
   bracket_position: number;
   station_number: number;
   player_a_id: number | null;
@@ -706,15 +722,19 @@ function seedDatabase() {
       id: 1,
       slug: "copa-inaugural-xtreme-2026",
       title: "Copa Inaugural Beyblade X 2026",
-      description: "Torneo Oficial Apertura Temporada 2 con formato Eliminación Directa y reglamento BeyScore.",
+      description: "Torneo Oficial Apertura Temporada 2 con formato Fase de Grupos + Eliminación Directa (Estilo Challonge / WBO).",
       organizer_id: 1,
-      format: "single_elim",
-      battle_type: "3on3",
+      format: "groups_elim",
+      stage_type: "group_stage",
+      group_count: 2,
+      advancers_per_group: 2,
+      knockout_round_name: "Semifinales",
+      battle_type: "3on3_deck",
       match_target_points: 4,
       stadium_type: "Xtreme Stadium Standard (BX-10)",
       max_participants: 8,
       entry_fee_ap: 0,
-      prize_pool_ap: 500,
+      prize_pool_ap: 1000,
       status: "in_progress",
       venue_name: "Estadio Central Albrook Mall",
       venue_address: "Plaza Central, Ciudad de Panamá",
@@ -727,24 +747,36 @@ function seedDatabase() {
     }
   ];
 
-  // Participants
+  // Participants (8 players distributed into 2 groups using Challonge Serpentine Seeding)
+  // Serpentine: Seed 1 -> A, Seed 2 -> B, Seed 3 -> B, Seed 4 -> A, Seed 5 -> A, Seed 6 -> B, Seed 7 -> B, Seed 8 -> A
   participants = [
-    { id: 1, tournament_id: 1, user_id: 1, seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Phoenix Wing 9-60 GF", "Wizard Rod 5-70 DB", "Dran Buster 1-60 F"] },
-    { id: 2, tournament_id: 1, user_id: 2, seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Wizard Rod 5-70 DB", "Whale Wave 7-60 R", "Silver Wolf 3-60 B"] },
-    { id: 3, tournament_id: 1, user_id: 4, seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Cobalt Dragoon 1-60 E", "Impact Drake 7-60 LF", "Samurai Saber 2-70 L"] },
-    { id: 4, tournament_id: 1, user_id: 5, seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Tyranno Beat 4-60 GP", "Shark Edge 3-60 LF", "Dran Dagger 4-60 R"] },
-    { id: 5, tournament_id: 1, user_id: 6, seed: 5, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Hells Chain 5-60 O", "Phoenix Rudder 9-70 G", "Weiss Tiger 3-60 U"] },
-    { id: 6, tournament_id: 1, user_id: 7, seed: 6, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Leon Crest 7-60 HN", "Knight Mail 3-85 BS", "Black Shell 4-70 D"] },
-    { id: 7, tournament_id: 1, user_id: 8, seed: 7, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Dran Buster 4-50 LF", "Cobalt Drake 4-60 F", "Unicorn Sting 5-60 P"] },
-    { id: 8, tournament_id: 1, user_id: 9, seed: 8, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Aero Pegasus 3-70 A", "Hells Hammer 3-70 H", "Viper Tail 5-80 O"] }
+    { id: 1, tournament_id: 1, user_id: 1, seed: 1, group_id: "A", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Phoenix Wing 9-60 GF", "Wizard Rod 5-70 DB", "Dran Buster 1-60 F"] },
+    { id: 2, tournament_id: 1, user_id: 2, seed: 2, group_id: "B", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Wizard Rod 5-70 DB", "Whale Wave 7-60 R", "Silver Wolf 3-60 B"] },
+    { id: 3, tournament_id: 1, user_id: 4, seed: 3, group_id: "B", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Cobalt Dragoon 1-60 E", "Impact Drake 7-60 LF", "Samurai Saber 2-70 L"] },
+    { id: 4, tournament_id: 1, user_id: 5, seed: 4, group_id: "A", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Tyranno Beat 4-60 GP", "Shark Edge 3-60 LF", "Dran Dagger 4-60 R"] },
+    { id: 5, tournament_id: 1, user_id: 6, seed: 5, group_id: "A", group_seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Hells Chain 5-60 O", "Phoenix Rudder 9-70 G", "Weiss Tiger 3-60 U"] },
+    { id: 6, tournament_id: 1, user_id: 7, seed: 6, group_id: "B", group_seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Leon Crest 7-60 HN", "Knight Mail 3-85 BS", "Black Shell 4-70 D"] },
+    { id: 7, tournament_id: 1, user_id: 8, seed: 7, group_id: "B", group_seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Dran Buster 4-50 LF", "Cobalt Drake 4-60 F", "Unicorn Sting 5-60 P"] },
+    { id: 8, tournament_id: 1, user_id: 9, seed: 8, group_id: "A", group_seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Aero Pegasus 3-70 A", "Hells Hammer 3-70 H", "Viper Tail 5-80 O"] }
   ];
 
-  // Matches
+  // Matches for Grupo A and Grupo B (Round Robin)
   matches = [
-    { id: 1, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 1, station_number: 1, player_a_id: 1, player_b_id: 9, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
-    { id: 2, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 2, station_number: 2, player_a_id: 2, player_b_id: 8, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
-    { id: 3, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 3, station_number: 3, player_a_id: 4, player_b_id: 7, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
-    { id: 4, tournament_id: 1, round_number: 1, stage: "Cuartos", bracket_position: 4, station_number: 4, player_a_id: 5, player_b_id: 6, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now }
+    // Grupo A matches
+    { id: 1, tournament_id: 1, round_number: 1, stage: "Fase de Grupos - Grupo A", group_id: "A", bracket_position: 1, station_number: 1, player_a_id: 1, player_b_id: 5, score_a: 4, score_b: 2, winner_id: 1, referee_id: 3, target_points: 4, status: "finished", is_bye: false, created_at: now },
+    { id: 2, tournament_id: 1, round_number: 1, stage: "Fase de Grupos - Grupo A", group_id: "A", bracket_position: 2, station_number: 2, player_a_id: 6, player_b_id: 9, score_a: 4, score_b: 1, winner_id: 6, referee_id: 3, target_points: 4, status: "finished", is_bye: false, created_at: now },
+    { id: 3, tournament_id: 1, round_number: 2, stage: "Fase de Grupos - Grupo A", group_id: "A", bracket_position: 3, station_number: 1, player_a_id: 1, player_b_id: 6, score_a: 2, score_b: 1, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
+    { id: 4, tournament_id: 1, round_number: 2, stage: "Fase de Grupos - Grupo A", group_id: "A", bracket_position: 4, station_number: 3, player_a_id: 5, player_b_id: 9, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "calling", is_bye: false, created_at: now },
+    { id: 5, tournament_id: 1, round_number: 3, stage: "Fase de Grupos - Grupo A", group_id: "A", bracket_position: 5, station_number: 1, player_a_id: 1, player_b_id: 9, score_a: 0, score_b: 0, winner_id: null, referee_id: null, target_points: 4, status: "pending", is_bye: false, created_at: now },
+    { id: 6, tournament_id: 1, round_number: 3, stage: "Fase de Grupos - Grupo A", group_id: "A", bracket_position: 6, station_number: 3, player_a_id: 5, player_b_id: 6, score_a: 0, score_b: 0, winner_id: null, referee_id: null, target_points: 4, status: "pending", is_bye: false, created_at: now },
+
+    // Grupo B matches
+    { id: 7, tournament_id: 1, round_number: 1, stage: "Fase de Grupos - Grupo B", group_id: "B", bracket_position: 1, station_number: 2, player_a_id: 2, player_b_id: 4, score_a: 4, score_b: 3, winner_id: 2, referee_id: 3, target_points: 4, status: "finished", is_bye: false, created_at: now },
+    { id: 8, tournament_id: 1, round_number: 1, stage: "Fase de Grupos - Grupo B", group_id: "B", bracket_position: 2, station_number: 4, player_a_id: 7, player_b_id: 8, score_a: 4, score_b: 2, winner_id: 7, referee_id: 3, target_points: 4, status: "finished", is_bye: false, created_at: now },
+    { id: 9, tournament_id: 1, round_number: 2, stage: "Fase de Grupos - Grupo B", group_id: "B", bracket_position: 3, station_number: 2, player_a_id: 2, player_b_id: 7, score_a: 1, score_b: 3, winner_id: null, referee_id: 3, target_points: 4, status: "in_progress", is_bye: false, created_at: now },
+    { id: 10, tournament_id: 1, round_number: 2, stage: "Fase de Grupos - Grupo B", group_id: "B", bracket_position: 4, station_number: 4, player_a_id: 4, player_b_id: 8, score_a: 0, score_b: 0, winner_id: null, referee_id: 3, target_points: 4, status: "calling", is_bye: false, created_at: now },
+    { id: 11, tournament_id: 1, round_number: 3, stage: "Fase de Grupos - Grupo B", group_id: "B", bracket_position: 5, station_number: 2, player_a_id: 2, player_b_id: 8, score_a: 0, score_b: 0, winner_id: null, referee_id: null, target_points: 4, status: "pending", is_bye: false, created_at: now },
+    { id: 12, tournament_id: 1, round_number: 3, stage: "Fase de Grupos - Grupo B", group_id: "B", bracket_position: 6, station_number: 4, player_a_id: 4, player_b_id: 7, score_a: 0, score_b: 0, winner_id: null, referee_id: null, target_points: 4, status: "pending", is_bye: false, created_at: now }
   ];
 
   // Match Games
@@ -1087,6 +1119,7 @@ function debitWallet(userId: number, amount: number, tx_type: string, reason: st
 function recalcTournamentStats(tournamentId: number) {
   const allT = participants.filter((p) => p.tournament_id === tournamentId);
   const tMatches = matches.filter((match) => match.tournament_id === tournamentId && match.status === "finished");
+  const tour = tournaments.find((t) => t.id === tournamentId);
 
   for (const p of allT) {
     p.matches_played = 0;
@@ -1097,11 +1130,19 @@ function recalcTournamentStats(tournamentId: number) {
     p.points_conceded = 0;
     p.swiss_points = 0;
     p.buchholz = 0;
+    p.group_points = 0;
+    p.group_matches_won = 0;
+    p.group_matches_drawn = 0;
+    p.group_matches_lost = 0;
+    p.group_points_scored = 0;
+    p.group_points_conceded = 0;
+    p.group_diff = 0;
   }
 
   for (const m of tMatches) {
     const pa = allT.find((p) => p.user_id === m.player_a_id);
     const pb = allT.find((p) => p.user_id === m.player_b_id);
+    const isGroupMatch = Boolean(m.group_id);
 
     if (pa) {
       pa.matches_played += 1;
@@ -1110,11 +1151,27 @@ function recalcTournamentStats(tournamentId: number) {
       if (m.winner_id === pa.user_id) {
         pa.matches_won += 1;
         pa.swiss_points += 3;
+        if (isGroupMatch) {
+          pa.group_matches_won = (pa.group_matches_won || 0) + 1;
+          pa.group_points = (pa.group_points || 0) + 3;
+        }
       } else if (m.winner_id === null) {
         pa.matches_drawn += 1;
         pa.swiss_points += 1;
+        if (isGroupMatch) {
+          pa.group_matches_drawn = (pa.group_matches_drawn || 0) + 1;
+          pa.group_points = (pa.group_points || 0) + 1;
+        }
       } else {
         pa.matches_lost += 1;
+        if (isGroupMatch) {
+          pa.group_matches_lost = (pa.group_matches_lost || 0) + 1;
+        }
+      }
+      if (isGroupMatch) {
+        pa.group_points_scored = (pa.group_points_scored || 0) + m.score_a;
+        pa.group_points_conceded = (pa.group_points_conceded || 0) + m.score_b;
+        pa.group_diff = (pa.group_points_scored || 0) - (pa.group_points_conceded || 0);
       }
     }
 
@@ -1125,16 +1182,32 @@ function recalcTournamentStats(tournamentId: number) {
       if (m.winner_id === pb.user_id) {
         pb.matches_won += 1;
         pb.swiss_points += 3;
+        if (isGroupMatch) {
+          pb.group_matches_won = (pb.group_matches_won || 0) + 1;
+          pb.group_points = (pb.group_points || 0) + 3;
+        }
       } else if (m.winner_id === null) {
         pb.matches_drawn += 1;
         pb.swiss_points += 1;
+        if (isGroupMatch) {
+          pb.group_matches_drawn = (pb.group_matches_drawn || 0) + 1;
+          pb.group_points = (pb.group_points || 0) + 1;
+        }
       } else {
         pb.matches_lost += 1;
+        if (isGroupMatch) {
+          pb.group_matches_lost = (pb.group_matches_lost || 0) + 1;
+        }
+      }
+      if (isGroupMatch) {
+        pb.group_points_scored = (pb.group_points_scored || 0) + m.score_b;
+        pb.group_points_conceded = (pb.group_points_conceded || 0) + m.score_a;
+        pb.group_diff = (pb.group_points_scored || 0) - (pb.group_points_conceded || 0);
       }
     }
   }
 
-  // Calculate Buchholz
+  // Calculate Buchholz for Swiss
   const userMap = new Map(allT.map((p) => [p.user_id, p]));
   for (const p of allT) {
     const oppIds: number[] = [];
@@ -1143,6 +1216,36 @@ function recalcTournamentStats(tournamentId: number) {
       if (match.player_b_id === p.user_id && match.player_a_id) oppIds.push(match.player_a_id);
     }
     p.buchholz = oppIds.reduce((sum, oppId) => sum + (userMap.get(oppId)?.swiss_points || 0), 0);
+  }
+
+  // Group stage standings ranking (Challonge tiebreak rule)
+  if (tour && tour.format === "groups_elim") {
+    const advancers = tour.advancers_per_group || 2;
+    const groupLetters = Array.from(new Set(allT.map((p) => p.group_id).filter(Boolean))) as string[];
+    for (const gId of groupLetters) {
+      const gParts = allT.filter((p) => p.group_id === gId);
+      gParts.sort((a, b) => {
+        // 1. Group points
+        if ((b.group_points || 0) !== (a.group_points || 0)) {
+          return (b.group_points || 0) - (a.group_points || 0);
+        }
+        // 2. Point differential
+        if ((b.group_diff || 0) !== (a.group_diff || 0)) {
+          return (b.group_diff || 0) - (a.group_diff || 0);
+        }
+        // 3. Points scored
+        if ((b.group_points_scored || 0) !== (a.group_points_scored || 0)) {
+          return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+        }
+        // 4. Initial seed
+        return a.seed - b.seed;
+      });
+
+      gParts.forEach((p, idx) => {
+        p.group_rank = idx + 1;
+        p.is_qualified_playoffs = idx < advancers;
+      });
+    }
   }
 }
 
@@ -1167,9 +1270,13 @@ function advanceSingleElimination(m: TournamentMatch) {
   const t = tournaments.find((tour) => tour.id === m.tournament_id);
   if (!t) return;
 
+  const isPlayoffOrElim = t.format === "single_elim" || (t.format === "groups_elim" && t.stage_type === "knockout");
+  if (!isPlayoffOrElim) return;
+
   const nextRound = m.round_number + 1;
   if (nextRound > t.total_rounds) {
     t.status = "completed";
+    t.stage_type = "completed";
     t.winner_user_id = m.winner_id;
     t.runner_up_user_id = m.winner_id === m.player_a_id ? m.player_b_id : m.player_a_id;
     distributePrizes(t);
@@ -1180,13 +1287,22 @@ function advanceSingleElimination(m: TournamentMatch) {
   const nextPos = Math.floor((m.bracket_position + 1) / 2);
   const isSlotA = m.bracket_position % 2 === 1;
 
-  let nextMatch = matches.find((match) => match.tournament_id === t.id && match.round_number === nextRound && match.bracket_position === nextPos);
+  // Determine stage name for the next round based on remaining matches in nextRound
+  const remainingInNext = Math.pow(2, Math.max(0, t.total_rounds - nextRound));
+  let nextStageName = `Ronda ${nextRound}`;
+  if (remainingInNext === 1) nextStageName = "Gran Final";
+  else if (remainingInNext === 2) nextStageName = "Semifinales";
+  else if (remainingInNext === 4) nextStageName = "Cuartos de Final";
+  else if (remainingInNext === 8) nextStageName = "8vos de Final";
+  else if (remainingInNext === 16) nextStageName = "16vos de Final";
+
+  let nextMatch = matches.find((match) => match.tournament_id === t.id && !match.group_id && match.round_number === nextRound && match.bracket_position === nextPos);
   if (!nextMatch) {
     nextMatch = {
       id: matches.length + 1,
       tournament_id: t.id,
       round_number: nextRound,
-      stage: `Round ${nextRound}`,
+      stage: nextStageName,
       bracket_position: nextPos,
       station_number: (nextPos % 4) + 1,
       player_a_id: null,
@@ -1196,6 +1312,7 @@ function advanceSingleElimination(m: TournamentMatch) {
       winner_id: null,
       status: "pending",
       is_bye: false,
+      target_points: t.match_target_points,
       created_at: new Date().toISOString()
     };
     matches.push(nextMatch);
@@ -1788,7 +1905,12 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
     return;
   }
   const cleanTitle = String(data.title).trim().slice(0, 100);
-  const format = data.format === "single_elim" ? "single_elim" : "swiss";
+  let format: "groups_elim" | "single_elim" | "swiss" = "groups_elim";
+  if (data.format === "single_elim" || data.format === "swiss") {
+    format = data.format;
+  }
+  const groupCount = data.group_count ? Math.max(2, Math.min(32, parseInt(data.group_count, 10))) : undefined;
+  const advancersPerGroup = data.advancers_per_group ? Math.max(1, Math.min(4, parseInt(data.advancers_per_group, 10) || 2)) : 2;
   const battleType = data.battle_type === "1on1" ? "1on1" : "3on3_deck";
   const targetPoints = Math.max(1, Math.min(10, parseInt(data.match_target_points, 10) || 4));
   const maxParticipants = Math.max(2, Math.min(256, parseInt(data.max_participants, 10) || 128));
@@ -1804,6 +1926,9 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
     description: data.description ? String(data.description).trim().slice(0, 500) : "",
     organizer_id: req.user!.id,
     format,
+    stage_type: format === "groups_elim" ? "group_stage" : undefined,
+    group_count: groupCount,
+    advancers_per_group: advancersPerGroup,
     battle_type: battleType,
     match_target_points: targetPoints,
     stadium_type: data.stadium_type ? String(data.stadium_type).trim().slice(0, 50) : "Xtreme Stadium (BX-10)",
@@ -2083,11 +2208,98 @@ api.post("/tournaments/:id/checkin", requireAuth, (req: AuthRequest, res) => {
   res.json({ message: "Check-in confirmado", user_id: userId });
 });
 
+function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentParticipant[]) {
+  const N = checkedInParts.length;
+  let groupCount = t.group_count;
+  if (!groupCount || groupCount <= 0) {
+    if (N >= 48) groupCount = 16;
+    else if (N >= 24) groupCount = 8;
+    else if (N >= 12) groupCount = 4;
+    else groupCount = 2;
+  }
+  // Safety cap to avoid empty groups
+  if (groupCount > Math.floor(N / 2)) {
+    groupCount = Math.max(1, Math.floor(N / 2));
+  }
+  t.group_count = groupCount;
+  t.advancers_per_group = t.advancers_per_group || 2;
+  t.stage_type = "group_stage";
+
+  // Challonge Serpentine Seeding distribution (1->A, 2->B, 3->B, 4->A...)
+  const sorted = [...checkedInParts].sort((a, b) => (a.seed || 999) - (b.seed || 999));
+  const groups: TournamentParticipant[][] = Array.from({ length: groupCount }, () => []);
+  let groupIdx = 0;
+  let dir = 1;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const p = sorted[i];
+    const letter = String.fromCharCode(65 + groupIdx);
+    p.group_id = letter;
+    p.group_seed = groups[groupIdx].length + 1;
+    groups[groupIdx].push(p);
+
+    if (dir === 1) {
+      if (groupIdx === groupCount - 1) {
+        dir = -1;
+      } else {
+        groupIdx++;
+      }
+    } else {
+      if (groupIdx === 0) {
+        dir = 1;
+      } else {
+        groupIdx--;
+      }
+    }
+  }
+
+  // Generate round robin matches for each group
+  let stationCounter = 1;
+  for (let g = 0; g < groupCount; g++) {
+    const gList = groups[g];
+    const letter = String.fromCharCode(65 + g);
+    let matchInGroup = 1;
+    for (let i = 0; i < gList.length; i++) {
+      for (let j = i + 1; j < gList.length; j++) {
+        const p1 = gList[i];
+        const p2 = gList[j];
+        matches.push({
+          id: matches.length + 1,
+          tournament_id: t.id,
+          round_number: matchInGroup,
+          stage: `Fase de Grupos - Grupo ${letter}`,
+          group_id: letter,
+          bracket_position: matchInGroup,
+          station_number: stationCounter,
+          player_a_id: p1.user_id,
+          player_b_id: p2.user_id,
+          score_a: 0,
+          score_b: 0,
+          winner_id: null,
+          status: "pending",
+          is_bye: false,
+          target_points: t.match_target_points,
+          created_at: new Date().toISOString()
+        });
+        stationCounter = (stationCounter % 4) + 1;
+        matchInGroup++;
+      }
+    }
+  }
+
+  recalcTournamentStats(t.id);
+}
+
 api.get("/tournaments/:id/participants", (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const list = participants
-    .filter((p) => p.tournament_id === id)
-    .sort((a, b) => b.swiss_points - a.swiss_points || b.buchholz - a.buchholz);
+  const t = tournaments.find((tour) => tour.id === id);
+  let list = participants.filter((p) => p.tournament_id === id);
+
+  if (t?.format === "groups_elim") {
+    list.sort((a, b) => (a.group_id || "").localeCompare(b.group_id || "") || (a.group_rank || 99) - (b.group_rank || 99) || a.seed - b.seed);
+  } else {
+    list.sort((a, b) => b.swiss_points - a.swiss_points || b.buchholz - a.buchholz || a.seed - b.seed);
+  }
 
   res.json(
     list.map((p) => ({
@@ -2146,7 +2358,9 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
   t.status = "in_progress";
   t.current_round = 1;
 
-  if (t.format === "swiss") {
+  if (t.format === "groups_elim") {
+    startGroupsElimTournament(t, parts);
+  } else if (t.format === "swiss") {
     // Generate Round 1 pairings
     for (let i = 0; i < parts.length; i += 2) {
       const p1 = parts[i];
@@ -2167,6 +2381,7 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
         winner_id: isBye ? p1.user_id : null,
         status: isBye ? "finished" : "pending",
         is_bye: isBye,
+        target_points: t.match_target_points,
         created_at: new Date().toISOString()
       });
       if (isBye) {
@@ -2203,13 +2418,150 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
         winner_id,
         status: isBye ? "finished" : "pending",
         is_bye: isBye,
+        target_points: t.match_target_points,
         created_at: new Date().toISOString()
       });
     }
   }
 
-  broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, status: t.status, current_round: t.current_round });
+  broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, status: t.status, current_round: t.current_round, stage_type: t.stage_type });
   res.json({ message: "Torneo iniciado exitosamente", current_round: t.current_round });
+});
+
+api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  if (t.format !== "groups_elim") {
+    res.status(400).json({ detail: "Solo aplicable a torneos con formato Fase de Grupos + Eliminación" });
+    return;
+  }
+
+  recalcTournamentStats(t.id);
+  const tParts = participants.filter((p) => p.tournament_id === id);
+  const groupLetters = Array.from(new Set(tParts.map((p) => p.group_id).filter(Boolean))).sort() as string[];
+  const advancersCount = t.advancers_per_group || 2;
+
+  const qualifiedByGroup: Record<string, TournamentParticipant[]> = {};
+  for (const g of groupLetters) {
+    const gParts = tParts.filter((p) => p.group_id === g).sort((a, b) => (a.group_rank || 99) - (b.group_rank || 99));
+    qualifiedByGroup[g] = gParts.slice(0, advancersCount);
+  }
+
+  interface PlayoffPairing {
+    playerA: TournamentParticipant;
+    playerB: TournamentParticipant;
+    labelA: string;
+    labelB: string;
+  }
+  const pairings: PlayoffPairing[] = [];
+
+  if (groupLetters.length === 2) {
+    // 2 groups (A, B) -> Semifinales (4 qualifiers)
+    // Semi 1: 1º A vs 2º B
+    // Semi 2: 1º B vs 2º A
+    const gA = qualifiedByGroup["A"] || [];
+    const gB = qualifiedByGroup["B"] || [];
+    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1º Grupo A", labelB: "2º Grupo B" });
+    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1º Grupo B", labelB: "2º Grupo A" });
+  } else if (groupLetters.length === 4) {
+    // 4 groups (A, B, C, D) -> Cuartos de Final (8 qualifiers)
+    // Cuartos 1: 1º A vs 2º B
+    // Cuartos 2: 1º C vs 2º D
+    // Cuartos 3: 1º B vs 2º A
+    // Cuartos 4: 1º D vs 2º C
+    const gA = qualifiedByGroup["A"] || [];
+    const gB = qualifiedByGroup["B"] || [];
+    const gC = qualifiedByGroup["C"] || [];
+    const gD = qualifiedByGroup["D"] || [];
+    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1º Grupo A", labelB: "2º Grupo B" });
+    if (gC[0] && gD[1]) pairings.push({ playerA: gC[0], playerB: gD[1], labelA: "1º Grupo C", labelB: "2º Grupo D" });
+    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1º Grupo B", labelB: "2º Grupo A" });
+    if (gD[0] && gC[1]) pairings.push({ playerA: gD[0], playerB: gC[1], labelA: "1º Grupo D", labelB: "2º Grupo C" });
+  } else if (groupLetters.length === 8) {
+    // 8 groups (A to H) -> 8vos de Final (16 qualifiers)
+    const pairs = [
+      ["A", "B"], ["C", "D"], ["E", "F"], ["G", "H"],
+      ["B", "A"], ["D", "C"], ["F", "E"], ["H", "G"]
+    ];
+    for (const [g1, g2] of pairs) {
+      const p1 = (qualifiedByGroup[g1] || [])[0];
+      const p2 = (qualifiedByGroup[g2] || [])[1];
+      if (p1 && p2) {
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
+      }
+    }
+  } else if (groupLetters.length === 16) {
+    // 16 groups -> 16vos de Final (32 qualifiers)
+    const pairs = [
+      ["A", "B"], ["C", "D"], ["E", "F"], ["G", "H"],
+      ["I", "J"], ["K", "L"], ["M", "N"], ["O", "P"],
+      ["B", "A"], ["D", "C"], ["F", "E"], ["H", "G"],
+      ["J", "I"], ["L", "K"], ["N", "M"], ["P", "O"]
+    ];
+    for (const [g1, g2] of pairs) {
+      const p1 = (qualifiedByGroup[g1] || [])[0];
+      const p2 = (qualifiedByGroup[g2] || [])[1];
+      if (p1 && p2) {
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
+      }
+    }
+  } else {
+    for (let i = 0; i < groupLetters.length; i++) {
+      const g1 = groupLetters[i];
+      const g2 = groupLetters[(i + 1) % groupLetters.length];
+      const p1 = (qualifiedByGroup[g1] || [])[0];
+      const p2 = (qualifiedByGroup[g2] || [])[1];
+      if (p1 && p2) {
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
+      }
+    }
+  }
+
+  if (pairings.length === 0) {
+    res.status(400).json({ detail: "No se pudieron clasificar participantes para la fase de eliminación. Verifique que los grupos tengan bladers clasificados." });
+    return;
+  }
+
+  let stageName = "Eliminatoria";
+  if (pairings.length === 16) stageName = "16vos de Final";
+  else if (pairings.length === 8) stageName = "8vos de Final";
+  else if (pairings.length === 4) stageName = "Cuartos de Final";
+  else if (pairings.length === 2) stageName = "Semifinales";
+  else if (pairings.length === 1) stageName = "Gran Final";
+
+  t.stage_type = "knockout";
+  t.knockout_round_name = stageName;
+  const playoffRounds = Math.log2(pairings.length * 2);
+  t.total_rounds = playoffRounds;
+  t.current_round = 1;
+
+  for (let pos = 0; pos < pairings.length; pos++) {
+    const pair = pairings[pos];
+    matches.push({
+      id: matches.length + 1,
+      tournament_id: t.id,
+      round_number: 1,
+      stage: stageName,
+      bracket_position: pos + 1,
+      station_number: (pos % 4) + 1,
+      player_a_id: pair.playerA.user_id,
+      player_b_id: pair.playerB.user_id,
+      score_a: 0,
+      score_b: 0,
+      winner_id: null,
+      status: "pending",
+      is_bye: false,
+      target_points: t.match_target_points,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, stage_type: "knockout", current_round: 1, knockout_round_name: stageName });
+  res.json({ message: `¡Cuadro de eliminación generado exitosamente! Ronda inicial: ${stageName}`, stage: stageName, pairings_count: pairings.length });
 });
 
 api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {

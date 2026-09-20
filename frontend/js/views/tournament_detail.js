@@ -143,8 +143,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <td class="py-3 px-3">
           <div class="flex items-center gap-2">
             <img src="${avatar}" class="w-7 h-7 rounded-full object-cover" alt="${p.user?.display_name || ''}"/>
-            <span class="font-bold text-white">${p.user?.display_name || ''}</span>
-            <span class="text-xs text-slate-400">@${p.user?.username || ''}</span>
+            <div>
+              <span class="font-bold text-white">${p.user?.display_name || ''}</span>
+              <span class="text-xs text-slate-400">@${p.user?.username || ''}</span>
+            </div>
           </div>
         </td>
         <td class="py-3 px-3 text-center font-extrabold text-cyan-400">${p.swiss_points}</td>
@@ -153,6 +155,334 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <td class="py-3 px-3 text-center text-xs font-mono text-slate-300">${p.buchholz.toFixed(1)}</td>
         <td class="py-3 px-3 text-center">${checkinBadge}</td>
       </tr>
+    `;
+  };
+
+  // Render Challonge Group Stage Cards (Group A, B, C, D...)
+  const renderChallongeGroupCards = (parts, tour, isOrganizer) => {
+    const advancers = tour.advancers_per_group || 2;
+    // Collect group IDs
+    let groupMap = {};
+    const hasAssignedGroups = parts.some(p => p.group_id);
+
+    if (hasAssignedGroups) {
+      parts.forEach(p => {
+        const gid = p.group_id || "A";
+        if (!groupMap[gid]) groupMap[gid] = [];
+        groupMap[gid].push(p);
+      });
+    } else {
+      // Preview serpentine groups before tournament starts
+      const count = tour.group_count || (parts.length >= 64 ? 16 : parts.length >= 32 ? 8 : parts.length >= 16 ? 4 : 2);
+      for (let i = 0; i < count; i++) {
+        groupMap[String.fromCharCode(65 + i)] = [];
+      }
+      parts.forEach((p, idx) => {
+        const cycle = Math.floor(idx / count);
+        const rem = idx % count;
+        const gIndex = cycle % 2 === 0 ? rem : count - 1 - rem;
+        const gName = String.fromCharCode(65 + gIndex);
+        if (groupMap[gName]) {
+          groupMap[gName].push({ ...p, group_id: gName, seed: p.seed || idx + 1 });
+        }
+      });
+    }
+
+    const groupKeys = Object.keys(groupMap).sort();
+    if (!groupKeys.length) {
+      return `<div class="p-8 text-center text-slate-500 glass-card rounded-2xl">No hay grupos configurados aún.</div>`;
+    }
+
+    return `
+      <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/20">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-bold text-cyan-300">📊 Fase de Grupos Estilo Challonge</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Siembra en Serpentina</span>
+            </div>
+            <p class="text-xs text-slate-400">
+              Sistema Round Robin por grupo (3 pts victoria, 1 pto empate). Desempates: Puntos &rarr; Diferencia de Puntos &rarr; Puntos a favor &rarr; Seed inicial.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold whitespace-nowrap">
+              Top ${advancers} por grupo clasifican a Eliminatorias
+            </span>
+            <button onclick="openSerpentineModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 transition">
+              ℹ️ Ver Siembra
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          ${groupKeys.map(gid => {
+            const list = groupMap[gid];
+            // Sort group members by group_rank if available, or tiebreakers
+            list.sort((a, b) => {
+              if (a.group_rank && b.group_rank) return a.group_rank - b.group_rank;
+              if ((b.group_points || 0) !== (a.group_points || 0)) return (b.group_points || 0) - (a.group_points || 0);
+              if ((b.group_diff || 0) !== (a.group_diff || 0)) return (b.group_diff || 0) - (a.group_diff || 0);
+              if ((b.group_points_scored || 0) !== (a.group_points_scored || 0)) return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+              return (a.seed || 99) - (b.seed || 99);
+            });
+
+            return `
+              <div class="glass-card rounded-2xl overflow-hidden border border-cyan-500/30 flex flex-col shadow-xl">
+                <!-- Group Header -->
+                <div class="p-4 bg-slate-900/90 border-b border-cyan-500/20 flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 font-black text-base flex items-center justify-center shadow">
+                      ${gid}
+                    </span>
+                    <div>
+                      <h3 class="font-extrabold text-white text-base">Grupo ${gid}</h3>
+                      <span class="text-[11px] text-slate-400">${list.length} Bladers en contienda</span>
+                    </div>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    Top ${advancers} a Playoffs
+                  </span>
+                </div>
+
+                <!-- Group Table -->
+                <div class="overflow-x-auto flex-1">
+                  <table class="w-full text-left text-xs">
+                    <thead class="text-[10px] uppercase text-slate-400 bg-slate-950/60 border-b border-slate-800/80">
+                      <tr>
+                        <th class="py-2.5 px-3 text-center w-8">#</th>
+                        <th class="py-2.5 px-3">Blader</th>
+                        <th class="py-2.5 px-2 text-center font-bold text-cyan-300">PTS</th>
+                        <th class="py-2.5 px-2 text-center">V-E-D</th>
+                        <th class="py-2.5 px-2 text-center">DIF</th>
+                        <th class="py-2.5 px-2 text-center">PF</th>
+                        <th class="py-2.5 px-3 text-center">Clasificación</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60">
+                      ${list.map((p, pIdx) => {
+                        const rank = p.group_rank || (pIdx + 1);
+                        const isQual = rank <= advancers;
+                        const avatar = p.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
+                        const diffVal = p.group_diff || 0;
+                        const diffStr = diffVal > 0 ? `+${diffVal}` : `${diffVal}`;
+                        const diffColor = diffVal > 0 ? 'text-emerald-400' : diffVal < 0 ? 'text-rose-400' : 'text-slate-400';
+
+                        return `
+                          <tr class="${isQual ? 'bg-emerald-950/15 hover:bg-emerald-950/25' : 'hover:bg-slate-800/40'} transition">
+                            <td class="py-2.5 px-3 text-center font-extrabold ${isQual ? 'text-emerald-400' : 'text-slate-400'}">
+                              ${rank}
+                            </td>
+                            <td class="py-2.5 px-3">
+                              <div class="flex items-center gap-2">
+                                <img src="${avatar}" class="w-6 h-6 rounded-lg object-cover border border-slate-700 flex-shrink-0" alt="${p.user?.display_name || ''}"/>
+                                <div class="min-w-0">
+                                  <div class="font-bold text-white text-xs truncate flex items-center gap-1.5">
+                                    <span>${p.user?.display_name || ''}</span>
+                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300 font-mono font-normal">S#${p.seed || pIdx + 1}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="py-2.5 px-2 text-center font-black text-cyan-300 text-sm">
+                              ${p.group_points || 0}
+                            </td>
+                            <td class="py-2.5 px-2 text-center text-slate-300 font-mono text-[11px]">
+                              ${p.matches_won || 0}-${p.matches_drawn || 0}-${p.matches_lost || 0}
+                            </td>
+                            <td class="py-2.5 px-2 text-center font-mono font-bold text-[11px] ${diffColor}">
+                              ${diffStr}
+                            </td>
+                            <td class="py-2.5 px-2 text-center text-slate-400 font-mono text-[11px]">
+                              ${p.group_points_scored || p.points_scored || 0}
+                            </td>
+                            <td class="py-2.5 px-3 text-center">
+                              ${isQual ? `
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
+                                  ✓ Clasificado
+                                </span>
+                              ` : `
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 bg-slate-900 border border-slate-800">
+                                  Eliminado
+                                </span>
+                              `}
+                            </td>
+                          </tr>
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  };
+
+  // Render Challonge Interactive Knockout Bracket Tree
+  const renderChallongeKnockoutBracket = (matchesList, tour, isOrganizer) => {
+    // Filter matches that are part of the knockout stage
+    const playoffMatches = matchesList.filter(m => !m.group_id || m.stage !== 'group_stage');
+    const isKnockoutActive = tour.stage_type === 'knockout' || playoffMatches.length > 0;
+
+    if (!isKnockoutActive) {
+      // Group stage in progress or not started yet: Show Bracket Preview & Ready trigger
+      const advancersCount = (tour.group_count || 4) * (tour.advancers_per_group || 2);
+      const startingStageName = advancersCount >= 32 ? "16vos de Final (32 Bladers)" :
+                                advancersCount >= 16 ? "8vos de Final (16 Bladers)" :
+                                advancersCount >= 8 ? "Cuartos de Final (8 Bladers)" : "Semifinales (4 Bladers)";
+
+      return `
+        <div class="glass-card rounded-2xl p-6 sm:p-8 border border-cyan-500/30 text-center space-y-6">
+          <div class="max-w-xl mx-auto space-y-3">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-3xl shadow-xl shadow-cyan-500/30">
+              🏆
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-white">Cuadro de Eliminación Directa (Playoffs)</h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Al finalizar los combates de la Fase de Grupos, los <strong class="text-cyan-300 font-bold">${advancersCount} mejores bladers</strong> clasificados avanzarán a las llaves eliminatorias de <strong class="text-amber-300 font-bold">${startingStageName}</strong>.
+            </p>
+          </div>
+
+          <!-- Preview of Challonge Crossover Pairings -->
+          <div class="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-xs">
+            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="font-bold text-cyan-400">Llave Superior (Cruce de Grupos)</div>
+              <div class="text-slate-300">⚔️ 1º Lugar Grupo A vs 2º Lugar Grupo B</div>
+              <div class="text-slate-300">⚔️ 1º Lugar Grupo C vs 2º Lugar Grupo D</div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="font-bold text-cyan-400">Llave Inferior (Cruce de Grupos)</div>
+              <div class="text-slate-300">⚔️ 1º Lugar Grupo B vs 2º Lugar Grupo A</div>
+              <div class="text-slate-300">⚔️ 1º Lugar Grupo D vs 2º Lugar Grupo C</div>
+            </div>
+          </div>
+
+          ${isOrganizer ? `
+            <div class="pt-2">
+              <button onclick="handleGeneratePlayoffs(${tour.id})" class="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 transition active:scale-95 flex items-center gap-2 mx-auto">
+                <span>⚡</span> Finalizar Grupos & Generar Fase de Eliminación
+              </button>
+            </div>
+          ` : `
+            <div class="text-xs text-slate-500 italic">
+              El organizador del torneo activará las llaves en cuanto concluyan las partidas de grupos.
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // Group playoff matches by round or stage
+    const stageOrder = ["16vos de Final", "8vos de Final", "Cuartos de Final", "Semifinales", "Gran Final"];
+    let roundsMap = {};
+
+    playoffMatches.forEach(m => {
+      let rName = m.stage_name || m.stage;
+      if (!rName || rName === "knockout") {
+        rName = `Ronda Playoff ${m.round_number}`;
+      }
+      if (!roundsMap[rName]) roundsMap[rName] = [];
+      roundsMap[rName].push(m);
+    });
+
+    const orderedRoundNames = Object.keys(roundsMap).sort((a, b) => {
+      const idxA = stageOrder.indexOf(a);
+      const idxB = stageOrder.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+
+    return `
+      <div class="space-y-4">
+        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🏆</span>
+            <span class="font-black text-amber-400 uppercase tracking-wide">Fase de Eliminación Directa en Curso</span>
+          </div>
+          <span class="text-slate-300 font-semibold">${playoffMatches.length} combates eliminatorios</span>
+        </div>
+
+        <!-- Horizontal Scrollable Bracket View -->
+        <div class="overflow-x-auto pb-4">
+          <div class="flex items-start gap-6 min-w-[700px] py-2">
+            ${orderedRoundNames.map(rName => {
+              const rMatches = roundsMap[rName];
+              return `
+                <div class="flex-1 min-w-[280px] max-w-[340px] space-y-4 flex flex-col">
+                  <!-- Round Title -->
+                  <div class="p-2.5 rounded-xl bg-slate-900 border border-cyan-500/30 text-center shadow">
+                    <h3 class="font-extrabold text-xs uppercase tracking-wider text-cyan-300">${rName}</h3>
+                    <span class="text-[10px] text-slate-400 font-mono">${rMatches.length} ${rMatches.length === 1 ? 'Combate' : 'Combates'}</span>
+                  </div>
+
+                  <!-- Matches in this Round -->
+                  <div class="space-y-3 flex-1 flex flex-col justify-around">
+                    ${rMatches.map(m => {
+                      const pAName = m.player_a?.display_name || "TBD (Clasificado)";
+                      const pBName = m.player_b?.display_name || "TBD (Clasificado)";
+                      const pAAvatar = m.player_a?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100";
+                      const pBAvatar = m.player_b?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100";
+                      const isFinished = m.status === "finished";
+                      const winnerA = m.winner_id === m.player_a_id;
+                      const winnerB = m.winner_id === m.player_b_id;
+
+                      return `
+                        <div class="glass-card rounded-2xl p-3 border ${
+                          m.status === 'in_progress' ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/10' :
+                          isFinished ? 'border-slate-800 bg-slate-950/70' : 'border-cyan-500/20'
+                        } space-y-2.5">
+                          <div class="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1.5">
+                            <span class="font-mono font-bold">Mesa #${m.station_number || 1}</span>
+                            ${getMatchStatusBadge(m.status)}
+                          </div>
+
+                          <!-- Player A -->
+                          <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl ${winnerA ? 'bg-amber-500/15 border border-amber-500/40' : 'bg-slate-900/60'}">
+                            <div class="flex items-center gap-2 min-w-0">
+                              <img src="${pAAvatar}" class="w-7 h-7 rounded-lg object-cover border border-slate-700" alt="${pAName}"/>
+                              <div class="truncate text-xs font-bold ${winnerA ? 'text-amber-300' : 'text-white'}">
+                                ${pAName}
+                              </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerA ? 'text-amber-300' : 'text-slate-300'}">
+                              ${m.score_a}
+                            </span>
+                          </div>
+
+                          <!-- Player B -->
+                          <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl ${winnerB ? 'bg-amber-500/15 border border-amber-500/40' : 'bg-slate-900/60'}">
+                            <div class="flex items-center gap-2 min-w-0">
+                              <img src="${pBAvatar}" class="w-7 h-7 rounded-lg object-cover border border-slate-700" alt="${pBName}"/>
+                              <div class="truncate text-xs font-bold ${winnerB ? 'text-amber-300' : 'text-white'}">
+                                ${pBName}
+                              </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerB ? 'text-amber-300' : 'text-slate-300'}">
+                              ${m.score_b}
+                            </span>
+                          </div>
+
+                          <!-- Actions Bar -->
+                          <div class="flex items-center justify-between pt-1 text-[11px]">
+                            <button onclick="location.hash='#/referee/${m.id}'" class="w-full py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 font-bold border border-cyan-500/30 flex items-center justify-center gap-1 transition active:scale-95">
+                              <span>⚡</span> Marcador Pad
+                            </button>
+                          </div>
+                        </div>
+                      `;
+                    }).join("")}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      </div>
     `;
   };
 
@@ -218,10 +548,38 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     `;
   };
 
+  let currentGroupFilter = "";
+
   const renderUI = () => {
     const isOrganizer = user && (user.role === "organizer" || user.role === "admin" || user.id === tournament.organizer_id);
     const isParticipant = user && participants.some(p => p.user_id === user.id);
     const userParticipation = user && participants.find(p => p.user_id === user.id);
+    const isGroupsFormat = tournament.format === "groups_elim";
+    const isKnockout = tournament.stage_type === "knockout";
+
+    // Format labels
+    const formatTitle = isGroupsFormat ? "Fase de Grupos + Playoffs (Challonge)" :
+                        tournament.format === "swiss" ? "Sistema Suizo WBO" : "Eliminación Directa";
+
+    // Stage status badge
+    let statusText = tournament.status.toUpperCase();
+    if (tournament.status === "in_progress") {
+      if (isGroupsFormat) {
+        statusText = isKnockout ? `• EN VIVO — ${tournament.knockout_round_name || 'Playoffs Eliminatorios'}` :
+                                  `• EN VIVO — Fase de Grupos (${tournament.group_count || 4} Grupos)`;
+      } else {
+        statusText = `• EN VIVO — Ronda ${tournament.current_round} de ${tournament.total_rounds}`;
+      }
+    }
+
+    // Extract unique groups from participants or matches
+    const allGroupIds = Array.from(new Set(participants.map(p => p.group_id).filter(Boolean))).sort();
+
+    // Filter matches for the matches tab
+    const groupStageMatches = matches.filter(m => m.group_id || m.stage === "group_stage");
+    const displayedMatches = currentGroupFilter
+      ? groupStageMatches.filter(m => m.group_id === currentGroupFilter)
+      : (isGroupsFormat ? groupStageMatches : matches);
 
     container.innerHTML = `
       <div class="space-y-6">
@@ -234,10 +592,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                   tournament.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                   tournament.status === 'registration_open' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-300'
                 }">
-                  ${tournament.status === 'in_progress' ? `• EN VIVO — Ronda ${tournament.current_round} de ${tournament.total_rounds}` : tournament.status.toUpperCase()}
+                  ${statusText}
                 </span>
-                <span class="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-cyan-300">${tournament.format === 'swiss' ? 'Sistema Suizo WBO' : 'Eliminación Directa'}</span>
-                <span class="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-amber-300">${tournament.battle_type === '3on3_deck' ? '3on3 Deck' : '1on1'} (Meta: ${tournament.match_target_points} pts)</span>
+                <span class="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-cyan-300 border border-cyan-500/30">${formatTitle}</span>
+                <span class="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-amber-300 border border-amber-500/30">${tournament.battle_type === '3on3_deck' ? '3on3 Deck' : '1on1'} (Meta: ${tournament.match_target_points} pts)</span>
               </div>
               <h1 class="text-2xl md:text-3xl font-extrabold text-white">${tournament.title}</h1>
               <p class="text-slate-300 text-sm max-w-2xl">${tournament.description || ""}</p>
@@ -279,12 +637,22 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               <div class="flex flex-wrap gap-2">
                 ${tournament.status === 'registration_open' ? `
                   <button onclick="openAddParticipantModal(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition">
-                    <span>+</span> Registrar Participante & Deck
+                    <span>+</span> Inscribir Blader & Deck
                   </button>
-                  <button onclick="handleStartTournament(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow active:scale-95 transition">
-                    ▶ Iniciar Torneo & Generar Ronda 1
+                  <button onclick="handleStartTournament(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow active:scale-95 transition flex items-center gap-1.5">
+                    <span>▶</span> ${isGroupsFormat ? 'Iniciar Torneo & Generar Grupos (Challonge)' : 'Iniciar Torneo & Generar Ronda 1'}
                   </button>
                 ` : ''}
+
+                ${tournament.status === 'in_progress' && isGroupsFormat && !isKnockout ? `
+                  <button onclick="handleGeneratePlayoffs(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow active:scale-95 transition flex items-center gap-1.5">
+                    <span>🏆</span> Finalizar Grupos & Generar Fase Eliminatoria (Playoffs)
+                  </button>
+                  <button onclick="openSerpentineModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                    ℹ️ Siembra Serpentina
+                  </button>
+                ` : ''}
+
                 ${tournament.status === 'in_progress' && tournament.format === 'swiss' ? `
                   <button onclick="handleNextRound(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow active:scale-95 transition">
                     + Generar Siguiente Ronda
@@ -297,25 +665,72 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
         <!-- Detail Sub-Navigation Tabs -->
         <div class="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs sm:text-sm">
-          <button onclick="switchTTab('matches')" id="ttab-btn-matches" class="ttab-btn px-4 py-2 rounded-xl font-bold whitespace-nowrap bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition">
-            Partidas en Vivo (${matches.length})
-          </button>
-          <button onclick="switchTTab('standings')" id="ttab-btn-standings" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
-            Tabla de Posiciones (${participants.length})
-          </button>
+          ${isGroupsFormat ? `
+            <button onclick="switchTTab('groups')" id="ttab-btn-groups" class="ttab-btn px-4 py-2 rounded-xl font-bold whitespace-nowrap bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition">
+              📊 Fase de Grupos (${allGroupIds.length || tournament.group_count || 4})
+            </button>
+            <button onclick="switchTTab('matches')" id="ttab-btn-matches" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
+              ⚔️ Partidas de Grupos (${groupStageMatches.length})
+            </button>
+            <button onclick="switchTTab('bracket')" id="ttab-btn-bracket" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
+              🏆 Cuadro de Eliminación (Playoffs)
+            </button>
+          ` : `
+            <button onclick="switchTTab('matches')" id="ttab-btn-matches" class="ttab-btn px-4 py-2 rounded-xl font-bold whitespace-nowrap bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition">
+              Partidas en Vivo (${matches.length})
+            </button>
+            <button onclick="switchTTab('standings')" id="ttab-btn-standings" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
+              Tabla de Posiciones (${participants.length})
+            </button>
+          `}
           <button onclick="switchTTab('decks')" id="ttab-btn-decks" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
             🛡️ Bladers & Decks (${participants.length})
           </button>
         </div>
 
+        <!-- Groups Tab View (for groups_elim) -->
+        ${isGroupsFormat ? `
+          <div id="ttab-groups" class="space-y-4">
+            ${renderChallongeGroupCards(participants, tournament, isOrganizer)}
+          </div>
+        ` : ''}
+
         <!-- Matches Tab View -->
-        <div id="ttab-matches" class="space-y-4">
+        <div id="ttab-matches" class="${isGroupsFormat ? 'hidden' : ''} space-y-4">
+          ${isGroupsFormat && allGroupIds.length > 0 ? `
+            <!-- Group Filter Bar -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <span class="text-slate-400 font-bold mr-1">Filtrar:</span>
+              <button onclick="filterGroupMatches('')" class="px-3 py-1.5 rounded-lg font-bold ${!currentGroupFilter ? 'bg-cyan-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'} transition">
+                Todos los Grupos (${groupStageMatches.length})
+              </button>
+              ${allGroupIds.map(gid => {
+                const count = groupStageMatches.filter(m => m.group_id === gid).length;
+                const isActive = currentGroupFilter === gid;
+                return `
+                  <button onclick="filterGroupMatches('${gid}')" class="px-3 py-1.5 rounded-lg font-bold ${isActive ? 'bg-cyan-600 text-white shadow' : 'bg-slate-800 text-slate-400 hover:text-white'} transition">
+                    Grupo ${gid} (${count})
+                  </button>
+                `;
+              }).join("")}
+            </div>
+          ` : ''}
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            ${matches.map(m => renderMatchCard(m, isOrganizer)).join("")}
+            ${displayedMatches.length ? displayedMatches.map(m => renderMatchCard(m, isOrganizer)).join("") : `
+              <div class="col-span-full text-center py-12 glass-card rounded-2xl text-slate-500">
+                No hay combates programados en esta sección.
+              </div>
+            `}
           </div>
         </div>
 
-        <!-- Standings Tab View -->
+        <!-- Bracket Tab View -->
+        <div id="ttab-bracket" class="hidden space-y-4">
+          ${renderChallongeKnockoutBracket(matches, tournament, isOrganizer)}
+        </div>
+
+        <!-- Swiss Standings Tab View (for swiss format) -->
         <div id="ttab-standings" class="hidden glass-card rounded-2xl p-4 overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="text-xs uppercase text-slate-400 border-b border-slate-800">
@@ -345,16 +760,22 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     `;
   };
 
-  window.switchTTab = (tab) => {
-    document.getElementById("ttab-matches").classList.toggle("hidden", tab !== "matches");
-    document.getElementById("ttab-standings").classList.toggle("hidden", tab !== "standings");
-    document.getElementById("ttab-decks").classList.toggle("hidden", tab !== "decks");
+  window.filterGroupMatches = (gid) => {
+    currentGroupFilter = gid;
+    renderUI();
+    // Keep matches tab active
+    window.switchTTab("matches");
+  };
 
-    const tabs = ["matches", "standings", "decks"];
-    tabs.forEach(t => {
+  window.switchTTab = (tab) => {
+    const allTabIds = ["groups", "matches", "bracket", "standings", "decks"];
+    allTabIds.forEach(t => {
+      const el = document.getElementById(`ttab-${t}`);
+      if (el) el.classList.toggle("hidden", t !== tab);
+
       const btn = document.getElementById(`ttab-btn-${t}`);
       if (btn) {
-        btn.className = tab === t
+        btn.className = t === tab
           ? "ttab-btn px-4 py-2 rounded-xl font-bold whitespace-nowrap bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition"
           : "ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition";
       }
@@ -386,15 +807,95 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   };
 
   window.handleStartTournament = async (tId) => {
-    const ok = await window.showAppConfirm("Iniciar Torneo", "¿Deseas iniciar el torneo y generar los emparejamientos de la Ronda 1?");
+    const isGroups = tournament && tournament.format === "groups_elim";
+    const title = isGroups ? "Iniciar Fase de Grupos" : "Iniciar Torneo";
+    const msg = isGroups
+      ? "¿Deseas iniciar el torneo y segmentar a los participantes en grupos mediante Siembra en Serpentina (Challonge)?"
+      : "¿Deseas iniciar el torneo y generar los emparejamientos de la Ronda 1?";
+    const ok = await window.showAppConfirm(title, msg);
     if (!ok) return;
     try {
       await window.api.startTournament(tId);
-      window.showToast("¡Torneo iniciado! Ronda 1 generada.", "success");
+      window.showToast("¡Torneo iniciado! Grupos y partidas generadas.", "success");
       refreshData();
     } catch(err) {
       window.showToast(err.message || "Error al iniciar torneo", "error");
     }
+  };
+
+  window.handleGeneratePlayoffs = async (tId) => {
+    const ok = await window.showAppConfirm(
+      "Generar Cuadro de Eliminación (Playoffs)",
+      "¿Deseas finalizar la fase de grupos y generar las llaves eliminatorias? Los mejores clasificados de cada grupo avanzarán según el cruce de Challonge (16vos, 8vos, Cuartos o Semifinales)."
+    );
+    if (!ok) return;
+    try {
+      const res = await window.api.generatePlayoffs(tId);
+      window.showToast(res.message || "¡Fase eliminatoria generada con éxito!", "success");
+      refreshData();
+      setTimeout(() => {
+        window.switchTTab("bracket");
+      }, 300);
+    } catch(err) {
+      window.showToast(err.message || "Error al generar playoffs", "error");
+    }
+  };
+
+  window.openSerpentineModal = () => {
+    const existing = document.getElementById("serpentine-modal");
+    if (existing) existing.remove();
+
+    const gCount = tournament.group_count || 4;
+    const modal = document.createElement("div");
+    modal.id = "serpentine-modal";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto";
+    modal.innerHTML = `
+      <div class="glass-card max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl my-auto">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🐍</span>
+            <h3 class="font-extrabold text-white text-base">Algoritmo de Siembra en Serpentina (Challonge)</h3>
+          </div>
+          <button onclick="document.getElementById('serpentine-modal').remove()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+        </div>
+
+        <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+          <p>
+            Al igual que en <strong class="text-cyan-300">challonge.com</strong>, los participantes se ordenan por su <strong>Seed inicial o Ranking</strong> y se siembran en zigzag a lo largo de los grupos para garantizar que ningún grupo quede desbalanceado con todos los jugadores fuertes.
+          </p>
+
+          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] space-y-1">
+            <div class="text-cyan-400 font-bold">Patrón de Distribución (Serpentine Seeding):</div>
+            <div>• Vuelta 1 (Izq a Der): Semilla 1 &rarr; Grupo A, Semilla 2 &rarr; Grupo B, Semilla 3 &rarr; Grupo C...</div>
+            <div>• Vuelta 2 (Der a Izq): Semilla N &rarr; Grupo C, Semilla N+1 &rarr; Grupo B, Semilla N+2 &rarr; Grupo A...</div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-3">
+            <h4 class="font-bold text-white text-xs mb-2">Bladers Sembrados en este Torneo:</h4>
+            <div class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+              ${participants.map((p, idx) => `
+                <div class="p-2 rounded-lg bg-slate-900/70 border border-slate-800 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 text-center font-bold text-cyan-400">#${p.seed || idx + 1}</span>
+                    <span class="font-semibold text-white">${p.user?.display_name || ''}</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">
+                    ${p.group_id ? `Grupo ${p.group_id}` : 'Pendiente'}
+                  </span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="document.getElementById('serpentine-modal').remove()" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow">
+            Entendido
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
   };
 
   window.handleNextRound = async (tId) => {

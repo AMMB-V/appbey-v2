@@ -212,6 +212,10 @@ class ApiClient {
     return this.request(`/tournaments/${id}/next-round`, { method: "POST" });
   }
 
+  generatePlayoffs(id) {
+    return this.request(`/tournaments/${id}/generate-playoffs`, { method: "POST" });
+  }
+
   getParticipants(tId) {
     return this.request(`/tournaments/${tId}/participants`);
   }

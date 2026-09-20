@@ -64,7 +64,7 @@ window.renderTournamentsView = async (container) => {
             <div class="grid grid-cols-2 gap-2 text-xs py-2 border-y border-slate-800">
               <div>
                 <span class="text-slate-500 block">Formato:</span>
-                <span class="font-semibold text-slate-200">${t.format === 'swiss' ? 'Sistema Suizo' : 'Eliminación Directa'}</span>
+                <span class="font-semibold text-slate-200">${t.format === 'groups_elim' ? 'Grupos + Playoff (Challonge)' : t.format === 'swiss' ? 'Sistema Suizo' : 'Eliminación Directa'}</span>
               </div>
               <div>
                 <span class="text-slate-500 block">Regla:</span>
@@ -134,10 +134,11 @@ window.openCreateTournamentModal = () => {
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 mb-1 font-semibold">Formato</label>
-            <select name="format" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
-              <option value="swiss">Sistema Suizo (WBO Oficial)</option>
+            <label class="block text-slate-300 mb-1 font-semibold">Formato de Competición</label>
+            <select name="format" id="create-t-format" onchange="toggleGroupOptions(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
+              <option value="groups_elim" selected>Fase de Grupos + Eliminatoria (Tipo Challonge)</option>
               <option value="single_elim">Eliminación Directa (Playoffs)</option>
+              <option value="swiss">Sistema Suizo (WBO Oficial)</option>
             </select>
           </div>
           <div>
@@ -147,6 +148,37 @@ window.openCreateTournamentModal = () => {
               <option value="1on1">1on1 Individual Battle</option>
             </select>
           </div>
+        </div>
+
+        <!-- Group Stage Config (Challonge style) -->
+        <div id="group-config-panel" class="p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 space-y-3">
+          <div class="flex items-center justify-between text-xs font-bold text-cyan-300">
+            <span>⚙️ Segmentación de Grupos (Challonge Serpentine)</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Siembra en Zigzag</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-slate-300 mb-1 text-[11px] font-semibold">Cantidad de Grupos</label>
+              <select name="group_count" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white focus:border-cyan-500 outline-none text-xs">
+                <option value="" selected>Auto (según bladers inscritos)</option>
+                <option value="2">2 Grupos (A, B)</option>
+                <option value="4">4 Grupos (A, B, C, D)</option>
+                <option value="8">8 Grupos (A a H)</option>
+                <option value="16">16 Grupos (A a P)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1 text-[11px] font-semibold">Clasifican a Playoffs</label>
+              <select name="advancers_per_group" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white focus:border-cyan-500 outline-none text-xs">
+                <option value="2" selected>Top 2 por grupo (1º y 2º lugar)</option>
+                <option value="1">Top 1 por grupo (Solo líderes)</option>
+                <option value="4">Top 4 por grupo</option>
+              </select>
+            </div>
+          </div>
+          <p class="text-[11px] text-cyan-200/70 leading-relaxed">
+            * Los bladers se distribuyen automáticamente según su Seed o ranking en orden de serpentina (1º al Grupo A, 2º al Grupo B, 3º al Grupo B, 4º al Grupo A...) igual que en challonge.com.
+          </p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -195,14 +227,27 @@ window.openCreateTournamentModal = () => {
   document.body.appendChild(modal);
 };
 
+window.toggleGroupOptions = (format) => {
+  const panel = document.getElementById("group-config-panel");
+  if (panel) {
+    panel.style.display = format === "groups_elim" ? "block" : "none";
+  }
+};
+
 window.submitNewTournament = async (e) => {
   e.preventDefault();
   const form = e.target;
   const targetPts = parseInt(form.match_target_points?.value || "4", 10);
+  const format = form.format.value;
+  const groupCount = form.group_count?.value ? parseInt(form.group_count.value, 10) : undefined;
+  const advancers = form.advancers_per_group?.value ? parseInt(form.advancers_per_group.value, 10) : 2;
+
   const data = {
     title: form.title.value,
     description: form.description.value,
-    format: form.format.value,
+    format,
+    group_count: groupCount,
+    advancers_per_group: advancers,
     battle_type: form.battle_type.value,
     match_target_points: targetPts,
     max_participants: 128,
@@ -210,7 +255,7 @@ window.submitNewTournament = async (e) => {
     entry_fee_ap: 0,
     venue_name: form.venue_name.value,
     country: form.country.value.toUpperCase(),
-    total_rounds: form.format.value === "swiss" ? 4 : 3
+    total_rounds: format === "swiss" ? 4 : 3
   };
 
   try {
