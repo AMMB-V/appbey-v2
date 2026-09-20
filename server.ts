@@ -3490,6 +3490,15 @@ app.get("/manifest.json", (req, res) => {
   }
 });
 
+app.get("/favicon.ico", (req, res) => {
+  const faviconFile = path.join(frontendPath, "assets", "icons", "favicon.png");
+  if (fs.existsSync(faviconFile)) {
+    res.type("image/png").sendFile(faviconFile);
+  } else {
+    res.status(204).end();
+  }
+});
+
 app.get("/sw.js", (req, res) => {
   const swFile = path.join(frontendPath, "sw.js");
   if (fs.existsSync(swFile)) {
