@@ -132,7 +132,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
               <div class="grid grid-cols-3 gap-2 items-center text-center">
                 <!-- Blue Blader -->
                 <div class="space-y-2">
-                  <img src="${m.player_a ? m.player_a.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120'}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto border-4 border-blue-500 shadow-xl object-cover"/>
+                  ${window.renderAvatar(m.player_a, "w-20 h-20 sm:w-24 sm:h-24 mx-auto", "text-3xl", "border-4 border-blue-500 shadow-xl")}
                   <div class="font-black text-lg sm:text-xl text-white truncate">${m.player_a ? m.player_a.display_name : 'TBD'}</div>
                   <div class="text-xs text-blue-400 font-bold truncate">${m.player_a ? m.player_a.favorite_combo || '' : ''}</div>
                 </div>
@@ -149,7 +149,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
 
                 <!-- Red Blader -->
                 <div class="space-y-2">
-                  <img src="${m.player_b ? m.player_b.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120'}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto border-4 border-rose-500 shadow-xl object-cover"/>
+                  ${window.renderAvatar(m.player_b, "w-20 h-20 sm:w-24 sm:h-24 mx-auto", "text-3xl", "border-4 border-rose-500 shadow-xl")}
                   <div class="font-black text-lg sm:text-xl text-white truncate">${m.player_b ? m.player_b.display_name : 'TBD'}</div>
                   <div class="text-xs text-rose-400 font-bold truncate">${m.player_b ? m.player_b.favorite_combo || '' : ''}</div>
                 </div>

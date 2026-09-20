@@ -43,6 +43,42 @@
     }, duration);
   };
 
+  // Clean, modern initials avatar component (No stock or AI generated images)
+  window.renderAvatar = (user, sizeClass = "w-8 h-8", textClass = "text-xs", borderClass = "border border-slate-700") => {
+    const name = (user?.display_name || user?.username || "Blader").trim();
+    const initial = (name.charAt(0) || "B").toUpperCase();
+    const colors = [
+      "bg-cyan-600 text-white",
+      "bg-blue-600 text-white",
+      "bg-indigo-600 text-white",
+      "bg-emerald-600 text-white",
+      "bg-amber-600 text-white",
+      "bg-rose-600 text-white",
+      "bg-violet-600 text-white",
+      "bg-teal-600 text-white"
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const color = colors[Math.abs(hash) % colors.length];
+
+    const customUrl = (user?.avatar_url || "").trim();
+    const isCleanCustomUrl = customUrl && !customUrl.includes("unsplash.com") && !customUrl.includes("placeholder");
+
+    if (isCleanCustomUrl) {
+      return `
+        <div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center">
+          <img src="${customUrl}" class="w-full h-full object-cover" onerror="this.parentElement.outerHTML='<div class=\\'${sizeClass} rounded-full ${color} ${borderClass} flex-shrink-0 flex items-center justify-center font-black ${textClass} select-none\\'>${initial}</div>'" alt="${name}"/>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="${sizeClass} rounded-full ${color} ${borderClass} flex-shrink-0 flex items-center justify-center font-black ${textClass} select-none shadow-sm">
+        ${initial}
+      </div>
+    `;
+  };
+
   // Safe global override of window.alert to completely prevent browser native alert dialogs
   window.alert = function(msg) {
     const text = (msg === null || msg === undefined) ? "" : String(msg);
@@ -193,7 +229,7 @@
           </div>
 
           <div onclick="location.hash='#/profile'" class="cursor-pointer flex items-center gap-2">
-            <img src="${user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-8 h-8 rounded-full border-2 border-cyan-400 object-cover"/>
+            ${window.renderAvatar(user, "w-8 h-8", "text-xs", "border-2 border-cyan-400")}
             <span class="text-xs font-bold text-white hidden sm:inline">${user.display_name}</span>
           </div>
 

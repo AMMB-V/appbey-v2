@@ -466,33 +466,6 @@ function seedDatabase() {
   const hash = (pw: string) => bcrypt.hashSync(pw, 10);
   const now = new Date().toISOString();
 
-  const avatarPool = [
-    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150",
-    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
-    "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150",
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150"
-  ];
-
-  const combos = [
-    "Phoenix Wing 9-60 GF",
-    "Wizard Rod 5-70 DB",
-    "Dran Buster 1-60 F",
-    "Shark Edge 3-60 LF",
-    "Hells Chain 5-60 HT",
-    "Tyranno Beat 4-70 Q",
-    "Cobalt Dragoon 1-60 E",
-    "Unicorn Sting 5-60 GP",
-    "Hells Hammer 3-70 H",
-    "Knight Shield 3-80 N"
-  ];
-
   // Base Staff Users
   const staffUsers: User[] = [
     {
@@ -503,9 +476,9 @@ function seedDatabase() {
       display_name: "Jan Kraft (Admin)",
       role: "admin",
       country: "PA",
-      avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-      bio: "Organizador Oficial de Torneos Beyblade X en Panama.",
-      favorite_combo: "Phoenix Wing 9-60 GF",
+      avatar_url: "",
+      bio: "Organizador Oficial de Torneos Beyblade X en Panamá.",
+      favorite_combo: "",
       elo_rating: 1850,
       is_active: true,
       is_verified: true,
@@ -516,12 +489,12 @@ function seedDatabase() {
       username: "blader_master",
       email: "organizer@appbey.app",
       password_hash: hash("123456"),
-      display_name: "Carlos 'Xtreme' Vega",
+      display_name: "Carlos Vega",
       role: "organizer",
       country: "PA",
-      avatar_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-      bio: "Juez oficial y organizador de la liga competitiva de Beyblade Xtreme Panama.",
-      favorite_combo: "Wizard Rod 5-70 DB",
+      avatar_url: "",
+      bio: "Organizador de torneos Beyblade X Panamá.",
+      favorite_combo: "",
       elo_rating: 1720,
       is_active: true,
       is_verified: true,
@@ -532,12 +505,12 @@ function seedDatabase() {
       username: "referee_alex",
       email: "referee@appbey.app",
       password_hash: hash("123456"),
-      display_name: "Arbitro Alex",
+      display_name: "Árbitro Alex",
       role: "referee",
       country: "PA",
-      avatar_url: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150&auto=format&fit=crop&q=80",
-      bio: "Arbitro certificado WBO y Takara Tomy para combates 3on3 Xtreme Stadium.",
-      favorite_combo: "Dran Buster 1-60 F",
+      avatar_url: "",
+      bio: "Árbitro oficial de torneos.",
+      favorite_combo: "",
       elo_rating: 1450,
       is_active: true,
       is_verified: true,
@@ -557,9 +530,9 @@ function seedDatabase() {
       display_name: b.blader,
       role: "blader",
       country: "PA",
-      avatar_url: avatarPool[idx % avatarPool.length],
-      bio: `Blader oficial de la Asociación Panameña de Beyblade (Rank #${b.rank}).`,
-      favorite_combo: combos[idx % combos.length],
+      avatar_url: "",
+      bio: "",
+      favorite_combo: "",
       elo_rating: baseElo,
       is_active: true,
       is_verified: true,
@@ -750,14 +723,14 @@ function seedDatabase() {
   // Participants (8 players distributed into 2 groups using Challonge Serpentine Seeding)
   // Serpentine: Seed 1 -> A, Seed 2 -> B, Seed 3 -> B, Seed 4 -> A, Seed 5 -> A, Seed 6 -> B, Seed 7 -> B, Seed 8 -> A
   participants = [
-    { id: 1, tournament_id: 1, user_id: 1, seed: 1, group_id: "A", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Phoenix Wing 9-60 GF", "Wizard Rod 5-70 DB", "Dran Buster 1-60 F"] },
-    { id: 2, tournament_id: 1, user_id: 2, seed: 2, group_id: "B", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Wizard Rod 5-70 DB", "Whale Wave 7-60 R", "Silver Wolf 3-60 B"] },
-    { id: 3, tournament_id: 1, user_id: 4, seed: 3, group_id: "B", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Cobalt Dragoon 1-60 E", "Impact Drake 7-60 LF", "Samurai Saber 2-70 L"] },
-    { id: 4, tournament_id: 1, user_id: 5, seed: 4, group_id: "A", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Tyranno Beat 4-60 GP", "Shark Edge 3-60 LF", "Dran Dagger 4-60 R"] },
-    { id: 5, tournament_id: 1, user_id: 6, seed: 5, group_id: "A", group_seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Hells Chain 5-60 O", "Phoenix Rudder 9-70 G", "Weiss Tiger 3-60 U"] },
-    { id: 6, tournament_id: 1, user_id: 7, seed: 6, group_id: "B", group_seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Leon Crest 7-60 HN", "Knight Mail 3-85 BS", "Black Shell 4-70 D"] },
-    { id: 7, tournament_id: 1, user_id: 8, seed: 7, group_id: "B", group_seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Dran Buster 4-50 LF", "Cobalt Drake 4-60 F", "Unicorn Sting 5-60 P"] },
-    { id: 8, tournament_id: 1, user_id: 9, seed: 8, group_id: "A", group_seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: ["Aero Pegasus 3-70 A", "Hells Hammer 3-70 H", "Viper Tail 5-80 O"] }
+    { id: 1, tournament_id: 1, user_id: 1, seed: 1, group_id: "A", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 2, tournament_id: 1, user_id: 2, seed: 2, group_id: "B", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 3, tournament_id: 1, user_id: 4, seed: 3, group_id: "B", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 4, tournament_id: 1, user_id: 5, seed: 4, group_id: "A", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 5, tournament_id: 1, user_id: 6, seed: 5, group_id: "A", group_seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 6, tournament_id: 1, user_id: 7, seed: 6, group_id: "B", group_seed: 3, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 7, tournament_id: 1, user_id: 8, seed: 7, group_id: "B", group_seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 8, tournament_id: 1, user_id: 9, seed: 8, group_id: "A", group_seed: 4, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] }
   ];
 
   // Matches for Grupo A and Grupo B (Round Robin)
@@ -829,8 +802,8 @@ function seedDatabase() {
       year: 2025,
       title: "Campeón Temporada 1 - Ranking General APB",
       user_id: users.find(u => u.display_name === "Yorch")?.id || 4,
-      tournament_name: "Gran Circuito Nacional Beyblade X Panama (646 Pts)",
-      signature_deck: "Phoenix Wing 9-60 GF / Wizard Rod 5-70 DB / Dran Buster 1-60 F",
+      tournament_name: "Gran Circuito Nacional Beyblade X Panamá (646 Pts)",
+      signature_deck: "",
       trophy_icon: "trophy-gold",
       notes: "Máximo anotador de la Temporada 1 con 96 victorias y 519 puntos a favor.",
       created_at: now
@@ -841,7 +814,7 @@ function seedDatabase() {
       title: "Subcampeón Nacional Temporada 1 APB",
       user_id: users.find(u => u.display_name === "Woonka")?.id || 5,
       tournament_name: "Circuito Oficial APB (483 Pts)",
-      signature_deck: "Shark Edge 3-60 LF / Cobalt Dragoon 1-60 E / Tyranno Beat 4-70 Q",
+      signature_deck: "",
       trophy_icon: "trophy-silver",
       notes: "94 victorias en 150 partidas oficiales con un 63% de efectividad.",
       created_at: now
@@ -852,7 +825,7 @@ function seedDatabase() {
       title: "3er Lugar Nacional Temporada 1 APB",
       user_id: users.find(u => u.display_name === "Kanghy")?.id || 6,
       tournament_name: "Circuito Oficial APB (480 Pts)",
-      signature_deck: "Hells Chain 5-60 HT / Unicorn Sting 5-60 GP / Wizard Rod 5-70 DB",
+      signature_deck: "",
       trophy_icon: "trophy-bronze",
       notes: "Líder en partidas jugadas (157 combates) y 505 puntos anotados.",
       created_at: now
@@ -863,9 +836,9 @@ function seedDatabase() {
       title: "Top 4 Master Blader Temporada 1 APB",
       user_id: users.find(u => u.display_name === "Raines")?.id || 7,
       tournament_name: "Circuito Oficial APB (465 Pts)",
-      signature_deck: "Dran Buster 1-60 F / Phoenix Wing 9-60 GF / Knight Shield 3-80 N",
+      signature_deck: "",
       trophy_icon: "medal",
-      notes: "73 victorias en 117 combates oficiales con 62% de Win Rate.",
+      notes: "73 victorias en 117 combates oficiales con 62% de efectividad.",
       created_at: now
     },
     {
@@ -874,7 +847,7 @@ function seedDatabase() {
       title: "Top 5 Master Blader Temporada 1 APB",
       user_id: users.find(u => u.display_name === "Zirox")?.id || 8,
       tournament_name: "Circuito Oficial APB (438 Pts)",
-      signature_deck: "Tyranno Beat 4-70 Q / Shark Edge 3-60 LF / Hells Chain 5-60 HT",
+      signature_deck: "",
       trophy_icon: "medal",
       notes: "78 victorias en 138 combates oficiales y 440 puntos a favor.",
       created_at: now
@@ -886,20 +859,16 @@ function seedDatabase() {
     {
       id: 1,
       user_id: 1,
-      content: "Bienvenidos a la plataforma oficial de la **Asociación Panameña de Beyblade (AppBey)**. Sistema de rankings oficiales, registro de torneos, control de arbitraje táctil y constructor de Decks listo.",
+      content: "Bienvenidos a la plataforma oficial de la Asociación Panameña de Beyblade (AppBey). Sistema de rankings oficiales, registro de torneos y control de arbitraje.",
       deck_id: null,
       image_url: null,
-      likes_count: 3,
+      likes_count: 0,
       comments_count: 0,
       created_at: now
     }
   ];
 
-  postLikes = [
-    { id: 1, post_id: 1, user_id: 2, created_at: now },
-    { id: 2, post_id: 1, user_id: 3, created_at: now },
-    { id: 3, post_id: 1, user_id: 4, created_at: now }
-  ];
+  postLikes = [];
 
   postComments = [];
 
@@ -1406,15 +1375,9 @@ api.post("/auth/register", (req, res) => {
     return;
   }
 
-  const defaultAvatars = [
-    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150",
-    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150",
-    "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150"
-  ];
-  const chosenAvatar = avatar_url && String(avatar_url).startsWith("http")
+  const chosenAvatar = avatar_url && (String(avatar_url).startsWith("http") || String(avatar_url).startsWith("data:image/"))
     ? String(avatar_url).trim()
-    : defaultAvatars[users.length % defaultAvatars.length];
+    : "";
 
   const newUser: User = {
     id: users.length + 1,
@@ -1584,13 +1547,9 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
   const validRoles = ["blader", "referee", "organizer", "admin"];
   const chosenRole = validRoles.includes(role) ? role : "blader";
 
-  const defaultAvatars = [
-    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150",
-    "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150",
-    "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150"
-  ];
-  const chosenAvatar = avatar_url || defaultAvatars[users.length % defaultAvatars.length];
+  const chosenAvatar = avatar_url && (String(avatar_url).startsWith("http") || String(avatar_url).startsWith("data:image/"))
+    ? String(avatar_url).trim()
+    : "";
 
   const newUser: User = {
     id: users.length + 1,

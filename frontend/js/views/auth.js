@@ -44,12 +44,14 @@ window.showAuthModal = (initialMode = "login") => {
         <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 space-y-2.5">
           <label class="block text-slate-300 font-bold flex items-center justify-between">
             <span>Foto de Perfil del Blader</span>
-            <span class="text-[10px] text-cyan-400 font-normal">Subir archivo o elegir avatar</span>
+            <span class="text-[10px] text-cyan-400 font-normal">Subir archivo o usar iniciales</span>
           </label>
 
           <div class="flex items-center gap-3">
             <div class="relative shrink-0">
-              <img id="register-avatar-preview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="w-14 h-14 rounded-full border-2 border-cyan-400 object-cover shadow-lg" alt="Avatar"/>
+              <div id="register-avatar-preview-box">
+                ${window.renderAvatar({ display_name: "Nuevo Blader" }, "w-14 h-14", "text-xl", "border-2 border-cyan-400 shadow-lg")}
+              </div>
               <label for="register-avatar-file" class="absolute -bottom-1 -right-1 p-1 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               </label>
@@ -57,27 +59,8 @@ window.showAuthModal = (initialMode = "login") => {
             </div>
 
             <div class="flex-1 space-y-1.5">
-              <input type="text" id="register-avatar-url" name="avatar_url" placeholder="O pega URL de imagen (https://...)" oninput="window.updateRegisterAvatarPreview(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white outline-none focus:border-cyan-400 text-[11px]"/>
-              
-              <!-- Quick Preset Badges -->
-              <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
-                <span class="text-[10px] text-slate-500 shrink-0">Presets:</span>
-                <button type="button" onclick="window.selectRegisterPreset('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
-                  <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="w-full h-full object-cover"/>
-                </button>
-                <button type="button" onclick="window.selectRegisterPreset('https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
-                  <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150" class="w-full h-full object-cover"/>
-                </button>
-                <button type="button" onclick="window.selectRegisterPreset('https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
-                  <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150" class="w-full h-full object-cover"/>
-                </button>
-                <button type="button" onclick="window.selectRegisterPreset('https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
-                  <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150" class="w-full h-full object-cover"/>
-                </button>
-                <button type="button" onclick="window.selectRegisterPreset('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150')" class="w-6 h-6 rounded-full border border-slate-700 overflow-hidden hover:border-cyan-400 shrink-0">
-                  <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150" class="w-full h-full object-cover"/>
-                </button>
-              </div>
+              <input type="text" id="register-avatar-url" name="avatar_url" placeholder="URL directa de imagen (opcional)" oninput="window.updateRegisterAvatarPreview(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white outline-none focus:border-cyan-400 text-[11px]"/>
+              <div class="text-[10px] text-slate-500">Si lo dejas vacío, se generará tu avatar con tus iniciales oficiales.</div>
             </div>
           </div>
         </div>
@@ -175,16 +158,10 @@ window.submitLogin = async (e) => {
 };
 
 window.updateRegisterAvatarPreview = (url) => {
-  const preview = document.getElementById("register-avatar-preview");
-  if (preview && url) {
-    preview.src = url;
-  }
-};
-
-window.selectRegisterPreset = (url) => {
-  const input = document.getElementById("register-avatar-url");
-  if (input) input.value = url;
-  window.updateRegisterAvatarPreview(url);
+  const box = document.getElementById("register-avatar-preview-box");
+  if (!box) return;
+  const nameInput = document.querySelector('#register-form input[name=display_name]')?.value || "Nuevo Blader";
+  box.innerHTML = window.renderAvatar({ display_name: nameInput, avatar_url: url }, "w-14 h-14", "text-xl", "border-2 border-cyan-400 shadow-lg");
 };
 
 window.handleRegisterAvatarUpload = (event) => {
@@ -200,7 +177,9 @@ window.handleRegisterAvatarUpload = (event) => {
   reader.onload = (e) => {
     const dataUrl = e.target?.result;
     if (dataUrl) {
-      window.selectRegisterPreset(dataUrl);
+      const input = document.getElementById("register-avatar-url");
+      if (input) input.value = dataUrl;
+      window.updateRegisterAvatarPreview(dataUrl);
     }
   };
   reader.readAsDataURL(file);
@@ -210,7 +189,7 @@ window.submitRegister = async (e) => {
   e.preventDefault();
   const form = e.target;
   try {
-    const avatarVal = form.avatar_url?.value?.trim() || document.getElementById("register-avatar-preview")?.src || null;
+    const avatarVal = form.avatar_url?.value?.trim() || "";
     const res = await window.api.register({
       username: form.username.value,
       display_name: form.display_name.value,

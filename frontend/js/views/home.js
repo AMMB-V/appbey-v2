@@ -223,10 +223,10 @@ window.renderHomeView = async (container) => {
       <div class="py-2.5 flex items-center justify-between first:pt-0 last:pb-0">
         <div class="flex items-center gap-3">
           <span class="w-6 text-center font-bold ${idx === 0 ? 'text-amber-400 text-base' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-amber-600' : 'text-slate-500 text-xs'}">#${b.rank}</span>
-          <img src="${b.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-8 h-8 rounded-full border border-slate-700 object-cover"/>
+          ${window.renderAvatar(b, "w-8 h-8", "text-xs", "border border-slate-700")}
           <div>
             <div class="font-bold text-sm text-white">${b.display_name}</div>
-            <div class="text-xs text-slate-400">${b.favorite_combo || 'Phoenix Wing'}</div>
+            ${b.favorite_combo ? `<div class="text-xs text-slate-400">${b.favorite_combo}</div>` : ''}
           </div>
         </div>
         <div class="text-right">

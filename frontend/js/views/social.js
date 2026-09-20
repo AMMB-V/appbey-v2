@@ -19,7 +19,7 @@ window.renderSocialView = async (container) => {
           ${window.api.user ? `
             <div class="glass-card rounded-2xl p-5 border border-cyan-500/30 space-y-3">
               <div class="flex items-center gap-3">
-                <img src="${window.api.user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-9 h-9 rounded-full object-cover"/>
+                ${window.renderAvatar(window.api.user, "w-9 h-9", "text-xs", "border border-slate-700")}
                 <span class="font-bold text-sm text-white">${window.api.user.display_name}</span>
               </div>
               <textarea id="new-post-content" rows="3" placeholder="¿Qué combos estás probando hoy para el próximo torneo?" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-400"></textarea>
@@ -37,7 +37,7 @@ window.renderSocialView = async (container) => {
               <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <img src="${p.user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}" class="w-10 h-10 rounded-full object-cover border border-slate-700"/>
+                    ${window.renderAvatar(p.user, "w-10 h-10", "text-sm", "border border-slate-700")}
                     <div>
                       <div class="font-bold text-white text-sm">${p.user.display_name}</div>
                       <div class="text-xs text-slate-400 font-mono">@${p.user.username} • ${new Date(p.created_at).toLocaleDateString()}</div>

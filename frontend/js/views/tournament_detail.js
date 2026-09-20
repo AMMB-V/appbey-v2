@@ -48,8 +48,6 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
   const renderMatchCard = (m, isOrganizer) => {
     const borderClass = m.status === 'in_progress' ? 'border-cyan-500 glow-cyan' : m.status === 'calling' ? 'border-amber-500 animate-pulse' : 'border-slate-800';
-    const playerAAvatar = m.player_a ? m.player_a.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
-    const playerBAvatar = m.player_b ? m.player_b.avatar_url : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
     const playerAName = m.player_a ? m.player_a.display_name : 'TBD';
     const playerBName = m.player_b ? m.player_b.display_name : (m.is_bye ? 'BYE (Pase Libre)' : 'TBD');
     const scoreAClass = m.score_a > m.score_b ? 'text-cyan-400' : 'text-slate-300';
@@ -92,7 +90,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2.5 flex-1 min-w-0">
-            <img src="${playerAAvatar}" class="w-10 h-10 rounded-xl border-2 border-blue-500 object-cover flex-shrink-0" alt="${playerAName}"/>
+            ${window.renderAvatar(m.player_a, "w-10 h-10", "text-sm", "border-2 border-blue-500")}
             <div class="min-w-0 truncate">
               <div class="font-bold text-sm text-white truncate ${m.winner_id === m.player_a_id ? 'text-amber-400' : ''}">
                 ${playerAName}
@@ -114,7 +112,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               </div>
               ${playerBDeck}
             </div>
-            <img src="${playerBAvatar}" class="w-10 h-10 rounded-xl border-2 border-rose-500 object-cover flex-shrink-0" alt="${playerBName}"/>
+            ${window.renderAvatar(m.player_b, "w-10 h-10", "text-sm", "border-2 border-rose-500")}
           </div>
         </div>
 
@@ -131,7 +129,6 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   };
 
   const renderStandingsRow = (p, idx) => {
-    const avatar = p.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
     const rankClass = idx === 0 ? 'text-amber-400 font-extrabold' : 'text-slate-300';
     const checkinBadge = p.checked_in
       ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">Check-in OK</span>'
@@ -142,7 +139,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <td class="py-3 px-3 font-bold ${rankClass}">${idx + 1}</td>
         <td class="py-3 px-3">
           <div class="flex items-center gap-2">
-            <img src="${avatar}" class="w-7 h-7 rounded-full object-cover" alt="${p.user?.display_name || ''}"/>
+            ${window.renderAvatar(p.user, "w-7 h-7", "text-xs", "border border-slate-700")}
             <div>
               <span class="font-bold text-white">${p.user?.display_name || ''}</span>
               <span class="text-xs text-slate-400">@${p.user?.username || ''}</span>
@@ -263,7 +260,6 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                       ${list.map((p, pIdx) => {
                         const rank = p.group_rank || (pIdx + 1);
                         const isQual = rank <= advancers;
-                        const avatar = p.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
                         const diffVal = p.group_diff || 0;
                         const diffStr = diffVal > 0 ? `+${diffVal}` : `${diffVal}`;
                         const diffColor = diffVal > 0 ? 'text-emerald-400' : diffVal < 0 ? 'text-rose-400' : 'text-slate-400';
@@ -275,7 +271,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                             </td>
                             <td class="py-2.5 px-3">
                               <div class="flex items-center gap-2">
-                                <img src="${avatar}" class="w-6 h-6 rounded-lg object-cover border border-slate-700 flex-shrink-0" alt="${p.user?.display_name || ''}"/>
+                                ${window.renderAvatar(p.user, "w-6 h-6", "text-[10px]", "border border-slate-700")}
                                 <div class="min-w-0">
                                   <div class="font-bold text-white text-xs truncate flex items-center gap-1.5">
                                     <span>${p.user?.display_name || ''}</span>
@@ -425,8 +421,6 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                     ${rMatches.map(m => {
                       const pAName = m.player_a?.display_name || "TBD (Clasificado)";
                       const pBName = m.player_b?.display_name || "TBD (Clasificado)";
-                      const pAAvatar = m.player_a?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100";
-                      const pBAvatar = m.player_b?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100";
                       const isFinished = m.status === "finished";
                       const winnerA = m.winner_id === m.player_a_id;
                       const winnerB = m.winner_id === m.player_b_id;
@@ -444,7 +438,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                           <!-- Player A -->
                           <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl ${winnerA ? 'bg-amber-500/15 border border-amber-500/40' : 'bg-slate-900/60'}">
                             <div class="flex items-center gap-2 min-w-0">
-                              <img src="${pAAvatar}" class="w-7 h-7 rounded-lg object-cover border border-slate-700" alt="${pAName}"/>
+                              ${window.renderAvatar(m.player_a, "w-7 h-7", "text-xs", "border border-slate-700")}
                               <div class="truncate text-xs font-bold ${winnerA ? 'text-amber-300' : 'text-white'}">
                                 ${pAName}
                               </div>
@@ -457,7 +451,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                           <!-- Player B -->
                           <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl ${winnerB ? 'bg-amber-500/15 border border-amber-500/40' : 'bg-slate-900/60'}">
                             <div class="flex items-center gap-2 min-w-0">
-                              <img src="${pBAvatar}" class="w-7 h-7 rounded-lg object-cover border border-slate-700" alt="${pBName}"/>
+                              ${window.renderAvatar(m.player_b, "w-7 h-7", "text-xs", "border border-slate-700")}
                               <div class="truncate text-xs font-bold ${winnerB ? 'text-amber-300' : 'text-white'}">
                                 ${pBName}
                               </div>
@@ -489,7 +483,6 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   const renderBladerDeckCard = (p, isOrganizer, u, tour) => {
     const deck = Array.isArray(p.deck) ? p.deck : [];
     const canEditDeck = isOrganizer || (u && u.id === p.user_id);
-    const avatar = p.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
     const checkinBadge = p.checked_in
       ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">Check-in</span>'
       : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">Pendiente</span>';
@@ -507,7 +500,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       <div class="glass-card rounded-2xl p-4 border border-slate-800 hover:border-cyan-500/40 transition space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <img src="${avatar}" class="w-10 h-10 rounded-xl object-cover border border-slate-700" alt="${p.user?.display_name || ''}"/>
+            ${window.renderAvatar(p.user, "w-10 h-10", "text-sm", "border border-slate-700")}
             <div>
               <div class="font-bold text-white text-sm">${p.user?.display_name || ''}</div>
               <div class="text-xs text-slate-400">@${p.user?.username || ''} • ${p.user?.country || 'PA'}</div>

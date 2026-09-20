@@ -1,4 +1,4 @@
-﻿// Hall of Fame View
+// Hall of Fame View
 window.renderHallOfFameView = async (container) => {
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando Salón de la Fama...</div>`;
 
@@ -32,7 +32,7 @@ window.renderHallOfFameView = async (container) => {
               </div>
 
               <div class="flex items-center gap-4">
-                <img src="${h.blader_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120'}" class="w-16 h-16 rounded-full border-2 border-amber-400 object-cover shadow-lg"/>
+                ${window.renderAvatar({ display_name: h.blader_name, username: h.blader_username, avatar_url: h.blader_avatar }, "w-16 h-16", "text-2xl", "border-2 border-amber-400 shadow-lg")}
                 <div>
                   <h3 class="text-lg font-black text-white">${h.blader_name}</h3>
                   <div class="text-xs text-amber-400 font-mono font-semibold">@${h.blader_username} • ${h.country}</div>
@@ -40,10 +40,12 @@ window.renderHallOfFameView = async (container) => {
                 </div>
               </div>
 
-              <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Deck Insignia Campeón:</span>
-                <p class="text-xs text-cyan-300 font-bold font-mono">${h.signature_deck}</p>
-              </div>
+              ${h.signature_deck ? `
+                <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                  <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Deck Insignia Campeón:</span>
+                  <p class="text-xs text-cyan-300 font-bold font-mono">${h.signature_deck}</p>
+                </div>
+              ` : ''}
 
               <p class="text-xs text-slate-400 leading-relaxed">${h.notes || ""}</p>
             </div>

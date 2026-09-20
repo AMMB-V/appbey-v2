@@ -65,7 +65,6 @@ window.renderRankingsView = async (container) => {
     const renderRankingRow = (item, idx, isPoints) => {
       const bladerName = item.display_name || item.user?.display_name || `Blader #${item.rank || idx + 1}`;
       const username = item.username || item.user?.username || `blader_${item.user_id || idx + 1}`;
-      const avatar = item.avatar_url || item.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100';
       const pos = item.rank || idx + 1;
       const diff = (item.points_for || 0) - (item.points_against || 0);
       const winRate = item.win_rate || "0%";
@@ -84,7 +83,7 @@ window.renderRankingsView = async (container) => {
           </td>
           <td class="py-3 px-2 sm:px-3 font-sans">
             <div class="flex items-center gap-2.5">
-              <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border ${borderClass} shrink-0" alt="${bladerName}"/>
+              ${window.renderAvatar(item, "w-8 h-8", "text-xs", "border " + borderClass)}
               <div>
                 <div class="font-bold text-white hover:text-cyan-300 transition text-xs sm:text-sm">${bladerName}</div>
                 <div class="text-[10px] text-slate-400 font-mono">@${username} • PA 🇵🇦</div>
@@ -194,7 +193,7 @@ window.renderRankingsView = async (container) => {
                   <span>🥈</span> 2do Lugar Nacional
                 </div>
                 <div class="relative inline-block mx-auto">
-                  <img src="${top3[1].avatar_url || top3[1].user?.avatar_url || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150'}" class="w-20 h-20 rounded-full border-4 border-slate-400 mx-auto object-cover shadow-lg" alt="2do Lugar"/>
+                  ${window.renderAvatar(top3[1], "w-20 h-20", "text-2xl", "border-4 border-slate-400 mx-auto shadow-lg")}
                   <span class="absolute -bottom-2 right-1/2 translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-200 text-xs font-black shadow">#2</span>
                 </div>
                 <div>
@@ -213,7 +212,7 @@ window.renderRankingsView = async (container) => {
                   <span>👑</span> Campeón de Temporada 1
                 </div>
                 <div class="relative inline-block mx-auto">
-                  <img src="${top3[0].avatar_url || top3[0].user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}" class="w-24 h-24 rounded-full border-4 border-amber-400 mx-auto object-cover shadow-2xl" alt="Campeón"/>
+                  ${window.renderAvatar(top3[0], "w-24 h-24", "text-3xl", "border-4 border-amber-400 mx-auto shadow-2xl")}
                   <span class="absolute -bottom-2.5 right-1/2 translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-500 text-black text-xs font-black shadow-lg">#1</span>
                 </div>
                 <div>
@@ -232,7 +231,7 @@ window.renderRankingsView = async (container) => {
                   <span>🥉</span> 3er Lugar Nacional
                 </div>
                 <div class="relative inline-block mx-auto">
-                  <img src="${top3[2].avatar_url || top3[2].user?.avatar_url || 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=150'}" class="w-20 h-20 rounded-full border-4 border-amber-700 mx-auto object-cover shadow-lg" alt="3er Lugar"/>
+                  ${window.renderAvatar(top3[2], "w-20 h-20", "text-2xl", "border-4 border-amber-700 mx-auto shadow-lg")}
                   <span class="absolute -bottom-2 right-1/2 translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-800 text-amber-200 text-xs font-black shadow">#3</span>
                 </div>
                 <div>
@@ -338,7 +337,6 @@ window.renderRankingsView = async (container) => {
 
       const name = b.display_name || b.user?.display_name || 'Blader';
       const username = b.username || b.user?.username || 'blader';
-      const avatar = b.avatar_url || b.user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
       const played = b.matches_played || ((b.matches_won || 0) + (b.matches_lost || 0));
       const diff = (b.points_for || 0) - (b.points_against || 0);
 
@@ -357,7 +355,7 @@ window.renderRankingsView = async (container) => {
 
           <div class="flex items-center gap-4">
             <div class="relative">
-              <img src="${avatar}" class="w-16 h-16 rounded-full border-2 border-amber-400 object-cover" alt="${name}"/>
+              ${window.renderAvatar(b, "w-16 h-16", "text-2xl", "border-2 border-amber-400 shadow-lg")}
               <span class="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black shadow">#${b.rank || index + 1}</span>
             </div>
             <div>
