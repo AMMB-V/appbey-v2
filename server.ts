@@ -14,8 +14,11 @@ export type { Response, NextFunction };
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const parsedPort = Number.parseInt(process.env.PORT || "3000", 10);
+const PORT = Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort <= 65535 ? parsedPort : 3000;
 const HOST = "0.0.0.0";
+const startedAt = new Date().toISOString();
+let isReady = false;
 // Secure secret resolution: environment variable or dynamically hashed project salt to avoid hardcoded credentials (SonarQube CWE-798)
 const DEFAULT_DEV_SECRET = crypto.createHash("sha256").update("appbey_stable_project_secret_key_salt_v2").digest("hex");
 const JWT_SECRET = process.env.SECRET_KEY || process.env.JWT_SECRET || DEFAULT_DEV_SECRET;
@@ -46,7 +49,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 // ---------------------------------------------------------------------------
 // In-Memory Database & Types
@@ -884,8 +887,16 @@ const globalSockets = new Set<WebSocket>();
 const tournamentSockets = new Map<number, Set<WebSocket>>();
 
 server.on("upgrade", (request, socket, head) => {
-  const url = request.url || "";
-  if (url === "/ws/global" || url.startsWith("/ws/tournaments/")) {
+  const url = request.url || "/";
+  let pathname: string;
+  try {
+    pathname = new URL(url, `http://${request.headers.host || "localhost"}`).pathname;
+  } catch {
+    socket.destroy();
+    return;
+  }
+
+  if (pathname === "/ws/global" || /^\/ws\/tournaments\/\d+$/.test(pathname)) {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request);
     });
@@ -895,13 +906,13 @@ server.on("upgrade", (request, socket, head) => {
 });
 
 wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
-  const url = req.url || "";
+  const url = req.url || "/";
   let currentTournamentId: number | null = null;
 
-  if (url === "/ws/global") {
+  if (url.split("?")[0] === "/ws/global") {
     globalSockets.add(ws);
-  } else if (url.startsWith("/ws/tournaments/")) {
-    const parts = url.split("/");
+  } else if (url.split("?")[0].startsWith("/ws/tournaments/")) {
+    const parts = url.split("?")[0].split("/");
     const id = parseInt(parts[3], 10);
     if (!isNaN(id)) {
       currentTournamentId = id;
@@ -921,6 +932,10 @@ wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
 
   ws.on("message", (msg) => {
     // Keep alive or echo
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
   });
 });
 
@@ -3409,8 +3424,28 @@ api.post("/social/notifications/mark-read", requireAuth, (req: AuthRequest, res)
 });
 
 // Mount API
-api.get("/health", (req, res) => {
-  res.json({ status: "ok", app: "AppBey", version: "2.0.0" });
+const healthPayload = () => ({
+  status: "ok",
+  app: "AppBey",
+  version: "2.0.0",
+  uptime: Math.round(process.uptime()),
+  started_at: startedAt
+});
+
+api.get("/health", (_req, res) => {
+  res.status(200).json(healthPayload());
+});
+
+app.get("/healthz", (_req, res) => {
+  res.status(200).json(healthPayload());
+});
+
+app.get("/readyz", (_req, res) => {
+  if (!isReady) {
+    res.status(503).json({ status: "unavailable", reason: "server_initializing" });
+    return;
+  }
+  res.status(200).json({ ...healthPayload(), ready: true });
 });
 
 app.use("/api/v1", api);
@@ -3424,15 +3459,17 @@ const frontendPath = path.join(process.cwd(), "frontend");
 
 const staticCacheConfig = {
   maxAge: "1d",
+  immutable: false,
   etag: true,
   lastModified: true
 };
 
 app.use("/assets", express.static(path.join(frontendPath, "assets"), staticCacheConfig));
-app.use("/css", express.static(path.join(frontendPath, "css"), staticCacheConfig));
-app.use("/js", express.static(path.join(frontendPath, "js"), staticCacheConfig));
+app.use("/css", express.static(path.join(frontendPath, "css"), { ...staticCacheConfig, maxAge: "7d", immutable: false }));
+app.use("/js", express.static(path.join(frontendPath, "js"), { ...staticCacheConfig, maxAge: "7d", immutable: false }));
 
 app.get("/manifest.json", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache");
   const manifestFile = path.join(frontendPath, "manifest.json");
   if (fs.existsSync(manifestFile)) {
     res.sendFile(manifestFile);
@@ -3451,6 +3488,7 @@ app.get("/favicon.ico", (req, res) => {
 });
 
 app.get("/sw.js", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache");
   const swFile = path.join(frontendPath, "sw.js");
   if (fs.existsSync(swFile)) {
     res.type("application/javascript").sendFile(swFile);
@@ -3460,18 +3498,66 @@ app.get("/sw.js", (req, res) => {
 });
 
 app.use((req, res) => {
+  if (req.path.startsWith("/api/") || req.path === "/api") {
+    res.status(404).json({ detail: "Ruta API no encontrada" });
+    return;
+  }
+  if (req.path.startsWith("/assets/") || req.path.startsWith("/css/") || req.path.startsWith("/js/")) {
+    res.status(404).type("text/plain").send("Asset no encontrado");
+    return;
+  }
   const indexFile = path.join(frontendPath, "index.html");
   if (fs.existsSync(indexFile)) {
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(indexFile);
   } else {
     res.send("AppBey Server Online");
   }
 });
 
-// Start Server
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`AppBey server is running on http://0.0.0.0:${PORT}`);
+// Express reports malformed JSON through the error middleware. Keep API errors
+// JSON-shaped while allowing the SPA fallback to handle browser navigations.
+app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+  if (error instanceof SyntaxError && "body" in error) {
+    res.status(400).json({ detail: "JSON inválido" });
+    return;
+  }
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+  console.error("Unhandled request error:", error);
+  if (req.path.startsWith("/api/") || req.path === "/api") {
+    res.status(500).json({ detail: "Error interno del servidor" });
+    return;
+  }
+  res.status(500).send("Error interno del servidor");
 });
 
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+server.requestTimeout = 30_000;
 
+// Start Server
+server.listen(PORT, HOST, () => {
+  isReady = true;
+  console.log(`AppBey server is running on http://${HOST}:${PORT}`);
+});
+
+function shutdown(signal: string) {
+  console.log(`Received ${signal}; shutting down gracefully`);
+  isReady = false;
+  for (const client of wss.clients) {
+    client.close(1001, "Server shutting down");
+  }
+  server.close((error) => {
+    if (error) {
+      console.error("Error during shutdown:", error);
+      process.exitCode = 1;
+    }
+  });
+}
+
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+process.once("SIGINT", () => shutdown("SIGINT"));
 

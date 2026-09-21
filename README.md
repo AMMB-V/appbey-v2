@@ -125,6 +125,11 @@ npm start
 ```
 La plataforma estará disponible en: `http://localhost:3000`
 
+Health checks disponibles:
+- `GET /healthz` confirma que el proceso responde.
+- `GET /readyz` confirma que el proceso está listo para recibir tráfico (ruta recomendada para Render).
+- `GET /api/health` mantiene compatibilidad con clientes existentes.
+
 ---
 
 ## 👤 Cuentas Principales de Acceso
@@ -149,3 +154,6 @@ El proyecto está configurado con **Continuous Deployment** conectado a la rama 
   - `PORT=3000`
   - `NODE_ENV=production`
   - `JWT_SECRET=(tu_clave_secreta)`
+  - `ALLOWED_ORIGINS=https://appbey-v2.onrender.com`
+
+El shell SPA se sirve con `Cache-Control: no-cache`, mientras que los assets estáticos usan caché con ETag y expiración corta. Esto evita que un despliegue deje el HTML apuntando a recursos antiguos.
