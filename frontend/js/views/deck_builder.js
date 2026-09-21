@@ -150,11 +150,7 @@ window.renderDeckBuilderView = async (container) => {
           <div class="p-4 rounded-xl bg-rose-950/80 border border-rose-500/60 text-rose-300 text-xs font-semibold flex items-center gap-2">
             <span>⚠️</span> <strong>Infracción de Reglas Takara Tomy:</strong> Tu deck contiene piezas repetidas en diferentes slots. En torneos 3on3 oficiales no se permite repetir Blade, Ratchet o Bit.
           </div>
-        ` : `
-          <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-            <span>✅</span> Deck válido según reglas oficiales de Torneo 3on3 (Sin piezas duplicadas).
-          </div>
-        `}
+        ` : ''}
 
         <!-- Deck Overall Stats Overview Card -->
         <div class="glass-card rounded-2xl p-6 border border-cyan-500/30 space-y-4">

@@ -195,6 +195,17 @@ class ApiClient {
     return this.request(`/tournaments/${tId}`, { method: "DELETE" });
   }
 
+  updateTournamentParticipantGroup(tId, userId, groupId, seed) {
+    return this.request(`/tournaments/${tId}/participants/${userId}/group`, {
+      method: "PUT",
+      body: { group_id: groupId, seed }
+    });
+  }
+
+  updateTournament(tId, data) {
+    return this.request(`/tournaments/${tId}`, { method: "PUT", body: data });
+  }
+
   addTournamentParticipant(tId, data, checkedIn = true) {
     let body = {};
     if (typeof data === "object" && data !== null) {
@@ -272,22 +283,6 @@ class ApiClient {
 
   declareWinner(matchId, winnerData) {
     return this.request(`/matches/${matchId}/declare-winner`, { method: "POST", body: winnerData });
-  }
-
-  // Wallet
-  getMyWallet() {
-    if (!this.token) {
-      return Promise.resolve({ balance: 0, transactions: [] });
-    }
-    return this.request("/wallets/me");
-  }
-
-  transferCoins(recipientUsername, amount, reason) {
-    return this.request("/wallets/transfer", { method: "POST", body: { recipient_username: recipientUsername, amount, reason } });
-  }
-
-  claimDailyReward() {
-    return this.request("/wallets/daily-reward", { method: "POST" });
   }
 
   // Rankings & Social

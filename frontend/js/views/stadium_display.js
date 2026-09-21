@@ -7,7 +7,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
         <div class="fixed inset-0 z-50 bg-[#040817] text-white p-8 overflow-y-auto flex flex-col justify-between select-none">
           <div class="flex items-center justify-between border-b border-cyan-500/30 pb-4">
             <div class="flex items-center gap-4">
-              <img src="/assets/images/appbey_logo.png" class="w-12 h-12 rounded-2xl object-cover shadow-lg shadow-cyan-500/40 border border-cyan-400/50" alt="AppBey Logo"/>
+              <img src="/assets/images/appbey_official_logo.png?v=3.1" class="w-12 h-12 rounded-2xl object-cover shadow-lg shadow-cyan-500/40 border border-cyan-400/50" alt="AppBey Logo"/>
               <div>
                 <div class="text-xs uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-2">
                   AppBey Arena Display System
@@ -89,7 +89,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
         <!-- Top Stadium Header -->
         <div class="flex items-center justify-between border-b border-cyan-500/30 pb-4">
           <div class="flex items-center gap-4">
-            <img src="/assets/images/appbey_logo.png" class="w-12 h-12 rounded-2xl object-cover shadow-lg shadow-cyan-500/40 border border-cyan-400/50" alt="AppBey Logo"/>
+            <img src="/assets/images/appbey_official_logo.png?v=3.1" class="w-12 h-12 rounded-2xl object-cover shadow-lg shadow-cyan-500/40 border border-cyan-400/50" alt="AppBey Logo"/>
             <div>
               <div class="text-xs uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>

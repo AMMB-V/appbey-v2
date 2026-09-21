@@ -1,4 +1,4 @@
-const CACHE_NAME = "appbey-v2-cache-v2-1";
+const CACHE_NAME = "appbey-v2-cache-v3-1";
 const ASSETS_TO_CACHE = [
   "/",
   "/manifest.json",

@@ -1028,63 +1028,6 @@ function updateEloRatings(userAId: number, userBId: number, winnerId: number | n
   userB.elo_rating = Math.max(100, userB.elo_rating + deltaB);
 }
 
-function getWallet(userId: number): Wallet {
-  let w = wallets.find((w) => w.user_id === userId);
-  if (!w) {
-    w = {
-      id: wallets.length + 1,
-      user_id: userId,
-      balance: 250,
-      created_at: new Date().toISOString()
-    };
-    wallets.push(w);
-    transactions.push({
-      id: transactions.length + 1,
-      wallet_id: w.id,
-      amount: 250,
-      tx_type: "signup_bonus",
-      reason: "Bono de bienvenida AppBey",
-      created_at: new Date().toISOString()
-    });
-  }
-  return w;
-}
-
-function creditWallet(userId: number, amount: number, tx_type: string, reason: string, ref_id?: string): Transaction {
-  const w = getWallet(userId);
-  w.balance += amount;
-  const tx: Transaction = {
-    id: transactions.length + 1,
-    wallet_id: w.id,
-    amount,
-    tx_type,
-    reason,
-    reference_id: ref_id,
-    created_at: new Date().toISOString()
-  };
-  transactions.push(tx);
-  return tx;
-}
-
-function debitWallet(userId: number, amount: number, tx_type: string, reason: string, ref_id?: string): Transaction {
-  const w = getWallet(userId);
-  if (w.balance < amount) {
-    throw new Error(`Saldo insuficiente de AP Coins (${w.balance} disponibles, se requieren ${amount})`);
-  }
-  w.balance -= amount;
-  const tx: Transaction = {
-    id: transactions.length + 1,
-    wallet_id: w.id,
-    amount: -amount,
-    tx_type,
-    reason,
-    reference_id: ref_id,
-    created_at: new Date().toISOString()
-  };
-  transactions.push(tx);
-  return tx;
-}
-
 function recalcTournamentStats(tournamentId: number) {
   const allT = participants.filter((p) => p.tournament_id === tournamentId);
   const tMatches = matches.filter((match) => match.tournament_id === tournamentId && match.status === "finished");
@@ -1223,16 +1166,7 @@ function updateStatsAfterMatch(m: TournamentMatch) {
 }
 
 function distributePrizes(t: Tournament) {
-  const pool = t.prize_pool_ap;
-  if (pool <= 0) return;
-
-  const p1 = Math.floor(pool * 0.60);
-  const p2 = Math.floor(pool * 0.25);
-  const p3 = Math.floor(pool * 0.15);
-
-  if (t.winner_user_id) creditWallet(t.winner_user_id, p1, "tournament_prize", `1er Lugar: ${t.title}`, String(t.id));
-  if (t.runner_up_user_id) creditWallet(t.runner_up_user_id, p2, "tournament_prize", `2do Lugar: ${t.title}`, String(t.id));
-  if (t.third_place_user_id) creditWallet(t.third_place_user_id, p3, "tournament_prize", `3er Lugar: ${t.title}`, String(t.id));
+  // Coins & wallet system completely removed
 }
 
 function advanceSingleElimination(m: TournamentMatch) {
@@ -2197,6 +2131,67 @@ api.delete("/tournaments/:id/participants/:userId", requireAuth, (req: AuthReque
   res.json({ message: "Participante removido con éxito", user_id: userId });
 });
 
+// Admin / Organizer: Edit participant group assignment and/or seed
+api.put("/tournaments/:id/participants/:userId/group", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const userId = parseInt(req.params.userId, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Solo los organizadores o administradores pueden reasignar grupos" });
+    return;
+  }
+
+  const part = participants.find((p) => p.tournament_id === id && p.user_id === userId);
+  if (!part) {
+    res.status(404).json({ detail: "Participante no encontrado en este torneo" });
+    return;
+  }
+
+  const { group_id, seed } = req.body;
+  if (group_id !== undefined) {
+    part.group_id = String(group_id).toUpperCase().trim();
+  }
+  if (seed !== undefined && !isNaN(parseInt(seed, 10))) {
+    part.seed = parseInt(seed, 10);
+  }
+
+  // Recalculate stats for the tournament groups
+  recalcTournamentStats(id);
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Asignación de grupo actualizada" });
+  res.json({ message: "Grupo y siembra actualizados exitosamente", participant: part });
+});
+
+// Admin / Organizer: Edit tournament settings (title, description, venue, rules)
+api.put("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "No tienes permisos para editar este torneo" });
+    return;
+  }
+
+  const { title, description, venue_name, country, match_target_points, max_participants } = req.body;
+  if (title) t.title = String(title).trim();
+  if (description !== undefined) t.description = String(description).trim();
+  if (venue_name) t.venue_name = String(venue_name).trim();
+  if (country) t.country = String(country).trim();
+  if (match_target_points && !isNaN(parseInt(match_target_points, 10))) t.match_target_points = parseInt(match_target_points, 10);
+  if (max_participants && !isNaN(parseInt(max_participants, 10))) t.max_participants = parseInt(max_participants, 10);
+
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Ajustes de torneo actualizados" });
+  res.json({ message: "Torneo actualizado exitosamente", tournament: t });
+});
+
 // Admin / Organizer: Randomize / Shuffle seeds (Challonge feature)
 api.post("/tournaments/:id/shuffle-seeds", requireAuth, (req: AuthRequest, res) => {
   const id = parseInt(req.params.id, 10);
@@ -2210,7 +2205,7 @@ api.post("/tournaments/:id/shuffle-seeds", requireAuth, (req: AuthRequest, res) 
     res.status(403).json({ detail: "No tienes permisos para reordenar las siembras" });
     return;
   }
-  if (t.status !== "upcoming") {
+  if (t.status !== "upcoming" && t.status !== "registration_open") {
     res.status(400).json({ detail: "Solo se pueden alterar las siembras antes de iniciar el torneo" });
     return;
   }
@@ -2406,6 +2401,13 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
   t.current_round = 1;
 
   if (t.format === "groups_elim") {
+    startGroupsElimTournament(t, parts);
+  } else if (t.format === "round_robin") {
+    t.group_count = 1;
+    parts.forEach((p, idx) => {
+      p.group_id = "A";
+      p.seed = idx + 1;
+    });
     startGroupsElimTournament(t, parts);
   } else if (t.format === "swiss") {
     // Generate Round 1 pairings
@@ -3152,93 +3154,6 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
   res.json(formatMatchDetails(m));
 });
 
-// --- Wallets ---
-api.get("/wallets/me", requireAuth, (req: AuthRequest, res) => {
-  const w = getWallet(req.user!.id);
-  const txs = transactions.filter((t) => t.wallet_id === w.id);
-  res.json({
-    ...w,
-    transactions: txs
-  });
-});
-
-api.post("/wallets/transfer", requireAuth, (req: AuthRequest, res) => {
-  const { recipient_username, amount, reason } = req.body;
-  const numAmount = parseInt(amount, 10);
-  if (!numAmount || isNaN(numAmount) || numAmount < 10) {
-    res.status(400).json({ detail: "El monto mínimo para transferencias es de 10 AP" });
-    return;
-  }
-  if (numAmount > 50000) {
-    res.status(400).json({ detail: "El monto máximo por transferencia es de 50,000 AP" });
-    return;
-  }
-
-  const cleanRecipient = String(recipient_username || "").trim().toLowerCase();
-  const recipient = users.find((u) => u.username.toLowerCase() === cleanRecipient);
-  if (!recipient) {
-    res.status(404).json({ detail: `Usuario destinatario '@${recipient_username}' no encontrado` });
-    return;
-  }
-  if (recipient.id === req.user!.id) {
-    res.status(400).json({ detail: "No puedes realizar transferencias a tu propia cuenta" });
-    return;
-  }
-
-  const senderWallet = getWallet(req.user!.id);
-  if (senderWallet.balance < numAmount) {
-    res.status(400).json({ detail: `Saldo insuficiente. Tienes ${senderWallet.balance} AP disponibles y requieres ${numAmount} AP.` });
-    return;
-  }
-
-  const cleanReason = reason ? String(reason).trim().slice(0, 150) : "Transferencia entre Bladers";
-
-  try {
-    debitWallet(req.user!.id, numAmount, "transfer_out", `Transferencia a @${recipient.username}: ${cleanReason}`);
-    const tx = creditWallet(recipient.id, numAmount, "transfer_in", `Transferencia recibida de @${req.user!.username}: ${cleanReason}`);
-    res.json({
-      message: `¡Transferencia de ${numAmount} AP a @${recipient.username} completada!`,
-      transaction: tx,
-      new_balance: getWallet(req.user!.id).balance
-    });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Error al procesar transferencia";
-    res.status(400).json({ detail: msg });
-  }
-});
-
-api.post("/wallets/daily-reward", requireAuth, (req: AuthRequest, res) => {
-  const userId = req.user!.id;
-  const userWallet = getWallet(userId);
-  const userTxs = transactions.filter((t) => t.wallet_id === userWallet.id && t.tx_type === "daily_bonus");
-
-  // Check 24-hour rate limit on daily bonus
-  if (userTxs.length > 0) {
-    userTxs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    const lastClaim = new Date(userTxs[0].created_at).getTime();
-    const now = Date.now();
-    const cooldownMs = 24 * 60 * 60 * 1000;
-    const elapsed = now - lastClaim;
-
-    if (elapsed < cooldownMs) {
-      const remainingMs = cooldownMs - elapsed;
-      const remHours = Math.floor(remainingMs / (60 * 60 * 1000));
-      const remMins = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
-      res.status(400).json({
-        detail: `Ya has reclamado tu recompensa de entrenamiento hoy. Vuelve en ${remHours} horas y ${remMins} minutos.`
-      });
-      return;
-    }
-  }
-
-  const tx = creditWallet(userId, 50, "daily_bonus", "Recompensa diaria de entrenamiento Blader");
-  res.json({
-    message: "¡Recompensa diaria de +50 AP reclamada exitosamente!",
-    transaction: tx,
-    new_balance: getWallet(userId).balance
-  });
-});
-
 // --- Rankings & Hall of Fame ---
 api.get("/rankings/leaderboard", (req, res) => {
   const country = req.query.country as string;
@@ -3253,7 +3168,7 @@ api.get("/rankings/leaderboard", (req, res) => {
       username: u.username,
       display_name: u.display_name,
       country: u.country,
-      avatar_url: u.avatar_url || "/assets/images/appbey_logo.jpg",
+      avatar_url: u.avatar_url || "/assets/images/appbey_official_logo.png?v=3.1",
       elo_rating: u.elo_rating,
       favorite_combo: u.favorite_combo,
       role: u.role

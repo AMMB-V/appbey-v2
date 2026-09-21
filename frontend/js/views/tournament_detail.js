@@ -1,8 +1,8 @@
 // Tournament Detail View
 if (typeof window.renderAvatar !== "function") {
   window.renderAvatar = (user, sizeClass = "w-8 h-8", textClass = "text-xs", borderClass = "border border-slate-700") => {
-    const src = (user?.avatar_url && !user.avatar_url.includes("placeholder")) ? user.avatar_url : "/assets/images/appbey_logo.png";
-    return `<div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center bg-slate-950 shadow-md"><img src="${src}" class="w-full h-full object-cover" onerror="this.src='/assets/images/appbey_logo.png'" alt="Blader"/></div>`;
+    const src = (user?.avatar_url && !user.avatar_url.includes("placeholder")) ? user.avatar_url : "/assets/images/appbey_official_logo.png?v=3.1";
+    return `<div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center bg-slate-950 shadow-md"><img src="${src}" class="w-full h-full object-cover" onerror="this.src='/assets/images/appbey_official_logo.png?v=3.1'" alt="Blader"/></div>`;
   };
 }
 
@@ -199,6 +199,31 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
     return `
       <div class="space-y-6">
+        <!-- Quick Participant Registration & Group Assignment Bar (Organizer) -->
+        ${isOrganizer && tour.status !== 'completed' ? `
+          <div class="p-4 rounded-2xl glass-card border border-cyan-500/40 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-cyan-950/40 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-cyan-600/30 border border-cyan-500/50 flex items-center justify-center text-cyan-300 font-bold shrink-0">
+                ⚡
+              </div>
+              <div>
+                <div class="text-xs font-black text-white uppercase tracking-wider">Inscripción Rápida en Mesa de Torneo</div>
+                <div class="text-[11px] text-slate-400">Registra bladers al instante y asígnalos directamente a un grupo</div>
+              </div>
+            </div>
+            <form onsubmit="handleQuickAddParticipant(event, ${tour.id})" class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <input type="text" id="quick-add-name-${tour.id}" placeholder="Nombre o Apodo del Blader..." required class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs outline-none focus:border-cyan-400 flex-1 min-w-[170px] shadow-inner"/>
+              <select id="quick-add-group-${tour.id}" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-cyan-300 text-xs font-bold outline-none focus:border-cyan-400">
+                <option value="">Grupo: Automático</option>
+                ${groupKeys.map(k => `<option value="${k}">Grupo ${k}</option>`).join("")}
+              </select>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 active:scale-95 transition whitespace-nowrap">
+                + Añadir
+              </button>
+            </form>
+          </div>
+        ` : ''}
+
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/20">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
@@ -260,7 +285,8 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                         <th class="py-2.5 px-2 text-center">V-E-D</th>
                         <th class="py-2.5 px-2 text-center">DIF</th>
                         <th class="py-2.5 px-2 text-center">PF</th>
-                        <th class="py-2.5 px-3 text-center">Clasificación</th>
+                        <th class="py-2.5 px-3 text-center">Estado</th>
+                        ${isOrganizer ? '<th class="py-2.5 px-2 text-center">Reasignar Grupo</th>' : ''}
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/60">
@@ -310,6 +336,18 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                                 </span>
                               `}
                             </td>
+                            ${isOrganizer ? `
+                              <td class="py-2.5 px-2 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                  <select onchange="handleMoveParticipantGroup(${tour.id}, ${p.user_id}, this.value)" title="Mover Blader a otro grupo" class="bg-slate-900 border border-slate-700 text-[10px] font-bold text-cyan-300 rounded-lg px-2 py-1 outline-none focus:border-cyan-400">
+                                    ${groupKeys.map(k => `<option value="${k}" ${k === gid ? 'selected' : ''}>Grupo ${k}</option>`).join("")}
+                                  </select>
+                                  <button onclick="handleRemoveParticipant(${tour.id}, ${p.user_id}, '${(p.user?.display_name || '').replace(/'/g, "\\'")}')" class="p-1 rounded bg-rose-950/40 border border-rose-800/40 hover:bg-rose-900/60 text-rose-300 text-xs transition" title="Remover del torneo">
+                                    ✕
+                                  </button>
+                                </div>
+                              </td>
+                            ` : ''}
                           </tr>
                         `;
                       }).join("")}
@@ -400,79 +438,124 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       return a.localeCompare(b);
     });
 
+    // Check for champion
+    const finalRoundName = orderedRoundNames[orderedRoundNames.length - 1];
+    const finalMatches = roundsMap[finalRoundName] || [];
+    const grandFinalMatch = finalMatches.find(m => m.stage === "Gran Final" || finalRoundName === "Gran Final");
+    let championUser = null;
+    if (grandFinalMatch && grandFinalMatch.status === "finished" && grandFinalMatch.winner_id) {
+      championUser = grandFinalMatch.winner_id === grandFinalMatch.player_a_id ? grandFinalMatch.player_a : grandFinalMatch.player_b;
+    } else if (tour.winner_user_id) {
+      const p = participants.find(part => part.user_id === tour.winner_user_id);
+      championUser = p ? p.user : null;
+    }
+
     return `
       <div class="space-y-4">
-        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="text-base">🏆</span>
-            <span class="font-black text-amber-400 uppercase tracking-wide">Fase de Eliminación Directa en Curso</span>
+        <!-- Interactive Bracket Header Toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/30">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl">🏆</span>
+            <div>
+              <h3 class="font-extrabold text-white text-sm">Cuadro de Eliminación Directa Interactivo</h3>
+              <p class="text-[11px] text-slate-400">Pasa el cursor sobre cualquier Blader para seguir su recorrido por las llaves</p>
+            </div>
           </div>
-          <span class="text-slate-300 font-semibold">${playoffMatches.length} combates eliminatorios</span>
+
+          <div class="flex items-center gap-2">
+            <button onclick="scrollBracketContainer(-300)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition active:scale-95" title="Desplazar a la izquierda">
+              ◀
+            </button>
+            <button onclick="scrollBracketContainer(300)" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition active:scale-95" title="Desplazar a la derecha">
+              ▶
+            </button>
+            <button onclick="toggleBracketViewMode()" id="btn-toggle-bracket-mode" class="px-3 py-2 rounded-xl bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold flex items-center gap-1.5 transition hover:bg-cyan-600/30">
+              <span id="bracket-mode-icon">🌲</span> <span id="bracket-mode-text">Vista en Árbol</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Horizontal Scrollable Bracket View -->
-        <div class="overflow-x-auto pb-4">
-          <div class="flex items-start gap-6 min-w-[700px] py-2">
-            ${orderedRoundNames.map(rName => {
+        <!-- Interactive Visual Tree Bracket Container -->
+        <div id="bracket-tree-view" class="overflow-x-auto pb-6 pt-2 scroll-smooth">
+          <div class="flex items-stretch gap-8 min-w-[850px] py-4 px-2">
+            ${orderedRoundNames.map((rName, rIdx) => {
               const rMatches = roundsMap[rName];
+
               return `
-                <div class="flex-1 min-w-[280px] max-w-[340px] space-y-4 flex flex-col">
-                  <!-- Round Title -->
-                  <div class="p-2.5 rounded-xl bg-slate-900 border border-cyan-500/30 text-center shadow">
-                    <h3 class="font-extrabold text-xs uppercase tracking-wider text-cyan-300">${rName}</h3>
+                <div class="flex-1 min-w-[270px] max-w-[320px] flex flex-col justify-between space-y-4 relative">
+                  <!-- Round Column Header -->
+                  <div class="p-2.5 rounded-xl bg-gradient-to-r from-slate-900 to-slate-950 border border-cyan-500/30 text-center shadow-lg sticky top-0 z-20">
+                    <h4 class="font-black text-xs uppercase tracking-wider text-cyan-300">${rName}</h4>
                     <span class="text-[10px] text-slate-400 font-mono">${rMatches.length} ${rMatches.length === 1 ? 'Combate' : 'Combates'}</span>
                   </div>
 
-                  <!-- Matches in this Round -->
-                  <div class="space-y-3 flex-1 flex flex-col justify-around">
-                    ${rMatches.map(m => {
+                  <!-- Column Matches -->
+                  <div class="flex-1 flex flex-col justify-around gap-6 py-2">
+                    ${rMatches.map((m) => {
                       const pAName = m.player_a?.display_name || "TBD (Clasificado)";
-                      const pBName = m.player_b?.display_name || "TBD (Clasificado)";
+                      const pBName = m.player_b?.display_name || (m.is_bye ? "BYE (Pase Libre)" : "TBD (Clasificado)");
                       const isFinished = m.status === "finished";
                       const winnerA = m.winner_id === m.player_a_id;
                       const winnerB = m.winner_id === m.player_b_id;
 
                       return `
-                        <div class="glass-card rounded-2xl p-3 border ${
-                          m.status === 'in_progress' ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/10' :
-                          isFinished ? 'border-slate-800 bg-slate-950/70' : 'border-cyan-500/20'
-                        } space-y-2.5">
-                          <div class="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1.5">
-                            <span class="font-mono font-bold">Mesa #${m.station_number || 1}</span>
+                        <div 
+                          class="bracket-node glass-card rounded-2xl p-3 border ${
+                            m.status === 'in_progress' ? 'border-emerald-500/80 shadow-lg shadow-emerald-500/20 glow-cyan' :
+                            isFinished ? 'border-slate-800 bg-slate-950/80' : 'border-cyan-500/25'
+                          } space-y-2 relative transition duration-200 hover:border-cyan-400 hover:shadow-cyan-950/40 cursor-pointer"
+                          onclick="location.hash='#/referee/${m.id}'"
+                          title="Haz clic para ver el marcador oficial de este match"
+                        >
+                          <div class="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800/80 pb-1.5">
+                            <span class="font-mono font-bold text-slate-300">Mesa #${m.station_number || 1}</span>
                             ${getMatchStatusBadge(m.status)}
                           </div>
 
-                          <!-- Player A -->
-                          <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl ${winnerA ? 'bg-amber-500/15 border border-amber-500/40' : 'bg-slate-900/60'}">
+                          <!-- Player A Node -->
+                          <div 
+                            class="bracket-player-row flex items-center justify-between gap-2 p-1.5 rounded-xl transition ${
+                              winnerA ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold' : 'bg-slate-900/60 text-slate-200'
+                            }"
+                            data-blader-id="${m.player_a_id || ''}"
+                            onmouseenter="highlightBracketBlader(${m.player_a_id || 0})"
+                            onmouseleave="unhighlightBracketBlader()"
+                          >
                             <div class="flex items-center gap-2 min-w-0">
-                              ${window.renderAvatar(m.player_a, "w-7 h-7", "text-xs", "border border-slate-700")}
-                              <div class="truncate text-xs font-bold ${winnerA ? 'text-amber-300' : 'text-white'}">
+                              ${window.renderAvatar(m.player_a, "w-6 h-6", "text-[10px]", winnerA ? "border border-amber-400" : "border border-slate-700")}
+                              <div class="truncate text-xs font-semibold ${winnerA ? 'text-amber-300 font-bold' : 'text-white'}">
                                 ${pAName}
                               </div>
                             </div>
-                            <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerA ? 'text-amber-300' : 'text-slate-300'}">
-                              ${m.score_a}
-                            </span>
+                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                              ${winnerA ? '<span class="text-xs">👑</span>' : ''}
+                              <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerA ? 'text-amber-400' : 'text-slate-300'}">
+                                ${m.score_a}
+                              </span>
+                            </div>
                           </div>
 
-                          <!-- Player B -->
-                          <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl ${winnerB ? 'bg-amber-500/15 border border-amber-500/40' : 'bg-slate-900/60'}">
+                          <!-- Player B Node -->
+                          <div 
+                            class="bracket-player-row flex items-center justify-between gap-2 p-1.5 rounded-xl transition ${
+                              winnerB ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold' : 'bg-slate-900/60 text-slate-200'
+                            }"
+                            data-blader-id="${m.player_b_id || ''}"
+                            onmouseenter="highlightBracketBlader(${m.player_b_id || 0})"
+                            onmouseleave="unhighlightBracketBlader()"
+                          >
                             <div class="flex items-center gap-2 min-w-0">
-                              ${window.renderAvatar(m.player_b, "w-7 h-7", "text-xs", "border border-slate-700")}
-                              <div class="truncate text-xs font-bold ${winnerB ? 'text-amber-300' : 'text-white'}">
+                              ${window.renderAvatar(m.player_b, "w-6 h-6", "text-[10px]", winnerB ? "border border-amber-400" : "border border-slate-700")}
+                              <div class="truncate text-xs font-semibold ${winnerB ? 'text-amber-300 font-bold' : 'text-white'}">
                                 ${pBName}
                               </div>
                             </div>
-                            <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerB ? 'text-amber-300' : 'text-slate-300'}">
-                              ${m.score_b}
-                            </span>
-                          </div>
-
-                          <!-- Actions Bar -->
-                          <div class="flex items-center justify-between pt-1 text-[11px]">
-                            <button onclick="location.hash='#/referee/${m.id}'" class="w-full py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 font-bold border border-cyan-500/30 flex items-center justify-center gap-1 transition active:scale-95">
-                              <span>⚡</span> Marcador Pad
-                            </button>
+                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                              ${winnerB ? '<span class="text-xs">👑</span>' : ''}
+                              <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerB ? 'text-amber-400' : 'text-slate-300'}">
+                                ${m.score_b}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       `;
@@ -481,7 +564,58 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                 </div>
               `;
             }).join("")}
+
+            <!-- Champion Podium Showcase Box -->
+            <div class="flex-1 min-w-[240px] max-w-[280px] flex flex-col justify-center items-center py-4">
+              <div class="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 text-center shadow-lg w-full mb-4">
+                <h4 class="font-black text-xs uppercase tracking-wider text-amber-300">Gran Campeón</h4>
+                <span class="text-[10px] text-slate-400">Título Oficial</span>
+              </div>
+
+              <div class="w-full glass-card rounded-3xl p-6 border-2 ${championUser ? 'border-amber-400 glow-gold bg-gradient-to-b from-amber-950/40 via-slate-900 to-slate-950' : 'border-slate-800 bg-slate-950/50'} text-center space-y-4">
+                <div class="text-4xl">
+                  👑
+                </div>
+                ${championUser ? `
+                  <div class="relative inline-block mx-auto">
+                    ${window.renderAvatar(championUser, "w-20 h-20", "text-xl", "border-4 border-amber-400 shadow-2xl")}
+                  </div>
+                  <div>
+                    <h3 class="font-black text-xl text-white">${championUser.display_name}</h3>
+                    <div class="text-xs text-amber-300 font-mono mt-0.5">@${championUser.username} • Campeón de Torneo</div>
+                  </div>
+                  <div class="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-[11px] font-extrabold text-amber-300">
+                    🏆 1er Lugar Nacional
+                  </div>
+                ` : `
+                  <div class="w-16 h-16 rounded-full border-2 border-dashed border-slate-700 flex items-center justify-center text-slate-500 mx-auto font-mono text-xs">
+                    ?
+                  </div>
+                  <div class="text-xs text-slate-400">
+                    Por definirse en la Gran Final
+                  </div>
+                `}
+              </div>
+            </div>
           </div>
+        </div>
+
+        <!-- Detailed Match List View (Alternative Toggle) -->
+        <div id="bracket-list-view" class="hidden space-y-6">
+          ${orderedRoundNames.map(rName => {
+            const rMatches = roundsMap[rName];
+            return `
+              <div class="space-y-3">
+                <div class="flex items-center gap-2 pb-1 border-b border-slate-800">
+                  <span class="font-extrabold text-sm text-cyan-300 uppercase">${rName}</span>
+                  <span class="text-xs text-slate-400 font-mono">(${rMatches.length} matches)</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  ${rMatches.map(m => renderMatchCard(m, isOrganizer)).join("")}
+                </div>
+              </div>
+            `;
+          }).join("")}
         </div>
       </div>
     `;
@@ -832,6 +966,87 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     } catch(err) {
       window.showToast(err.message || "Error al iniciar torneo", "error");
     }
+  };
+
+  // Quick Inline Participant Registration
+  window.handleQuickAddParticipant = async (e, tId) => {
+    e.preventDefault();
+    const input = document.getElementById(`quick-add-name-${tId}`);
+    const groupSelect = document.getElementById(`quick-add-group-${tId}`);
+    const name = input?.value?.trim();
+    if (!name) return;
+    const targetGroup = groupSelect?.value || undefined;
+
+    try {
+      input.disabled = true;
+      const res = await window.api.addTournamentParticipant(tId, {
+        new_blader_name: name,
+        checked_in: true
+      });
+      if (targetGroup && res?.participant?.user_id) {
+        await window.api.updateTournamentParticipantGroup(tId, res.participant.user_id, targetGroup);
+      }
+      window.showToast(`¡Blader "${name}" añadido e inscrito con éxito!`, "success");
+      input.value = "";
+      input.disabled = false;
+      refreshData();
+    } catch(err) {
+      if (input) input.disabled = false;
+      window.showToast(err.message || "Error al añadir participante", "error");
+    }
+  };
+
+  // Reassign Participant Group
+  window.handleMoveParticipantGroup = async (tId, userId, newGroupId) => {
+    if (!newGroupId) return;
+    try {
+      await window.api.updateTournamentParticipantGroup(tId, userId, newGroupId);
+      window.showToast(`Blader reasignado a Grupo ${newGroupId}`, "success");
+      refreshData();
+    } catch(err) {
+      window.showToast(err.message || "Error al mover de grupo", "error");
+    }
+  };
+
+  // Interactive Bracket Controls
+  window.scrollBracketContainer = (offset) => {
+    const container = document.getElementById("bracket-tree-view");
+    if (container) {
+      container.scrollBy({ left: offset, behavior: "smooth" });
+    }
+  };
+
+  window.toggleBracketViewMode = () => {
+    const treeView = document.getElementById("bracket-tree-view");
+    const listView = document.getElementById("bracket-list-view");
+    const icon = document.getElementById("bracket-mode-icon");
+    const text = document.getElementById("bracket-mode-text");
+    if (!treeView || !listView) return;
+
+    if (treeView.classList.contains("hidden")) {
+      treeView.classList.remove("hidden");
+      listView.classList.add("hidden");
+      if (icon) icon.textContent = "🌲";
+      if (text) text.textContent = "Vista en Árbol";
+    } else {
+      treeView.classList.add("hidden");
+      listView.classList.remove("hidden");
+      if (icon) icon.textContent = "📋";
+      if (text) text.textContent = "Vista en Lista";
+    }
+  };
+
+  window.highlightBracketBlader = (bladerId) => {
+    if (!bladerId) return;
+    document.querySelectorAll(`[data-blader-id="${bladerId}"]`).forEach(el => {
+      el.classList.add("ring-2", "ring-cyan-400", "bg-cyan-900/40");
+    });
+  };
+
+  window.unhighlightBracketBlader = () => {
+    document.querySelectorAll(".bracket-player-row").forEach(el => {
+      el.classList.remove("ring-2", "ring-cyan-400", "bg-cyan-900/40");
+    });
   };
 
   window.handleShuffleSeeds = async (tId) => {

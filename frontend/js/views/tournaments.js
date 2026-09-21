@@ -148,9 +148,10 @@ window.openCreateTournamentModal = () => {
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Formato de Competición</label>
             <select name="format" id="create-t-format" onchange="toggleGroupOptions(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
-              <option value="groups_elim" selected>Fase de Grupos + Eliminatoria (Tipo Challonge)</option>
-              <option value="single_elim">Eliminación Directa (Playoffs)</option>
-              <option value="swiss">Sistema Suizo (WBO Oficial)</option>
+              <option value="groups_elim" selected>Fase de Grupos + Llave Eliminatoria (Recomendado)</option>
+              <option value="single_elim">Eliminación Directa (Knockout a un combate)</option>
+              <option value="round_robin">Todos contra Todos (Liga / Round Robin)</option>
+              <option value="swiss">Sistema Suizo Oficial (WBO Standard)</option>
             </select>
           </div>
           <div>

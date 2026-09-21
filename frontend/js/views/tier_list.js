@@ -78,64 +78,35 @@ window.renderTierListView = async (container) => {
       <div class="space-y-6 max-w-6xl mx-auto pb-16">
         <!-- Header & Live Connection Status Banner -->
         <div class="glass-card rounded-2xl p-5 md:p-6 border border-slate-800 relative overflow-hidden bg-slate-900/60">
-          <div class="absolute -right-16 -top-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Conexión Oficial En Vivo
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                  Catálogo Oficial Beyblade X
                 </span>
                 <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                  ${meta.meta_version || "BX/UX Meta Ver. 2026.3"}
+                  Takara Tomy Lineup
                 </span>
               </div>
               <h1 class="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-                <span class="text-amber-400">👑</span> Beyblade X Official Meta Tier List
+                <span class="text-amber-400">🛡️</span> Piezas & Meta Tier List
               </h1>
               <p class="text-slate-400 text-sm max-w-2xl">
-                Base de datos sincronizada con el reglamento y resultados de torneos de la
-                <a href="${meta.official_url || 'https://worldbeyblade.org'}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold">World Beyblade Organization (WBO)</a>
-                y el catálogo oficial de
-                <a href="${meta.secondary_url || 'https://beyblade.takaratomy.co.jp'}" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline font-semibold">Takara Tomy</a>.
+                Base de datos completa de Blades, Ratchets y Bits conectada directamente con el catálogo oficial de
+                <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold">Takara Tomy Lineup</a>.
               </p>
             </div>
 
-            <!-- Sync Controls & Metrics Box -->
-            <div class="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 shrink-0">
-              <div class="flex items-center gap-2">
-                <button id="btn-sync-tierlist" onclick="handleLiveSync()" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-2 shadow-lg shadow-cyan-900/30 transition transform active:scale-95">
-                  <svg id="sync-spinner" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                  </svg>
-                  <span>Sincronizar con Sitio Oficial</span>
-                </button>
-                <button onclick="togglePatchNotes()" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-                  <span>📜 Notas del Parche</span>
-                </button>
-              </div>
-
-              <div class="text-xs text-slate-400 flex flex-wrap items-center gap-3">
-                <span>⏱️ <strong class="text-slate-200" id="sync-time-label">${formatTimeAgo(meta.last_synced_at)}</strong></span>
-                <span>⚔️ <strong class="text-cyan-300" id="sync-matches-label">${meta.total_matches_analyzed ? meta.total_matches_analyzed.toLocaleString() : '2,840'}</strong> combates</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Patch Notes Drawer (Collapsible) -->
-          <div id="patch-notes-drawer" class="hidden mt-4 pt-4 border-t border-slate-800 space-y-2">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <span>📋</span> Registro Oficial de Cambios y Balance WBO / TT
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs" id="patch-notes-list">
-              ${(meta.patch_notes || []).map(note => `
-                <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 text-slate-300 flex items-start gap-2">
-                  <span class="text-cyan-400 mt-0.5">•</span>
-                  <span>${note}</span>
-                </div>
-              `).join("")}
+            <div class="flex items-center gap-3 shrink-0">
+              <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 flex items-center gap-2 transition">
+                <span>🔗 Catálogo Takara Tomy</span>
+              </a>
+              <button id="btn-sync-tierlist" onclick="handleLiveSync()" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-2 shadow-lg shadow-cyan-900/30 transition transform active:scale-95">
+                <svg id="sync-spinner" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>Actualizar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -336,25 +307,14 @@ window.renderTierListView = async (container) => {
             </div>
           </div>
 
-          <div class="pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-1 text-[10px]">
-            <div>
-              <span class="text-slate-500 block">Win Rate</span>
-              <span class="font-extrabold ${winRateClass}">
-                ${winRateText}
-              </span>
+          <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+            <div class="flex items-center gap-2">
+              <span class="text-rose-400 font-bold font-mono">ATK ${p.attack_stat || 50}</span>
+              <span class="text-blue-400 font-bold font-mono">DEF ${p.defense_stat || 50}</span>
+              <span class="text-amber-400 font-bold font-mono">STA ${p.stamina_stat || 50}</span>
             </div>
-            <div>
-              <span class="text-slate-500 block">Pick Rate</span>
-              <span class="font-extrabold text-amber-400">
-                ${pickRateText}
-              </span>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between text-[10px] pt-1">
-            <div>${trendIcon}</div>
-            <span class="text-slate-500 group-hover:text-cyan-400 transition flex items-center gap-0.5">
-              Ver detalles <span>→</span>
+            <span class="text-slate-400 group-hover:text-cyan-400 transition text-[11px] font-semibold flex items-center gap-0.5">
+              Ver ficha <span>→</span>
             </span>
           </div>
         </div>
@@ -588,7 +548,10 @@ window.renderTierListView = async (container) => {
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex items-center justify-end gap-2 pt-2">
+          <div class="flex items-center justify-between gap-2 pt-2">
+            <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 flex items-center gap-1.5 transition">
+              <span>🌐 Catálogo Takara Tomy Lineup</span>
+            </a>
             <button onclick="closePartModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
               Cerrar
             </button>

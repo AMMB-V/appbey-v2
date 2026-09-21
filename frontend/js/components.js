@@ -1,4 +1,4 @@
-﻿// AppBey Global UI Components & Shared Helpers
+// AppBey Global UI Components & Shared Helpers
 (function() {
   // --- IN-APP TOAST NOTIFICATION SYSTEM ---
   window.showToast = (message, type = "info", duration = 3500) => {
@@ -88,7 +88,7 @@
     const name = (user?.display_name || user?.username || "Blader").trim();
     const customUrl = (user?.avatar_url || "").trim();
     const isCleanCustomUrl = customUrl && !customUrl.includes("unsplash.com") && !customUrl.includes("placeholder") && !customUrl.includes("via.placeholder");
-    const logoSrc = "/assets/images/appbey_logo.png";
+    const logoSrc = "/assets/images/appbey_official_logo.png?v=3.1";
     const src = isCleanCustomUrl ? customUrl : logoSrc;
 
     return `
