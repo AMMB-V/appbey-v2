@@ -12,13 +12,13 @@ window.renderHomeView = async (container) => {
               En Vivo • Beyblade X Championship
             </div>
             <div class="flex items-center gap-3.5 mb-2">
-              <img src="/assets/images/appbey_logo.jpg" class="w-12 h-12 rounded-2xl object-cover shadow-xl border border-cyan-400/40 shrink-0" alt="AppBey Logo"/>
+              <img src="/assets/images/appbey_official_logo.png?v=3.0" class="w-12 h-12 rounded-2xl object-contain shadow-xl border border-cyan-400/40 shrink-0" alt="AppBey Logo"/>
               <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
                 AppBey
               </h1>
             </div>
             <p class="text-slate-300 max-w-xl text-sm md:text-base">
-              Plataforma competitiva oficial: Brackets en tiempo real, arbitraje táctil 3on3 Xtreme Stadium, constructor de Decks y sistema de AP Coins.
+              Plataforma competitiva oficial: Brackets en tiempo real, arbitraje táctil 3on3 Xtreme Stadium y constructor de Decks.
             </p>
           </div>
           <div class="flex flex-wrap gap-3">
@@ -43,34 +43,34 @@ window.renderHomeView = async (container) => {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div onclick="location.hash='#/referee'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-cyan-400 transition transform hover:-translate-y-1 group">
           <div class="w-12 h-12 rounded-lg bg-blue-600/20 text-cyan-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           </div>
-          <h3 class="font-bold text-lg text-white mb-1">Mesa de Arbitraje</h3>
-          <p class="text-xs text-slate-400">Marcador táctil de 1-toque para registrar Spin, Over, Burst y Xtreme Finishes.</p>
+          <h3 class="font-bold text-lg text-white mb-1">Marcador BeyScore</h3>
+          <p class="text-xs text-slate-400">Arbitraje táctil oficial de mesa (Spin, Over, Burst y Xtreme Finish).</p>
         </div>
 
-        <div onclick="location.hash='#/stadium-display'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1 group">
-          <div class="w-12 h-12 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+        <div onclick="location.hash='#/stadium-display'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-indigo-400 transition transform hover:-translate-y-1 group">
+          <div class="w-12 h-12 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           </div>
-          <h3 class="font-bold text-lg text-white mb-1">Modo Proyector TV</h3>
-          <p class="text-xs text-slate-400">Pantalla gigante para proyectar llamados a mesas y marcadores en vivo en la arena.</p>
+          <h3 class="font-bold text-lg text-white mb-1">Pantalla TV Estadio</h3>
+          <p class="text-xs text-slate-400">Proyección en vivo para pantallas gigantes y televisores de torneo.</p>
         </div>
 
         <div onclick="location.hash='#/tier-list'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-purple-400 transition transform hover:-translate-y-1 group">
           <div class="w-12 h-12 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
           </div>
-          <h3 class="font-bold text-lg text-white mb-1">Meta Tier List</h3>
-          <p class="text-xs text-slate-400">Ranking oficial y comunitario de Blades, Ratchets y Bits Beyblade X.</p>
+          <h3 class="font-bold text-lg text-white mb-1">Catálogo Takara Tomy</h3>
+          <p class="text-xs text-slate-400">Base de datos oficial de Blades, Ratchets y Bits Beyblade X.</p>
         </div>
 
-        <div onclick="location.hash='#/wallet'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-emerald-400 transition transform hover:-translate-y-1 group">
-          <div class="w-12 h-12 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div onclick="location.hash='#/rankings'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1 group">
+          <div class="w-12 h-12 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
+            <span class="text-2xl">🏆</span>
           </div>
-          <h3 class="font-bold text-lg text-white mb-1">Billetera AP Coins</h3>
-          <p class="text-xs text-slate-400">Reclama recompensas diarias, transfiere monedas y participa en torneos.</p>
+          <h3 class="font-bold text-lg text-white mb-1">Rankings Nacionales</h3>
+          <p class="text-xs text-slate-400">Clasificación oficial por Puntos de Temporada 1 y Elo de Temporada 2.</p>
         </div>
       </div>
 
@@ -123,24 +123,16 @@ window.renderHomeView = async (container) => {
         <div class="text-xs text-slate-500">Temporada 2026</div>
       </div>
       <div class="glass-card p-4 rounded-xl border-l-4 border-emerald-500">
-        <div class="text-xs text-slate-400 font-medium">Saldo AP Coins</div>
-        <div class="text-lg font-bold text-emerald-400" id="home-ap-balance">... AP</div>
-        <button onclick="claimDailyRewardHome()" class="text-xs text-emerald-300 hover:underline">+ Reclamar Bono</button>
+        <div class="text-xs text-slate-400 font-medium">Combo Insignia</div>
+        <div class="text-base font-bold text-emerald-400 truncate">${user.favorite_combo || "Sin definir"}</div>
+        <div class="text-xs text-slate-500">Deck 3on3</div>
       </div>
       <div class="glass-card p-4 rounded-xl border-l-4 border-cyan-500">
-        <div class="text-xs text-slate-400 font-medium">Rol en Plataforma</div>
+        <div class="text-xs text-slate-400 font-medium">Cargo en Plataforma</div>
         <div class="text-lg font-bold text-cyan-300 uppercase text-sm">${user.role}</div>
-        <div class="text-xs text-slate-400">${user.favorite_combo || "Phoenix Wing"}</div>
+        <div class="text-xs text-slate-400">Verificado</div>
       </div>
     `;
-
-    // Fetch actual wallet
-    if (window.api.token) {
-      window.api.getMyWallet().then(w => {
-        const el = document.getElementById("home-ap-balance");
-        if (el) el.innerText = `${w.balance} AP`;
-      }).catch(() => {});
-    }
   } else {
     userCardEl.innerHTML = `
       <div class="col-span-full glass-card p-4 rounded-xl flex items-center justify-between bg-blue-950/40 border border-cyan-500/30">
@@ -150,7 +142,7 @@ window.renderHomeView = async (container) => {
           </div>
           <div>
             <div class="font-bold text-white">¿Eres organizador o Blader competidor?</div>
-            <div class="text-xs text-slate-400">Inicia sesión con tu cuenta para guardar decks, ganar AP Coins y registrarte en torneos.</div>
+            <div class="text-xs text-slate-400">Inicia sesión con tu cuenta para guardar tus decks 3on3 y participar en torneos oficiales.</div>
           </div>
         </div>
         <button onclick="window.showAuthModal()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm shadow">
@@ -240,15 +232,5 @@ window.renderHomeView = async (container) => {
     `).join("");
   } catch(e) {
     console.error("Error loading home leaderboard:", e);
-  }
-};
-
-window.claimDailyRewardHome = async () => {
-  try {
-    const res = await window.api.claimDailyReward();
-    window.showToast?.("¡Felicidades! Has reclamado +50 AP Coins.", "success");
-    setTimeout(() => location.reload(), 400);
-  } catch(err) {
-    window.showToast?.(err.message || "Error al reclamar recompensa", "error");
   }
 };

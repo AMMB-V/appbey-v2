@@ -11,7 +11,7 @@ window.showAuthModal = (initialMode = "login") => {
     <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
-          <img src="/assets/images/appbey_logo.jpg" class="w-7 h-7 rounded-lg object-cover shadow" alt="AppBey Logo"/>
+          <img src="/assets/images/appbey_official_logo.png?v=3.0" class="w-8 h-8 rounded-xl object-contain shadow" alt="AppBey Logo"/>
           <h2 class="text-xl font-extrabold text-white">AppBey</h2>
         </div>
         <button onclick="document.getElementById('auth-modal').remove()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
@@ -87,32 +87,9 @@ window.showAuthModal = (initialMode = "login") => {
           <p class="text-[10px] text-slate-400 mt-1">El registro otorga rol inicial de <strong>Blader</strong>. Los roles de Árbitro y Organizador son asignados por un Administrador.</p>
         </div>
         <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm shadow-lg shadow-emerald-500/25 transition active:scale-95">
-          Crear Cuenta (+250 AP Bono)
+          Crear Cuenta Oficial de Blader
         </button>
       </form>
-
-      <!-- Quick Demo Switcher -->
-      <div class="pt-3 border-t border-slate-800 text-[11px] space-y-2">
-        <span class="text-slate-400 block font-semibold">⚡ Cuentas de Demostración Rápida:</span>
-        <div class="grid grid-cols-2 gap-1.5">
-          <button onclick="quickFillAuth('byjankraftyt@gmail.com', '123456')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left truncate">
-            <span class="font-bold text-amber-400 block">👑 Jan Kraft (Admin)</span>
-            <span class="text-[10px] text-slate-500">byjankraftyt@gmail.com</span>
-          </button>
-          <button onclick="quickFillAuth('organizer@appbey.app', '123456')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left truncate">
-            <span class="font-bold text-blue-400 block">📋 Carlos (Organizador)</span>
-            <span class="text-[10px] text-slate-500">organizer@appbey.app</span>
-          </button>
-          <button onclick="quickFillAuth('referee@appbey.app', '123456')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left truncate">
-            <span class="font-bold text-cyan-400 block">⚖️ Alex (Árbitro)</span>
-            <span class="text-[10px] text-slate-500">referee@appbey.app</span>
-          </button>
-          <button onclick="quickFillAuth('ryu@appbey.app', '123456')" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left truncate">
-            <span class="font-bold text-emerald-400 block">⚔️ Ryu (Pro Blader)</span>
-            <span class="text-[10px] text-slate-500">ryu@appbey.app</span>
-          </button>
-        </div>
-      </div>
     </div>
   `;
 
@@ -132,15 +109,6 @@ window.switchAuthTab = (mode) => {
   document.getElementById("auth-tab-register").className = !isLogin
     ? "flex-1 py-2 rounded-lg bg-emerald-600 text-white shadow font-bold"
     : "flex-1 py-2 rounded-lg text-slate-400 hover:text-white font-semibold";
-};
-
-window.quickFillAuth = (email, password) => {
-  switchAuthTab("login");
-  const form = document.getElementById("login-form");
-  if (form) {
-    form.email.value = email;
-    form.password.value = password;
-  }
 };
 
 window.submitLogin = async (e) => {
@@ -201,7 +169,7 @@ window.submitRegister = async (e) => {
     });
     window.api.setAuth(res.access_token, res.user);
     document.getElementById("auth-modal")?.remove();
-    window.showToast?.("¡Cuenta creada exitosamente con bono de 250 AP Coins!", "success");
+    window.showToast?.("¡Cuenta creada exitosamente! Bienvenido a AppBey.", "success");
     setTimeout(() => location.reload(), 400);
   } catch(err) {
     window.showToast?.(err.message || "Error al registrarse", "error");

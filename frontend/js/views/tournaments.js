@@ -75,8 +75,8 @@ window.renderTournamentsView = async (container) => {
                 <span class="font-semibold text-slate-200 truncate block">${t.venue_name}</span>
               </div>
               <div>
-                <span class="text-slate-500 block">Premio:</span>
-                <span class="font-bold text-amber-400">${t.prize_pool_ap} AP Coins</span>
+                <span class="text-slate-500 block">Estadios:</span>
+                <span class="font-bold text-cyan-400">4 Mesas Activas</span>
               </div>
             </div>
           </div>
@@ -203,8 +203,8 @@ window.openCreateTournamentModal = () => {
             </select>
           </div>
           <div>
-            <label class="block text-slate-300 mb-1 font-semibold">Pozo Premio (AP Coins)</label>
-            <input type="number" name="prize_pool_ap" value="1000" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none"/>
+            <label class="block text-slate-300 mb-1 font-semibold">Cupo Máximo de Bladers</label>
+            <input type="number" name="max_participants" value="64" min="4" max="256" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none"/>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

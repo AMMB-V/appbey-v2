@@ -606,7 +606,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               <p class="text-slate-300 text-sm max-w-2xl">${tournament.description || ""}</p>
               <div class="text-xs text-slate-400 flex flex-wrap gap-4 pt-1">
                 <span>📍 ${tournament.venue_name} (${tournament.country})</span>
-                <span>🏆 Pozo: <strong class="text-amber-400">${tournament.prize_pool_ap} AP Coins</strong></span>
+                <span>🛡️ Modalidad: <strong class="text-amber-400">${tournament.battle_type === '3on3_deck' ? '3on3 Deck Battle' : '1on1'}</strong></span>
                 <span>👥 Participantes: <strong class="text-cyan-400 font-bold">${participants.length}</strong> Bladers inscritos</span>
               </div>
             </div>
@@ -615,7 +615,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             <div class="flex flex-wrap md:flex-col gap-2">
               ${!isParticipant && tournament.status === 'registration_open' ? `
                 <button onclick="handleRegisterTournament(${tournament.id})" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/25 transition active:scale-95">
-                  Inscribirse (${tournament.entry_fee_ap} AP)
+                  Inscribirse al Torneo
                 </button>
               ` : ''}
 

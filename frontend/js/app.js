@@ -147,7 +147,6 @@
       "#/tier-list": window.renderTierListView,
       "#/rankings": window.renderRankingsView,
       "#/hall-of-fame": window.renderHallOfFameView,
-      "#/wallet": window.renderWalletView,
       "#/social": window.renderSocialView,
     };
 
@@ -202,12 +201,7 @@
             </button>
           ` : ''}
 
-          <div onclick="location.hash='#/wallet'" class="cursor-pointer px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold font-mono flex items-center gap-1.5 hover:bg-amber-500/20 transition">
-            <span>🪙</span>
-            <span id="nav-wallet-balance">... AP</span>
-          </div>
-
-          <div onclick="location.hash='#/profile'" class="cursor-pointer flex items-center gap-2">
+          <div onclick="location.hash='#/profile'" class="cursor-pointer flex items-center gap-2 hover:opacity-90 transition">
             ${window.renderAvatar(user, "w-8 h-8", "text-xs", "border-2 border-cyan-400")}
             <span class="text-xs font-bold text-white hidden sm:inline">${user.display_name}</span>
           </div>
@@ -217,13 +211,6 @@
           </button>
         </div>
       `;
-
-      if (window.api.token) {
-        window.api.getMyWallet().then(w => {
-          const el = document.getElementById("nav-wallet-balance");
-          if (el) el.innerText = `${w.balance} AP`;
-        }).catch(() => {});
-      }
     } else {
       authContainer.innerHTML = `
         <button onclick="window.showAuthModal('login')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs shadow-md transition active:scale-95">
