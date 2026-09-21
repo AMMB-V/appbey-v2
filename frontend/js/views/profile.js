@@ -146,7 +146,7 @@ window.renderProfileView = async (container, userId = null) => {
 window.updateProfileAvatarPreview = (url) => {
   const container = document.getElementById("profile-avatar-preview-container");
   if (!container) return;
-  const user = window.api.currentUser || { display_name: "Blader" };
+  const user = window.api.user || { display_name: "Blader" };
   const mockUser = { ...user, avatar_url: url ? url.trim() : "" };
   container.innerHTML = window.renderAvatar(mockUser, "w-16 h-16", "text-2xl", "border-2 border-cyan-400 shadow-lg");
 };
