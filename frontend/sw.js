@@ -1,19 +1,23 @@
-const CACHE_NAME = "appbey-static-v4";
+const CACHE_VERSION = "3.3.0";
+const CACHE_NAME = `appbey-shell-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
-  "/",
-  "/manifest.json",
-  "/css/styles.css",
-  "/js/components.js",
-  "/js/app.js",
-  "/js/api.js",
-  "/js/ws.js"
+  `/?v=${CACHE_VERSION}`,
+  `/manifest.json?v=${CACHE_VERSION}`,
+  `/css/styles.css?v=${CACHE_VERSION}`,
+  `/js/components.js?v=${CACHE_VERSION}`,
+  `/js/app.js?v=${CACHE_VERSION}`,
+  `/js/api.js?v=${CACHE_VERSION}`,
+  `/js/ws.js?v=${CACHE_VERSION}`
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .catch((error) => console.warn("AppBey cache warmup skipped:", error))
+      .then((cache) => Promise.all(
+        STATIC_ASSETS.map((asset) => cache.add(asset).catch((error) => {
+          console.warn("AppBey asset skipped during cache warmup:", asset, error);
+        }))
+      ))
   );
   self.skipWaiting();
 });
@@ -21,10 +25,15 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      keys.filter((key) => key.startsWith("appbey-") && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))
     ))
   );
   self.clients.claim();
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -35,33 +44,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // HTML and JavaScript must always be refreshed first. This prevents an old
-  // service worker from keeping a broken SPA shell after a Render deployment.
-  const isApplicationCode = url.pathname === "/" ||
-    url.pathname.endsWith(".html") || url.pathname.endsWith(".js");
-
-  if (isApplicationCode) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
+  const isShell = event.request.mode === "navigate" ||
+    url.pathname === "/" ||
+    url.pathname.endsWith(".html") ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css");
 
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      if (response.ok) {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      }
-      return response;
-    }))
+    fetch(event.request, { cache: isShell ? "no-store" : "default" })
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        if (event.request.mode === "navigate") return caches.match(`/?v=${CACHE_VERSION}`);
+        throw new Error("AppBey resource unavailable offline");
+      }))
   );
 });

@@ -32,7 +32,7 @@ class ApiClient {
 
   getHeaders() {
     const headers = { Accept: "application/json", "Content-Type": "application/json" };
-    if (this.token) headers.Authorization = `Bearer ${this.token}`;
+    if (this.token) headers.Authorization = "Bearer " + this.token;
     return headers;
   }
 
@@ -54,18 +54,30 @@ class ApiClient {
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, config);
       const contentType = response.headers.get("content-type") || "";
-      const data = contentType.includes("application/json") ? await response.json() : { message: await response.text() };
+      const body = await response.text();
+      let data = null;
+      if (body) {
+        if (contentType.includes("application/json")) {
+          try {
+            data = JSON.parse(body);
+          } catch (_error) {
+            throw new Error("El servidor devolvio una respuesta JSON invalida.");
+          }
+        } else {
+          data = { message: body };
+        }
+      }
       if (response.status === 401) this.setAuth(null, null);
       if (!response.ok) {
-        const error = new Error(data.detail || data.message || `Error en el servidor (${response.status})`);
+        const error = new Error(data?.detail || data?.message || `Error en el servidor (${response.status})`);
         error.status = response.status;
         throw error;
       }
-      if (isGet) this.cache.set(endpoint, { time: Date.now(), data: structuredClone(data) });
+      if (isGet && data !== null) this.cache.set(endpoint, { time: Date.now(), data: structuredClone(data) });
       return data;
     } catch (error) {
       if (error.name === "AbortError") {
-        const timeoutError = new Error("La solicitud tardó demasiado. Verifica la conexión e inténtalo de nuevo.");
+        const timeoutError = new Error("La solicitud tardo demasiado. Verifica la conexion e intentalo de nuevo.");
         timeoutError.status = 408;
         throw timeoutError;
       }

@@ -5,11 +5,18 @@ class WebSocketHub {
     this.tournamentId = null;
     this.listeners = {};
     this.reconnectTimer = null;
+    this.connectionId = 0;
   }
 
   connect(tournamentId = null) {
+    const connectionId = ++this.connectionId;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.socket) {
       try {
+        this.socket.onclose = null;
         this.socket.close();
       } catch (_err) {
         // Ignore socket closure errors during reconnection (SonarQube S2486)
@@ -41,8 +48,12 @@ class WebSocketHub {
       };
 
       this.socket.onclose = () => {
+        if (connectionId !== this.connectionId) return;
         console.log("WebSocket closed, attempting reconnect in 3s...");
-        this.reconnectTimer = setTimeout(() => this.connect(this.tournamentId), 3000);
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectTimer = null;
+          if (connectionId === this.connectionId) this.connect(this.tournamentId);
+        }, 3000);
       };
 
       this.socket.onerror = (err) => {
@@ -68,7 +79,22 @@ class WebSocketHub {
       delete this.listeners[event];
     } else {
       this.listeners = {};
+      this.disconnect();
     }
+  }
+
+  disconnect() {
+    this.connectionId += 1;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.socket) {
+      this.socket.onclose = null;
+      this.socket.close();
+      this.socket = null;
+    }
+    this.tournamentId = null;
   }
 
   emit(event, data) {
