@@ -132,17 +132,23 @@ Health checks disponibles:
 
 ---
 
-## 👤 Cuentas Principales de Acceso
+## 👤 Configuración inicial de producción
 
-| Rol | Correo Electrónico | Contraseña | Funciones |
-|---|---|---|---|
-| **Administrador** | `byjankraftyt@gmail.com` | `123456` | Gestión total, creación de torneos, asignación de roles y control global |
-| **Organizador** | `organizer@appbey.app` | `123456` | Creación de torneos, siembra Challonge, avance de llaves |
-| **Árbitro** | `referee@appbey.app` | `123456` | Arbitraje de combates asignados en el BeyScore pad |
-| **Blader #1 (T1)** | `yorch@appbey.app` | `123456` | Perfil del Campeón Nacional Temporada 1 (646 pts) |
-| **Blader #2 (T1)** | `woonka@appbey.app` | `123456` | Perfil del 2do Lugar Nacional Temporada 1 (483 pts) |
-| **Blader #3 (T1)** | `kanghy@appbey.app` | `123456` | Perfil del 3er Lugar Nacional Temporada 1 (480 pts) |
-| **Cualquier Blader T1** | `<username>@appbey.app` | `123456` | 96 cuentas reales precargadas listas para usar |
+La aplicación no crea cuentas, rankings ni torneos ficticios en producción. Para
+crear el primer administrador, configura en Render:
+
+- `APPBEY_DEMO_DATA=false`
+- `APPBEY_ADMIN_EMAIL=correo-de-la-organizacion`
+- `APPBEY_ADMIN_PASSWORD=una-clave-de-12-o-mas-caracteres`
+- `APPBEY_ADMIN_COUNTRY=PA`
+
+`APPBEY_DEMO_DATA=true` solo debe usarse en desarrollo o demostraciones. No se
+deben publicar ni reutilizar credenciales de demostración.
+
+**Importante:** esta versión todavía usa almacenamiento en memoria. Los usuarios,
+torneos y resultados se pierden al reiniciar el proceso o al hacer redeploy en
+Render. Por esa razón no se puede declarar lista para operación oficial hasta
+conectar una base de datos persistente y probar restauración de datos.
 
 ---
 
@@ -156,6 +162,9 @@ El proyecto está configurado con **Continuous Deployment** conectado a la rama 
   - `JWT_SECRET=(tu_clave_secreta)`
   - `ALLOWED_ORIGINS=https://appbey-v2.onrender.com`
   - `GOOGLE_CLIENT_ID=(Web client ID de Google; opcional)`
+  - `APPBEY_DEMO_DATA=false`
+  - `APPBEY_ADMIN_EMAIL=(correo inicial de la organización)`
+  - `APPBEY_ADMIN_PASSWORD=(mínimo 12 caracteres)`
 
 Cuando `GOOGLE_CLIENT_ID` está configurado, el formulario muestra Google Sign-In. El
 servidor valida cada `id_token` con Google antes de crear o vincular la cuenta.

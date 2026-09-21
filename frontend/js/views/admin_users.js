@@ -79,7 +79,7 @@ window.openAdminUserManagementModal = async () => {
             </div>
             <div>
               <label class="block text-slate-300 font-semibold mb-1">Contraseña Inicial</label>
-              <input type="password" name="password" required value="123456" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
+              <input type="password" name="password" required minlength="12" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
             </div>
           </div>
 
