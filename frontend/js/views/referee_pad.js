@@ -42,7 +42,7 @@ window.renderRefereePadView = async (container, matchId) => {
                 </div>
               </div>
               <button onclick="location.hash='#/referee/standalone'" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
-                🎮 Iniciar Marcador Libre (Modo Práctica)
+                🎮 Iniciar Marcador Libre
               </button>
             </div>
 

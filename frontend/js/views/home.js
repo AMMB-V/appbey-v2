@@ -192,8 +192,8 @@ window.renderHomeView = async (container) => {
           </div>
           <div class="flex items-center gap-4">
             <div class="text-right">
-              <div class="text-xs text-slate-400">Premio Total</div>
-              <div class="text-sm font-bold text-amber-400">${t.prize_pool_ap} AP</div>
+              <div class="text-xs text-slate-400">Premio</div>
+              <div class="text-sm font-bold text-amber-400 truncate max-w-[120px]">${t.prize_description || "—"}</div>
             </div>
             <div class="text-right">
               <div class="text-xs text-slate-400">Inscritos</div>

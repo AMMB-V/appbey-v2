@@ -159,8 +159,7 @@ interface Tournament {
   match_target_points: number;
   stadium_type: string;
   max_participants: number;
-  entry_fee_ap: number;
-  prize_pool_ap: number;
+  prize_description: string;
   status: "registration_open" | "check_in" | "in_progress" | "completed" | "cancelled";
   venue_name: string;
   venue_address: string;
@@ -340,10 +339,10 @@ let metaSyncState: MetaSyncState = {
   status: "live_connected",
   auto_sync_interval_mins: 15,
   patch_notes: [
-    "Sincronización oficial WBO: Silver Wolf y Whale Wave ingresan al Meta Tier S/A tras los torneos G1.",
+    "SincronizaciÃ³n oficial WBO: Silver Wolf y Whale Wave ingresan al Meta Tier S/A tras los torneos G1.",
     "Ajuste en pick rates: Ratchet 9-60 y Bit Disc Ball mantienen dominancia en torneos 3on3 Deck.",
-    "Elevate (E) y Glide (G) integrados al catálogo competitivo oficial con métricas de resistencia y rebote.",
-    "Regla de Deck 3on3: No se permiten piezas repetidas según el reglamento oficial WBO y TT."
+    "Elevate (E) y Glide (G) integrados al catÃ¡logo competitivo oficial con mÃ©tricas de resistencia y rebote.",
+    "Regla de Deck 3on3: No se permiten piezas repetidas segÃºn el reglamento oficial WBO y TT."
   ]
 };
 
@@ -369,7 +368,7 @@ const APB_SEASON_1_RANKINGS: HistoricalBladerData[] = [
   { rank: 3, blader: "Kanghy", tournaments_played: 16, matches_played: 157, matches_won: 87, matches_lost: 70, points_for: 505, points_against: 417, bonus_points: 392, warnings: 0, win_rate: "55%", total_points: 480 },
   { rank: 4, blader: "Raines", tournaments_played: 12, matches_played: 117, matches_won: 73, matches_lost: 44, points_for: 429, points_against: 311, bonus_points: 347, warnings: 0, win_rate: "62%", total_points: 465 },
   { rank: 5, blader: "Zirox", tournaments_played: 16, matches_played: 138, matches_won: 78, matches_lost: 60, points_for: 440, points_against: 354, bonus_points: 352, warnings: 0, win_rate: "57%", total_points: 438 },
-  { rank: 6, blader: "Káiser", tournaments_played: 12, matches_played: 116, matches_won: 70, matches_lost: 46, points_for: 416, points_against: 323, bonus_points: 286, warnings: 0, win_rate: "60%", total_points: 379 },
+  { rank: 6, blader: "KÃ¡iser", tournaments_played: 12, matches_played: 116, matches_won: 70, matches_lost: 46, points_for: 416, points_against: 323, bonus_points: 286, warnings: 0, win_rate: "60%", total_points: 379 },
   { rank: 7, blader: "Baco", tournaments_played: 16, matches_played: 149, matches_won: 81, matches_lost: 68, points_for: 479, points_against: 413, bonus_points: 304, warnings: 0, win_rate: "54%", total_points: 370 },
   { rank: 8, blader: "RADD", tournaments_played: 12, matches_played: 107, matches_won: 69, matches_lost: 38, points_for: 370, points_against: 268, bonus_points: 241, warnings: 0, win_rate: "64%", total_points: 343 },
   { rank: 9, blader: "Raphaeru", tournaments_played: 10, matches_played: 91, matches_won: 56, matches_lost: 35, points_for: 305, points_against: 222, bonus_points: 237, warnings: 0, win_rate: "62%", total_points: 320 },
@@ -398,10 +397,10 @@ const APB_SEASON_1_RANKINGS: HistoricalBladerData[] = [
   { rank: 32, blader: "Geovane NG", tournaments_played: 3, matches_played: 22, matches_won: 10, matches_lost: 12, points_for: 63, points_against: 64, bonus_points: 53, warnings: 0, win_rate: "45%", total_points: 52 },
   { rank: 33, blader: "Diego Q.", tournaments_played: 3, matches_played: 21, matches_won: 10, matches_lost: 11, points_for: 61, points_against: 61, bonus_points: 52, warnings: 0, win_rate: "48%", total_points: 52 },
   { rank: 34, blader: "Gengar", tournaments_played: 6, matches_played: 31, matches_won: 15, matches_lost: 16, points_for: 86, points_against: 100, bonus_points: 59, warnings: 0, win_rate: "48%", total_points: 45 },
-  { rank: 35, blader: "Saviñon Sr", tournaments_played: 2, matches_played: 15, matches_won: 7, matches_lost: 8, points_for: 42, points_against: 43, bonus_points: 45, warnings: 0, win_rate: "47%", total_points: 44 },
+  { rank: 35, blader: "SaviÃ±on Sr", tournaments_played: 2, matches_played: 15, matches_won: 7, matches_lost: 8, points_for: 42, points_against: 43, bonus_points: 45, warnings: 0, win_rate: "47%", total_points: 44 },
   { rank: 36, blader: "Nova", tournaments_played: 3, matches_played: 22, matches_won: 8, matches_lost: 14, points_for: 60, points_against: 66, bonus_points: 46, warnings: 0, win_rate: "36%", total_points: 40 },
   { rank: 37, blader: "Miguel de sedas", tournaments_played: 2, matches_played: 18, matches_won: 11, matches_lost: 7, points_for: 55, points_against: 44, bonus_points: 28, warnings: 0, win_rate: "61%", total_points: 39 },
-  { rank: 38, blader: "Saviñon Jr", tournaments_played: 2, matches_played: 13, matches_won: 5, matches_lost: 8, points_for: 41, points_against: 32, bonus_points: 28, warnings: 0, win_rate: "38%", total_points: 37 },
+  { rank: 38, blader: "SaviÃ±on Jr", tournaments_played: 2, matches_played: 13, matches_won: 5, matches_lost: 8, points_for: 41, points_against: 32, bonus_points: 28, warnings: 0, win_rate: "38%", total_points: 37 },
   { rank: 39, blader: "Zero", tournaments_played: 2, matches_played: 13, matches_won: 7, matches_lost: 6, points_for: 43, points_against: 41, bonus_points: 30, warnings: 0, win_rate: "54%", total_points: 32 },
   { rank: 40, blader: "Kai", tournaments_played: 5, matches_played: 29, matches_won: 11, matches_lost: 18, points_for: 76, points_against: 100, bonus_points: 55, warnings: 0, win_rate: "38%", total_points: 31 },
   { rank: 41, blader: "Alejandro LUNA", tournaments_played: 1, matches_played: 7, matches_won: 4, matches_lost: 3, points_for: 23, points_against: 17, bonus_points: 25, warnings: 0, win_rate: "57%", total_points: 31 },
@@ -477,7 +476,7 @@ function seedDatabase() {
       role: "admin",
       country: "PA",
       avatar_url: "",
-      bio: "Organizador Oficial de Torneos Beyblade X en Panamá.",
+      bio: "Organizador Oficial de Torneos Beyblade X en PanamÃ¡.",
       favorite_combo: "",
       elo_rating: 1850,
       is_active: true,
@@ -493,7 +492,7 @@ function seedDatabase() {
       role: "organizer",
       country: "PA",
       avatar_url: "",
-      bio: "Organizador de torneos Beyblade X Panamá.",
+      bio: "Organizador de torneos Beyblade X PanamÃ¡.",
       favorite_combo: "",
       elo_rating: 1720,
       is_active: true,
@@ -505,11 +504,11 @@ function seedDatabase() {
       username: "referee_alex",
       email: "referee@appbey.app",
       password_hash: hash("123456"),
-      display_name: "Árbitro Alex",
+      display_name: "Ãrbitro Alex",
       role: "referee",
       country: "PA",
       avatar_url: "",
-      bio: "Árbitro oficial de torneos.",
+      bio: "Ãrbitro oficial de torneos.",
       favorite_combo: "",
       elo_rating: 1450,
       is_active: true,
@@ -566,101 +565,101 @@ function seedDatabase() {
     { id: 2, code: "UX-03", name: "Wizard Rod", category: "blade", system: "UX", type_attr: "Stamina", weight_grams: 35.5, attack_stat: 40, defense_stat: 85, stamina_stat: 98, dash_stat: 55, tier: "S", pick_rate_pct: 88.2, win_rate_pct: 69.4, trend: "stable", trend_label: "Rey de Stamina", best_combo: "Wizard Rod 5-70 / 9-60 DB / Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "El rey indiscutible de la resistencia y estabilidad centrifuga exterior." },
     { id: 3, code: "UX-01", name: "Dran Buster", category: "blade", system: "UX", type_attr: "Attack", weight_grams: 35.0, attack_stat: 98, defense_stat: 30, stamina_stat: 40, dash_stat: 95, tier: "S", pick_rate_pct: 62.0, win_rate_pct: 61.5, trend: "up", trend_label: "+1 Tier (G1 Finals)", best_combo: "Dran Buster 1-60 F / Low Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Espada descomunal de un solo impacto letal para conseguir One-Hit KOs y Burst Finish." },
     { id: 4, code: "BX-34", name: "Cobalt Dragoon", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 37.8, attack_stat: 94, defense_stat: 60, stamina_stat: 58, dash_stat: 92, tier: "S", pick_rate_pct: 58.4, win_rate_pct: 63.1, trend: "up", trend_label: "Giro Izquierdo Top Tier", best_combo: "Cobalt Dragoon 5-60 Glide / Elevate", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Primer Beyblade X de giro izquierdo (Left Spin) con tremendo spin-steal y upper attacks." },
-    { id: 5, code: "UX-07", name: "Silver Wolf", category: "blade", system: "UX", type_attr: "Stamina", weight_grams: 36.2, attack_stat: 55, defense_stat: 88, stamina_stat: 94, dash_stat: 60, tier: "S", pick_rate_pct: 54.0, win_rate_pct: 62.7, trend: "new", trend_label: "Nuevo Lanzamiento S", best_combo: "Silver Wolf 3-60 / 5-70 Hexa / Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Release Dec 2024", description: "Anillo libre de rotación que disipa impactos directos con excepcional conservación de giro." },
-    { id: 6, code: "UX-08", name: "Whale Wave", category: "blade", system: "UX", type_attr: "Attack", weight_grams: 36.6, attack_stat: 92, defense_stat: 65, stamina_stat: 60, dash_stat: 88, tier: "S", pick_rate_pct: 51.5, win_rate_pct: 60.9, trend: "new", trend_label: "Top Smash Attack", best_combo: "Whale Wave 7-60 Rush / Low Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO Competitive Index", description: "Diseño curvado de aleta de ballena con peso perimetral concentrado para empujes masivos." },
-    { id: 7, code: "BX-14", name: "Shark Edge", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 34.8, attack_stat: 92, defense_stat: 35, stamina_stat: 45, dash_stat: 90, tier: "A", pick_rate_pct: 46.2, win_rate_pct: 57.3, trend: "stable", trend_label: "Upper Attacker Clásico", best_combo: "Shark Edge 3-60 LF", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Upper attack demoledor capaz de lanzar rivales fuera del estadio en el primer choque." },
-    { id: 8, code: "BX-31", name: "Tyranno Beat", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 37.5, attack_stat: 90, defense_stat: 60, stamina_stat: 55, dash_stat: 85, tier: "A", pick_rate_pct: 44.0, win_rate_pct: 56.4, trend: "stable", trend_label: "Smash Pesado", best_combo: "Tyranno Beat 4-60 Point / Gear Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Mandíbula demoledora con masa concentrada para golpes de choque masivos." },
-    { id: 9, code: "BX-21", name: "Hells Chain", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.5, attack_stat: 70, defense_stat: 80, stamina_stat: 80, dash_stat: 70, tier: "A", pick_rate_pct: 42.1, win_rate_pct: 55.0, trend: "stable", trend_label: "Balance Sólido", best_combo: "Hells Chain 5-60 Orb / Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Excelente combinación de defensa angular y contraataque equilibrado." },
+    { id: 5, code: "UX-07", name: "Silver Wolf", category: "blade", system: "UX", type_attr: "Stamina", weight_grams: 36.2, attack_stat: 55, defense_stat: 88, stamina_stat: 94, dash_stat: 60, tier: "S", pick_rate_pct: 54.0, win_rate_pct: 62.7, trend: "new", trend_label: "Nuevo Lanzamiento S", best_combo: "Silver Wolf 3-60 / 5-70 Hexa / Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Release Dec 2024", description: "Anillo libre de rotaciÃ³n que disipa impactos directos con excepcional conservaciÃ³n de giro." },
+    { id: 6, code: "UX-08", name: "Whale Wave", category: "blade", system: "UX", type_attr: "Attack", weight_grams: 36.6, attack_stat: 92, defense_stat: 65, stamina_stat: 60, dash_stat: 88, tier: "S", pick_rate_pct: 51.5, win_rate_pct: 60.9, trend: "new", trend_label: "Top Smash Attack", best_combo: "Whale Wave 7-60 Rush / Low Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO Competitive Index", description: "DiseÃ±o curvado de aleta de ballena con peso perimetral concentrado para empujes masivos." },
+    { id: 7, code: "BX-14", name: "Shark Edge", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 34.8, attack_stat: 92, defense_stat: 35, stamina_stat: 45, dash_stat: 90, tier: "A", pick_rate_pct: 46.2, win_rate_pct: 57.3, trend: "stable", trend_label: "Upper Attacker ClÃ¡sico", best_combo: "Shark Edge 3-60 LF", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Upper attack demoledor capaz de lanzar rivales fuera del estadio en el primer choque." },
+    { id: 8, code: "BX-31", name: "Tyranno Beat", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 37.5, attack_stat: 90, defense_stat: 60, stamina_stat: 55, dash_stat: 85, tier: "A", pick_rate_pct: 44.0, win_rate_pct: 56.4, trend: "stable", trend_label: "Smash Pesado", best_combo: "Tyranno Beat 4-60 Point / Gear Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "MandÃ­bula demoledora con masa concentrada para golpes de choque masivos." },
+    { id: 9, code: "BX-21", name: "Hells Chain", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.5, attack_stat: 70, defense_stat: 80, stamina_stat: 80, dash_stat: 70, tier: "A", pick_rate_pct: 42.1, win_rate_pct: 55.0, trend: "stable", trend_label: "Balance SÃ³lido", best_combo: "Hells Chain 5-60 Orb / Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Excelente combinaciÃ³n de defensa angular y contraataque equilibrado." },
     { id: 10, code: "UX-02", name: "Hells Hammer", category: "blade", system: "UX", type_attr: "Balance", weight_grams: 33.2, attack_stat: 78, defense_stat: 68, stamina_stat: 75, dash_stat: 75, tier: "A", pick_rate_pct: 38.6, win_rate_pct: 53.8, trend: "stable", trend_label: "Ataque Descendente", best_combo: "Hells Hammer 3-70 Hexa", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Ataque descendente martillo ideal para desestabilizar Beys defensivos." },
-    { id: 11, code: "UX-06", name: "Phoenix Rudder", category: "blade", system: "UX", type_attr: "Stamina", weight_grams: 35.8, attack_stat: 48, defense_stat: 82, stamina_stat: 92, dash_stat: 58, tier: "A", pick_rate_pct: 39.2, win_rate_pct: 55.4, trend: "up", trend_label: "+1 Tier", best_combo: "Phoenix Rudder 9-70 Glide", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Official 2025", description: "Variante de timón aerodinámico que redirige el flujo de aire para giro prolongado." },
+    { id: 11, code: "UX-06", name: "Phoenix Rudder", category: "blade", system: "UX", type_attr: "Stamina", weight_grams: 35.8, attack_stat: 48, defense_stat: 82, stamina_stat: 92, dash_stat: 58, tier: "A", pick_rate_pct: 39.2, win_rate_pct: 55.4, trend: "up", trend_label: "+1 Tier", best_combo: "Phoenix Rudder 9-70 Glide", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Official 2025", description: "Variante de timÃ³n aerodinÃ¡mico que redirige el flujo de aire para giro prolongado." },
     { id: 12, code: "BX-00", name: "Cobalt Drake", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 38.0, attack_stat: 93, defense_stat: 65, stamina_stat: 60, dash_stat: 88, tier: "A", pick_rate_pct: 28.5, win_rate_pct: 58.2, trend: "stable", trend_label: "Pieza Rara Competitiva", best_combo: "Cobalt Drake 4-60 Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Blade legendaria y pesada con 4 hojas agresivas de alto impacto." },
-    { id: 13, code: "BX-01", name: "Dran Sword", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 34.5, attack_stat: 88, defense_stat: 45, stamina_stat: 50, dash_stat: 88, tier: "A", pick_rate_pct: 35.0, win_rate_pct: 52.8, trend: "stable", trend_label: "Ataque Estándar", best_combo: "Dran Sword 3-60 Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "La espada clásica de 3 puntas para ataques veloces en la Xtreme Line." },
-    { id: 14, code: "BX-26", name: "Unicorn Sting", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.8, attack_stat: 72, defense_stat: 76, stamina_stat: 78, dash_stat: 70, tier: "B", pick_rate_pct: 24.8, win_rate_pct: 49.5, trend: "stable", trend_label: "Asimétrico", best_combo: "Unicorn Sting 5-60 Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Forma asimétrica que permite alternar ataque con un cuerno y defensa lisa." },
+    { id: 13, code: "BX-01", name: "Dran Sword", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 34.5, attack_stat: 88, defense_stat: 45, stamina_stat: 50, dash_stat: 88, tier: "A", pick_rate_pct: 35.0, win_rate_pct: 52.8, trend: "stable", trend_label: "Ataque EstÃ¡ndar", best_combo: "Dran Sword 3-60 Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "La espada clÃ¡sica de 3 puntas para ataques veloces en la Xtreme Line." },
+    { id: 14, code: "BX-26", name: "Unicorn Sting", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.8, attack_stat: 72, defense_stat: 76, stamina_stat: 78, dash_stat: 70, tier: "B", pick_rate_pct: 24.8, win_rate_pct: 49.5, trend: "stable", trend_label: "AsimÃ©trico", best_combo: "Unicorn Sting 5-60 Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Forma asimÃ©trica que permite alternar ataque con un cuerno y defensa lisa." },
     { id: 15, code: "BX-16", name: "Viper Tail", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 34.0, attack_stat: 65, defense_stat: 60, stamina_stat: 85, dash_stat: 60, tier: "B", pick_rate_pct: 22.1, win_rate_pct: 48.0, trend: "down", trend_label: "-1 Tier (Stamina Meta)", best_combo: "Viper Tail 5-80 Orb", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Down-force blades que mantienen la postura de giro estable contra ataques." },
-    { id: 16, code: "UX-04", name: "Black Shell", category: "blade", system: "UX", type_attr: "Defense", weight_grams: 34.2, attack_stat: 45, defense_stat: 86, stamina_stat: 74, dash_stat: 52, tier: "B", pick_rate_pct: 19.5, win_rate_pct: 47.3, trend: "stable", trend_label: "Defensa Esférica", best_combo: "Black Shell 4-70 Dot", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Caparazón redondeado diseñado para desviar impactos de blades de ataque rápido." },
-    { id: 17, code: "BX-04", name: "Knight Shield", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 32.8, attack_stat: 40, defense_stat: 88, stamina_stat: 70, dash_stat: 50, tier: "C", pick_rate_pct: 12.0, win_rate_pct: 42.1, trend: "stable", trend_label: "Defensa Básica", best_combo: "Knight Shield 3-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Escudo clásico de absorción de impactos frontales." },
+    { id: 16, code: "UX-04", name: "Black Shell", category: "blade", system: "UX", type_attr: "Defense", weight_grams: 34.2, attack_stat: 45, defense_stat: 86, stamina_stat: 74, dash_stat: 52, tier: "B", pick_rate_pct: 19.5, win_rate_pct: 47.3, trend: "stable", trend_label: "Defensa EsfÃ©rica", best_combo: "Black Shell 4-70 Dot", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "CaparazÃ³n redondeado diseÃ±ado para desviar impactos de blades de ataque rÃ¡pido." },
+    { id: 17, code: "BX-04", name: "Knight Shield", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 32.8, attack_stat: 40, defense_stat: 88, stamina_stat: 70, dash_stat: 50, tier: "C", pick_rate_pct: 12.0, win_rate_pct: 42.1, trend: "stable", trend_label: "Defensa BÃ¡sica", best_combo: "Knight Shield 3-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Escudo clÃ¡sico de absorciÃ³n de impactos frontales." },
     { id: 18, code: "BX-19", name: "Rhino Horn", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 33.1, attack_stat: 52, defense_stat: 80, stamina_stat: 65, dash_stat: 55, tier: "C", pick_rate_pct: 9.8, win_rate_pct: 39.4, trend: "down", trend_label: "Bajo Peso", best_combo: "Rhino Horn 3-60 Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Blade compacta y puntiaguda pero propensa a salir despedida por choques pesados." },
 
     // Ratchets
-    { id: 19, code: "R-960", name: "9-60", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.6, attack_stat: 70, defense_stat: 85, stamina_stat: 90, dash_stat: 80, tier: "S", pick_rate_pct: 92.4, win_rate_pct: 68.9, trend: "stable", trend_label: "El Ratchet Más Usado", best_combo: "Indispensable en Slot 1 o 2", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "9 puntos de contacto que reducen el riesgo de Burst y optimizan el peso centrífugo." },
-    { id: 20, code: "R-560", name: "5-60", category: "ratchet", system: "BX", type_attr: "Defense", weight_grams: 6.4, attack_stat: 75, defense_stat: 80, stamina_stat: 85, dash_stat: 75, tier: "S", pick_rate_pct: 78.0, win_rate_pct: 64.2, trend: "stable", trend_label: "Estándar Competitivo", best_combo: "Ataque y Resistencia", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Perfil bajo de 60mm con 5 salientes equilibrados, el favorito de torneos." },
-    { id: 21, code: "R-760", name: "7-60", category: "ratchet", system: "UX", type_attr: "Balance", weight_grams: 6.8, attack_stat: 74, defense_stat: 84, stamina_stat: 88, dash_stat: 78, tier: "S", pick_rate_pct: 65.1, win_rate_pct: 63.5, trend: "up", trend_label: "+1 Tier (UX Meta)", best_combo: "Whale Wave / Silver Wolf", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "7 salientes con distribución simétrica de inercia y gran resistencia al desencajamiento." },
-    { id: 22, code: "R-160", name: "1-60", category: "ratchet", system: "UX", type_attr: "Attack", weight_grams: 6.1, attack_stat: 95, defense_stat: 50, stamina_stat: 50, dash_stat: 90, tier: "S", pick_rate_pct: 59.3, win_rate_pct: 61.8, trend: "stable", trend_label: "Ataque Puro", best_combo: "Dran Buster 1-60", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Un solo punto excéntrico diseñado para Dran Buster y golpes de poder único." },
-    { id: 23, code: "R-360", name: "3-60", category: "ratchet", system: "BX", type_attr: "Attack", weight_grams: 6.2, attack_stat: 85, defense_stat: 65, stamina_stat: 75, dash_stat: 85, tier: "A", pick_rate_pct: 52.0, win_rate_pct: 56.7, trend: "stable", trend_label: "Alineación 3-Hojas", best_combo: "Shark Edge / Dran Sword", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Ideal para alinear las cuchillas de ataque de 3 lados como Shark Edge y Dran Sword." },
+    { id: 19, code: "R-960", name: "9-60", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.6, attack_stat: 70, defense_stat: 85, stamina_stat: 90, dash_stat: 80, tier: "S", pick_rate_pct: 92.4, win_rate_pct: 68.9, trend: "stable", trend_label: "El Ratchet MÃ¡s Usado", best_combo: "Indispensable en Slot 1 o 2", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "9 puntos de contacto que reducen el riesgo de Burst y optimizan el peso centrÃ­fugo." },
+    { id: 20, code: "R-560", name: "5-60", category: "ratchet", system: "BX", type_attr: "Defense", weight_grams: 6.4, attack_stat: 75, defense_stat: 80, stamina_stat: 85, dash_stat: 75, tier: "S", pick_rate_pct: 78.0, win_rate_pct: 64.2, trend: "stable", trend_label: "EstÃ¡ndar Competitivo", best_combo: "Ataque y Resistencia", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Perfil bajo de 60mm con 5 salientes equilibrados, el favorito de torneos." },
+    { id: 21, code: "R-760", name: "7-60", category: "ratchet", system: "UX", type_attr: "Balance", weight_grams: 6.8, attack_stat: 74, defense_stat: 84, stamina_stat: 88, dash_stat: 78, tier: "S", pick_rate_pct: 65.1, win_rate_pct: 63.5, trend: "up", trend_label: "+1 Tier (UX Meta)", best_combo: "Whale Wave / Silver Wolf", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "7 salientes con distribuciÃ³n simÃ©trica de inercia y gran resistencia al desencajamiento." },
+    { id: 22, code: "R-160", name: "1-60", category: "ratchet", system: "UX", type_attr: "Attack", weight_grams: 6.1, attack_stat: 95, defense_stat: 50, stamina_stat: 50, dash_stat: 90, tier: "S", pick_rate_pct: 59.3, win_rate_pct: 61.8, trend: "stable", trend_label: "Ataque Puro", best_combo: "Dran Buster 1-60", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Un solo punto excÃ©ntrico diseÃ±ado para Dran Buster y golpes de poder Ãºnico." },
+    { id: 23, code: "R-360", name: "3-60", category: "ratchet", system: "BX", type_attr: "Attack", weight_grams: 6.2, attack_stat: 85, defense_stat: 65, stamina_stat: 75, dash_stat: 85, tier: "A", pick_rate_pct: 52.0, win_rate_pct: 56.7, trend: "stable", trend_label: "AlineaciÃ³n 3-Hojas", best_combo: "Shark Edge / Dran Sword", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Ideal para alinear las cuchillas de ataque de 3 lados como Shark Edge y Dran Sword." },
     { id: 24, code: "R-570", name: "5-70", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 6.7, attack_stat: 60, defense_stat: 85, stamina_stat: 92, dash_stat: 70, tier: "A", pick_rate_pct: 49.0, win_rate_pct: 57.1, trend: "stable", trend_label: "Combo Clave Rod", best_combo: "Wizard Rod 5-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Altura de 70mm optimizada para Wizard Rod y defensas altas." },
-    { id: 25, code: "R-970", name: "9-70", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 6.9, attack_stat: 62, defense_stat: 86, stamina_stat: 91, dash_stat: 68, tier: "A", pick_rate_pct: 41.5, win_rate_pct: 54.9, trend: "up", trend_label: "+1 Tier", best_combo: "Phoenix Rudder / Stamina Beys", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Versión de 70mm con 9 puntos que resiste los ataques de Beys bajos." },
-    { id: 26, code: "R-370", name: "3-70", category: "ratchet", system: "UX", type_attr: "Balance", weight_grams: 6.3, attack_stat: 78, defense_stat: 70, stamina_stat: 77, dash_stat: 76, tier: "A", pick_rate_pct: 35.8, win_rate_pct: 52.4, trend: "stable", trend_label: "Hells Hammer Core", best_combo: "Hells Hammer 3-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Altura media con 3 contactos para ataques en ángulo descendente." },
-    { id: 27, code: "R-460", name: "4-60", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.3, attack_stat: 75, defense_stat: 74, stamina_stat: 78, dash_stat: 76, tier: "B", pick_rate_pct: 26.2, win_rate_pct: 48.6, trend: "stable", trend_label: "4 Contactos", best_combo: "Tyranno Beat 4-60", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Perfil bajo con 4 salientes simétricos." },
-    { id: 28, code: "R-470", name: "4-70", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.5, attack_stat: 70, defense_stat: 75, stamina_stat: 78, dash_stat: 75, tier: "B", pick_rate_pct: 21.0, win_rate_pct: 46.8, trend: "stable", trend_label: "Defensa Media", best_combo: "Black Shell 4-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "4 alas de protección media." },
+    { id: 25, code: "R-970", name: "9-70", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 6.9, attack_stat: 62, defense_stat: 86, stamina_stat: 91, dash_stat: 68, tier: "A", pick_rate_pct: 41.5, win_rate_pct: 54.9, trend: "up", trend_label: "+1 Tier", best_combo: "Phoenix Rudder / Stamina Beys", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "VersiÃ³n de 70mm con 9 puntos que resiste los ataques de Beys bajos." },
+    { id: 26, code: "R-370", name: "3-70", category: "ratchet", system: "UX", type_attr: "Balance", weight_grams: 6.3, attack_stat: 78, defense_stat: 70, stamina_stat: 77, dash_stat: 76, tier: "A", pick_rate_pct: 35.8, win_rate_pct: 52.4, trend: "stable", trend_label: "Hells Hammer Core", best_combo: "Hells Hammer 3-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Altura media con 3 contactos para ataques en Ã¡ngulo descendente." },
+    { id: 27, code: "R-460", name: "4-60", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.3, attack_stat: 75, defense_stat: 74, stamina_stat: 78, dash_stat: 76, tier: "B", pick_rate_pct: 26.2, win_rate_pct: 48.6, trend: "stable", trend_label: "4 Contactos", best_combo: "Tyranno Beat 4-60", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Perfil bajo con 4 salientes simÃ©tricos." },
+    { id: 28, code: "R-470", name: "4-70", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.5, attack_stat: 70, defense_stat: 75, stamina_stat: 78, dash_stat: 75, tier: "B", pick_rate_pct: 21.0, win_rate_pct: 46.8, trend: "stable", trend_label: "Defensa Media", best_combo: "Black Shell 4-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "4 alas de protecciÃ³n media." },
     { id: 29, code: "R-380", name: "3-80", category: "ratchet", system: "BX", type_attr: "Stamina", weight_grams: 7.1, attack_stat: 50, defense_stat: 70, stamina_stat: 80, dash_stat: 60, tier: "C", pick_rate_pct: 11.2, win_rate_pct: 41.5, trend: "down", trend_label: "Riesgo de Burst", best_combo: "Knight Shield 3-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Altura de 80mm para resistir ataques rasantes." },
-    { id: 30, code: "R-580", name: "5-80", category: "ratchet", system: "BX", type_attr: "Stamina", weight_grams: 7.3, attack_stat: 48, defense_stat: 72, stamina_stat: 82, dash_stat: 58, tier: "C", pick_rate_pct: 9.5, win_rate_pct: 39.8, trend: "stable", trend_label: "Altura Máxima", best_combo: "Viper Tail 5-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Gran masa de 80mm pero vulnerable a ser golpeado en el centro del ratchet." },
+    { id: 30, code: "R-580", name: "5-80", category: "ratchet", system: "BX", type_attr: "Stamina", weight_grams: 7.3, attack_stat: 48, defense_stat: 72, stamina_stat: 82, dash_stat: 58, tier: "C", pick_rate_pct: 9.5, win_rate_pct: 39.8, trend: "stable", trend_label: "Altura MÃ¡xima", best_combo: "Viper Tail 5-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Gran masa de 80mm pero vulnerable a ser golpeado en el centro del ratchet." },
 
     // Bits
-    { id: 31, code: "B-B", name: "Ball (B)", category: "bit", system: "BX", type_attr: "Stamina", weight_grams: 2.2, attack_stat: 30, defense_stat: 80, stamina_stat: 98, dash_stat: 40, tier: "S", pick_rate_pct: 86.4, win_rate_pct: 67.5, trend: "stable", trend_label: "Punta de Giro Clásica", best_combo: "Wizard Rod / Silver Wolf", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta esférica con máxima inercia y resistencia a los choques." },
-    { id: 32, code: "B-DB", name: "Disc Ball (DB)", category: "bit", system: "UX", type_attr: "Stamina", weight_grams: 2.5, attack_stat: 35, defense_stat: 88, stamina_stat: 99, dash_stat: 45, tier: "S", pick_rate_pct: 91.0, win_rate_pct: 71.2, trend: "stable", trend_label: "#1 Winrate en Torneos", best_combo: "Wizard Rod 5-70 DB", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Disco estabilizador anti-inclinación y resistencia superior." },
-    { id: 33, code: "B-H", name: "Hexa (H)", category: "bit", system: "UX", type_attr: "Defense", weight_grams: 2.6, attack_stat: 45, defense_stat: 94, stamina_stat: 80, dash_stat: 55, tier: "S", pick_rate_pct: 72.8, win_rate_pct: 65.0, trend: "up", trend_label: "Defensa Anti-KO", best_combo: "Phoenix Wing / Hells Chain", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Base hexagonal con alta resistencia al Burst y gran amortiguación de retroceso." },
-    { id: 34, code: "B-GF", name: "Gear Flat (GF)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.4, attack_stat: 98, defense_stat: 30, stamina_stat: 35, dash_stat: 99, tier: "S", pick_rate_pct: 68.5, win_rate_pct: 62.4, trend: "stable", trend_label: "Máximo Xtreme Dash", best_combo: "Phoenix Wing / Whale Wave", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Engranajes extendidos en la punta para Xtreme Dash supersónicos." },
-    { id: 35, code: "B-E", name: "Elevate (E)", category: "bit", system: "UX", type_attr: "Balance", weight_grams: 2.7, attack_stat: 65, defense_stat: 82, stamina_stat: 86, dash_stat: 70, tier: "S", pick_rate_pct: 56.0, win_rate_pct: 63.8, trend: "new", trend_label: "Nuevo Top Tier", best_combo: "Cobalt Dragoon / Phoenix Rudder", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Punta de altura regulada que salta sobre Beys rivales en la línea Xtreme." },
+    { id: 31, code: "B-B", name: "Ball (B)", category: "bit", system: "BX", type_attr: "Stamina", weight_grams: 2.2, attack_stat: 30, defense_stat: 80, stamina_stat: 98, dash_stat: 40, tier: "S", pick_rate_pct: 86.4, win_rate_pct: 67.5, trend: "stable", trend_label: "Punta de Giro ClÃ¡sica", best_combo: "Wizard Rod / Silver Wolf", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta esfÃ©rica con mÃ¡xima inercia y resistencia a los choques." },
+    { id: 32, code: "B-DB", name: "Disc Ball (DB)", category: "bit", system: "UX", type_attr: "Stamina", weight_grams: 2.5, attack_stat: 35, defense_stat: 88, stamina_stat: 99, dash_stat: 45, tier: "S", pick_rate_pct: 91.0, win_rate_pct: 71.2, trend: "stable", trend_label: "#1 Winrate en Torneos", best_combo: "Wizard Rod 5-70 DB", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Disco estabilizador anti-inclinaciÃ³n y resistencia superior." },
+    { id: 33, code: "B-H", name: "Hexa (H)", category: "bit", system: "UX", type_attr: "Defense", weight_grams: 2.6, attack_stat: 45, defense_stat: 94, stamina_stat: 80, dash_stat: 55, tier: "S", pick_rate_pct: 72.8, win_rate_pct: 65.0, trend: "up", trend_label: "Defensa Anti-KO", best_combo: "Phoenix Wing / Hells Chain", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Base hexagonal con alta resistencia al Burst y gran amortiguaciÃ³n de retroceso." },
+    { id: 34, code: "B-GF", name: "Gear Flat (GF)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.4, attack_stat: 98, defense_stat: 30, stamina_stat: 35, dash_stat: 99, tier: "S", pick_rate_pct: 68.5, win_rate_pct: 62.4, trend: "stable", trend_label: "MÃ¡ximo Xtreme Dash", best_combo: "Phoenix Wing / Whale Wave", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Engranajes extendidos en la punta para Xtreme Dash supersÃ³nicos." },
+    { id: 35, code: "B-E", name: "Elevate (E)", category: "bit", system: "UX", type_attr: "Balance", weight_grams: 2.7, attack_stat: 65, defense_stat: 82, stamina_stat: 86, dash_stat: 70, tier: "S", pick_rate_pct: 56.0, win_rate_pct: 63.8, trend: "new", trend_label: "Nuevo Top Tier", best_combo: "Cobalt Dragoon / Phoenix Rudder", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Punta de altura regulada que salta sobre Beys rivales en la lÃ­nea Xtreme." },
     { id: 36, code: "B-LF", name: "Low Flat (LF)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.2, attack_stat: 95, defense_stat: 35, stamina_stat: 40, dash_stat: 92, tier: "A", pick_rate_pct: 54.2, win_rate_pct: 58.1, trend: "stable", trend_label: "Upper Attack Base", best_combo: "Shark Edge / Dran Buster", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta plana rebajada para trayectorias agresivas y upper hits." },
-    { id: 37, code: "B-F", name: "Flat (F)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.1, attack_stat: 90, defense_stat: 40, stamina_stat: 45, dash_stat: 88, tier: "A", pick_rate_pct: 48.0, win_rate_pct: 54.5, trend: "stable", trend_label: "Ataque Controlado", best_combo: "Dran Sword 3-60 F", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "La punta clásica de ataque de alta velocidad." },
-    { id: 38, code: "B-P", name: "Point (P)", category: "bit", system: "BX", type_attr: "Balance", weight_grams: 2.3, attack_stat: 70, defense_stat: 70, stamina_stat: 75, dash_stat: 75, tier: "A", pick_rate_pct: 45.3, win_rate_pct: 55.2, trend: "stable", trend_label: "Balance Versátil", best_combo: "Phoenix Wing / Unicorn Sting", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Centro de resistencia con borde de ataque Xtreme." },
-    { id: 39, code: "B-GP", name: "Gear Point (GP)", category: "bit", system: "BX", type_attr: "Balance", weight_grams: 2.4, attack_stat: 75, defense_stat: 68, stamina_stat: 72, dash_stat: 85, tier: "A", pick_rate_pct: 42.1, win_rate_pct: 53.7, trend: "stable", trend_label: "Aceleración Rápida", best_combo: "Tyranno Beat 4-60 GP", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Versión engranada de Point para aceleraciones repentinas." },
-    { id: 40, code: "B-R", name: "Rush (R)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.3, attack_stat: 88, defense_stat: 45, stamina_stat: 52, dash_stat: 90, tier: "A", pick_rate_pct: 38.4, win_rate_pct: 54.0, trend: "up", trend_label: "+1 Tier", best_combo: "Dran Dagger / Whale Wave", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Dientes de engranaje finos con mayor duración de movimiento continuo." },
-    { id: 41, code: "B-O", name: "Orb (O)", category: "bit", system: "BX", type_attr: "Stamina", weight_grams: 2.2, attack_stat: 35, defense_stat: 75, stamina_stat: 90, dash_stat: 45, tier: "B", pick_rate_pct: 25.0, win_rate_pct: 48.9, trend: "stable", trend_label: "Esfera Fina", best_combo: "Hells Chain / Viper Tail", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta esférica compacta para giro estable en el centro." },
-    { id: 42, code: "B-HN", name: "High Needle (HN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.4, attack_stat: 40, defense_stat: 84, stamina_stat: 72, dash_stat: 48, tier: "B", pick_rate_pct: 20.2, win_rate_pct: 46.5, trend: "stable", trend_label: "Aguja Alta", best_combo: "Black Shell 4-70 HN", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta cónica elevada para evitar contacto prematuro del ratchet." },
-    { id: 43, code: "B-Q", name: "Quake (Q)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.5, attack_stat: 85, defense_stat: 25, stamina_stat: 20, dash_stat: 90, tier: "C", pick_rate_pct: 8.5, win_rate_pct: 35.0, trend: "down", trend_label: "Rebote Impredecible", best_combo: "Uso Causal / No Torneos", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta biselada cortada que produce saltos caóticos en el estadio." },
+    { id: 37, code: "B-F", name: "Flat (F)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.1, attack_stat: 90, defense_stat: 40, stamina_stat: 45, dash_stat: 88, tier: "A", pick_rate_pct: 48.0, win_rate_pct: 54.5, trend: "stable", trend_label: "Ataque Controlado", best_combo: "Dran Sword 3-60 F", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "La punta clÃ¡sica de ataque de alta velocidad." },
+    { id: 38, code: "B-P", name: "Point (P)", category: "bit", system: "BX", type_attr: "Balance", weight_grams: 2.3, attack_stat: 70, defense_stat: 70, stamina_stat: 75, dash_stat: 75, tier: "A", pick_rate_pct: 45.3, win_rate_pct: 55.2, trend: "stable", trend_label: "Balance VersÃ¡til", best_combo: "Phoenix Wing / Unicorn Sting", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Centro de resistencia con borde de ataque Xtreme." },
+    { id: 39, code: "B-GP", name: "Gear Point (GP)", category: "bit", system: "BX", type_attr: "Balance", weight_grams: 2.4, attack_stat: 75, defense_stat: 68, stamina_stat: 72, dash_stat: 85, tier: "A", pick_rate_pct: 42.1, win_rate_pct: 53.7, trend: "stable", trend_label: "AceleraciÃ³n RÃ¡pida", best_combo: "Tyranno Beat 4-60 GP", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "VersiÃ³n engranada de Point para aceleraciones repentinas." },
+    { id: 40, code: "B-R", name: "Rush (R)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.3, attack_stat: 88, defense_stat: 45, stamina_stat: 52, dash_stat: 90, tier: "A", pick_rate_pct: 38.4, win_rate_pct: 54.0, trend: "up", trend_label: "+1 Tier", best_combo: "Dran Dagger / Whale Wave", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Dientes de engranaje finos con mayor duraciÃ³n de movimiento continuo." },
+    { id: 41, code: "B-O", name: "Orb (O)", category: "bit", system: "BX", type_attr: "Stamina", weight_grams: 2.2, attack_stat: 35, defense_stat: 75, stamina_stat: 90, dash_stat: 45, tier: "B", pick_rate_pct: 25.0, win_rate_pct: 48.9, trend: "stable", trend_label: "Esfera Fina", best_combo: "Hells Chain / Viper Tail", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta esfÃ©rica compacta para giro estable en el centro." },
+    { id: 42, code: "B-HN", name: "High Needle (HN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.4, attack_stat: 40, defense_stat: 84, stamina_stat: 72, dash_stat: 48, tier: "B", pick_rate_pct: 20.2, win_rate_pct: 46.5, trend: "stable", trend_label: "Aguja Alta", best_combo: "Black Shell 4-70 HN", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta cÃ³nica elevada para evitar contacto prematuro del ratchet." },
+    { id: 43, code: "B-Q", name: "Quake (Q)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.5, attack_stat: 85, defense_stat: 25, stamina_stat: 20, dash_stat: 90, tier: "C", pick_rate_pct: 8.5, win_rate_pct: 35.0, trend: "down", trend_label: "Rebote Impredecible", best_combo: "Uso Causal / No Torneos", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta biselada cortada que produce saltos caÃ³ticos en el estadio." },
 
     // Additional Official Blades (Takara Tomy & Hasbro WBO Standard)
-    { id: 44, code: "BX-02", name: "Hells Scythe", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.0, attack_stat: 75, defense_stat: 75, stamina_stat: 82, dash_stat: 72, tier: "A", pick_rate_pct: 48.0, win_rate_pct: 54.0, trend: "stable", trend_label: "Balance Clásico", best_combo: "Hells Scythe 3-60 Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "4 hojas de guadaña simétricas con balance y resistencia excepcionales." },
-    { id: 45, code: "BX-03", name: "Wizard Arrow", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 31.5, attack_stat: 45, defense_stat: 65, stamina_stat: 88, dash_stat: 60, tier: "B", pick_rate_pct: 20.0, win_rate_pct: 47.0, trend: "stable", trend_label: "Aerodinámica", best_combo: "Wizard Arrow 4-60 Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Dos grandes alas tipo flecha diseñadas para corte de viento y resistencia." },
+    { id: 44, code: "BX-02", name: "Hells Scythe", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.0, attack_stat: 75, defense_stat: 75, stamina_stat: 82, dash_stat: 72, tier: "A", pick_rate_pct: 48.0, win_rate_pct: 54.0, trend: "stable", trend_label: "Balance ClÃ¡sico", best_combo: "Hells Scythe 3-60 Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "4 hojas de guadaÃ±a simÃ©tricas con balance y resistencia excepcionales." },
+    { id: 45, code: "BX-03", name: "Wizard Arrow", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 31.5, attack_stat: 45, defense_stat: 65, stamina_stat: 88, dash_stat: 60, tier: "B", pick_rate_pct: 20.0, win_rate_pct: 47.0, trend: "stable", trend_label: "AerodinÃ¡mica", best_combo: "Wizard Arrow 4-60 Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Dos grandes alas tipo flecha diseÃ±adas para corte de viento y resistencia." },
     { id: 46, code: "BX-13", name: "Knight Lance", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 33.5, attack_stat: 60, defense_stat: 84, stamina_stat: 70, dash_stat: 65, tier: "B", pick_rate_pct: 18.5, win_rate_pct: 46.2, trend: "stable", trend_label: "Defensa con Lanza", best_combo: "Knight Lance 4-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Escudo con lanzas sobresalientes para absorber y repeler ataques directos." },
-    { id: 47, code: "BX-15", name: "Leon Claw", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 32.2, attack_stat: 74, defense_stat: 72, stamina_stat: 70, dash_stat: 74, tier: "B", pick_rate_pct: 22.0, win_rate_pct: 48.1, trend: "stable", trend_label: "Garras de León", best_combo: "Leon Claw 5-60 Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Garras afiladas diseñadas para cambiar entre ataque y defensa según la inclinación." },
-    { id: 48, code: "BX-20", name: "Dran Dagger", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 35.2, attack_stat: 92, defense_stat: 42, stamina_stat: 48, dash_stat: 92, tier: "A", pick_rate_pct: 44.5, win_rate_pct: 55.8, trend: "stable", trend_label: "Ataque Ráfaga", best_combo: "Dran Dagger 4-60 Rush", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "6 hojas continuas de daga que propinan una ráfaga incesante de golpes." },
-    { id: 49, code: "BX-20B", name: "Wyvern Gale", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 32.6, attack_stat: 42, defense_stat: 74, stamina_stat: 86, dash_stat: 62, tier: "B", pick_rate_pct: 16.0, win_rate_pct: 45.4, trend: "stable", trend_label: "Hélice de Viento", best_combo: "Wyvern Gale 5-80 Gear Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Diseño curvado de turbina que desvía ataques y optimiza la estabilidad centrífuga." },
+    { id: 47, code: "BX-15", name: "Leon Claw", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 32.2, attack_stat: 74, defense_stat: 72, stamina_stat: 70, dash_stat: 74, tier: "B", pick_rate_pct: 22.0, win_rate_pct: 48.1, trend: "stable", trend_label: "Garras de LeÃ³n", best_combo: "Leon Claw 5-60 Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Garras afiladas diseÃ±adas para cambiar entre ataque y defensa segÃºn la inclinaciÃ³n." },
+    { id: 48, code: "BX-20", name: "Dran Dagger", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 35.2, attack_stat: 92, defense_stat: 42, stamina_stat: 48, dash_stat: 92, tier: "A", pick_rate_pct: 44.5, win_rate_pct: 55.8, trend: "stable", trend_label: "Ataque RÃ¡faga", best_combo: "Dran Dagger 4-60 Rush", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "6 hojas continuas de daga que propinan una rÃ¡faga incesante de golpes." },
+    { id: 49, code: "BX-20B", name: "Wyvern Gale", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 32.6, attack_stat: 42, defense_stat: 74, stamina_stat: 86, dash_stat: 62, tier: "B", pick_rate_pct: 16.0, win_rate_pct: 45.4, trend: "stable", trend_label: "HÃ©lice de Viento", best_combo: "Wyvern Gale 5-80 Gear Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "DiseÃ±o curvado de turbina que desvÃ­a ataques y optimiza la estabilidad centrÃ­fuga." },
     { id: 50, code: "BX-24", name: "Shinobi Shadow", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 32.0, attack_stat: 50, defense_stat: 82, stamina_stat: 68, dash_stat: 66, tier: "C", pick_rate_pct: 10.5, win_rate_pct: 41.0, trend: "stable", trend_label: "Defensa Lisa", best_combo: "Shinobi Shadow 1-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Perfil ultra resbaladizo para amortiguar impactos y deslizarse en la arena." },
     { id: 51, code: "BX-27", name: "Sphinx Cowl", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 34.0, attack_stat: 55, defense_stat: 86, stamina_stat: 65, dash_stat: 60, tier: "B", pick_rate_pct: 21.0, win_rate_pct: 47.9, trend: "stable", trend_label: "Blindaje Pesado", best_combo: "Sphinx Cowl 9-80 Gear Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Casco blindado egipcio con masivos puntos de choque defensivos." },
     { id: 52, code: "BX-33", name: "Weiss Tiger", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 34.8, attack_stat: 90, defense_stat: 52, stamina_stat: 56, dash_stat: 88, tier: "A", pick_rate_pct: 36.5, win_rate_pct: 53.2, trend: "stable", trend_label: "Garras de Tigre", best_combo: "Weiss Tiger 3-60 Unite", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Cuchillas en forma de garras de tigre blanco para ataques de corte diagonal." },
     { id: 53, code: "BX-35", name: "Impact Drake", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 38.6, attack_stat: 97, defense_stat: 58, stamina_stat: 52, dash_stat: 94, tier: "S", pick_rate_pct: 64.0, win_rate_pct: 64.8, trend: "new", trend_label: "Goma & Peso Masivo", best_combo: "Impact Drake 7-60 Low Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Release 2025", description: "Blade monumental con inserciones de goma de alto impacto para smash finishes brutales." },
-    { id: 54, code: "BX-00B", name: "Aero Pegasus", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 37.9, attack_stat: 96, defense_stat: 55, stamina_stat: 58, dash_stat: 95, tier: "S", pick_rate_pct: 42.0, win_rate_pct: 62.1, trend: "stable", trend_label: "Pieza Rara Legendaria", best_combo: "Aero Pegasus 3-70 Accel", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Rare Bey Get", description: "Hojas aerodinámicas de tres alas con tremendo downforce para ataques aéreos." },
-    { id: 55, code: "UX-05", name: "Leon Crest", category: "blade", system: "UX", type_attr: "Defense", weight_grams: 36.0, attack_stat: 52, defense_stat: 92, stamina_stat: 78, dash_stat: 58, tier: "S", pick_rate_pct: 58.0, win_rate_pct: 63.4, trend: "up", trend_label: "Defensa UX Top", best_combo: "Leon Crest 7-60 High Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2024", description: "Melena densa de metal exterior UX diseñada para anular todo impulso de ataque rival." },
+    { id: 54, code: "BX-00B", name: "Aero Pegasus", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 37.9, attack_stat: 96, defense_stat: 55, stamina_stat: 58, dash_stat: 95, tier: "S", pick_rate_pct: 42.0, win_rate_pct: 62.1, trend: "stable", trend_label: "Pieza Rara Legendaria", best_combo: "Aero Pegasus 3-70 Accel", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Rare Bey Get", description: "Hojas aerodinÃ¡micas de tres alas con tremendo downforce para ataques aÃ©reos." },
+    { id: 55, code: "UX-05", name: "Leon Crest", category: "blade", system: "UX", type_attr: "Defense", weight_grams: 36.0, attack_stat: 52, defense_stat: 92, stamina_stat: 78, dash_stat: 58, tier: "S", pick_rate_pct: 58.0, win_rate_pct: 63.4, trend: "up", trend_label: "Defensa UX Top", best_combo: "Leon Crest 7-60 High Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2024", description: "Melena densa de metal exterior UX diseÃ±ada para anular todo impulso de ataque rival." },
     { id: 56, code: "UX-09", name: "Samurai Saber", category: "blade", system: "UX", type_attr: "Attack", weight_grams: 36.4, attack_stat: 96, defense_stat: 48, stamina_stat: 54, dash_stat: 92, tier: "S", pick_rate_pct: 55.0, win_rate_pct: 62.0, trend: "new", trend_label: "Filo de Katana", best_combo: "Samurai Saber 2-70 Level", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Katana doble con filo extremo que corta el centro de la arena en Xtreme Dash." },
     { id: 57, code: "UX-10", name: "Knight Mail", category: "blade", system: "UX", type_attr: "Defense", weight_grams: 37.0, attack_stat: 50, defense_stat: 95, stamina_stat: 76, dash_stat: 55, tier: "S", pick_rate_pct: 60.5, win_rate_pct: 64.2, trend: "new", trend_label: "Armadura Inquebrantable", best_combo: "Knight Mail 3-85 Bound Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Cota de malla con masa perimetral masiva que disipa el retroceso de impactos pesados." },
-    { id: 58, code: "HB-01", name: "Bear Scratch", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 33.4, attack_stat: 86, defense_stat: 45, stamina_stat: 52, dash_stat: 84, tier: "B", pick_rate_pct: 15.0, win_rate_pct: 46.5, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Bear Scratch 5-60 Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Diseño exclusivo Hasbro con zarpazos de oso de retroceso moderado." },
+    { id: 58, code: "HB-01", name: "Bear Scratch", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 33.4, attack_stat: 86, defense_stat: 45, stamina_stat: 52, dash_stat: 84, tier: "B", pick_rate_pct: 15.0, win_rate_pct: 46.5, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Bear Scratch 5-60 Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "DiseÃ±o exclusivo Hasbro con zarpazos de oso de retroceso moderado." },
     { id: 59, code: "HB-02", name: "Tusk Mammoth", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 34.2, attack_stat: 58, defense_stat: 82, stamina_stat: 64, dash_stat: 60, tier: "B", pick_rate_pct: 14.0, win_rate_pct: 46.0, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Tusk Mammoth 3-80 Taper", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Colmillos frontales de mamut para amortiguar ataques directos." },
-    { id: 60, code: "HB-03", name: "Roar Tyranno", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 35.8, attack_stat: 89, defense_stat: 50, stamina_stat: 50, dash_stat: 86, tier: "A", pick_rate_pct: 25.0, win_rate_pct: 51.5, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Roar Tyranno 4-60 Gear Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Mandíbula jurásica pesada que lanza rivales en choques frontales." },
-    { id: 61, code: "HB-04", name: "Steel Samurai", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.8, attack_stat: 72, defense_stat: 74, stamina_stat: 74, dash_stat: 72, tier: "B", pick_rate_pct: 17.5, win_rate_pct: 48.0, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Steel Samurai 4-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Hojas gemelas de samurái para combate balanceado en media distancia." },
+    { id: 60, code: "HB-03", name: "Roar Tyranno", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 35.8, attack_stat: 89, defense_stat: 50, stamina_stat: 50, dash_stat: 86, tier: "A", pick_rate_pct: 25.0, win_rate_pct: 51.5, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Roar Tyranno 4-60 Gear Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "MandÃ­bula jurÃ¡sica pesada que lanza rivales en choques frontales." },
+    { id: 61, code: "HB-04", name: "Steel Samurai", category: "blade", system: "BX", type_attr: "Balance", weight_grams: 33.8, attack_stat: 72, defense_stat: 74, stamina_stat: 74, dash_stat: 72, tier: "B", pick_rate_pct: 17.5, win_rate_pct: 48.0, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Steel Samurai 4-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Hojas gemelas de samurÃ¡i para combate balanceado en media distancia." },
     { id: 62, code: "HB-05", name: "Bite Croc", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 33.6, attack_stat: 87, defense_stat: 44, stamina_stat: 46, dash_stat: 85, tier: "B", pick_rate_pct: 16.0, win_rate_pct: 47.2, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Bite Croc 3-60 Low Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Dientes de cocodrilo con puntos de enganche para sacar al rival de trayectoria." },
-    { id: 63, code: "HB-06", name: "Talon Ptera", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 32.5, attack_stat: 50, defense_stat: 62, stamina_stat: 84, dash_stat: 66, tier: "B", pick_rate_pct: 13.5, win_rate_pct: 45.8, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Talon Ptera 3-80 Orb", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Alas extendidas de pterodáctilo para giros suaves y prolongados." },
-    { id: 64, code: "HB-07", name: "Yell Kong", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 34.0, attack_stat: 60, defense_stat: 83, stamina_stat: 66, dash_stat: 62, tier: "B", pick_rate_pct: 15.0, win_rate_pct: 46.8, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Yell Kong 5-60 Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Pechera simétrica y pesada para resistir ráfagas de ataque." },
+    { id: 63, code: "HB-06", name: "Talon Ptera", category: "blade", system: "BX", type_attr: "Stamina", weight_grams: 32.5, attack_stat: 50, defense_stat: 62, stamina_stat: 84, dash_stat: 66, tier: "B", pick_rate_pct: 13.5, win_rate_pct: 45.8, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Talon Ptera 3-80 Orb", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Alas extendidas de pterodÃ¡ctilo para giros suaves y prolongados." },
+    { id: 64, code: "HB-07", name: "Yell Kong", category: "blade", system: "BX", type_attr: "Defense", weight_grams: 34.0, attack_stat: 60, defense_stat: 83, stamina_stat: 66, dash_stat: 62, tier: "B", pick_rate_pct: 15.0, win_rate_pct: 46.8, trend: "stable", trend_label: "Hasbro Exclusivo", best_combo: "Yell Kong 5-60 Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Hasbro Beyblade X", description: "Pechera simÃ©trica y pesada para resistir rÃ¡fagas de ataque." },
 
     // Additional Official Ratchets
-    { id: 65, code: "R-180", name: "1-80", category: "ratchet", system: "BX", type_attr: "Attack", weight_grams: 6.8, attack_stat: 92, defense_stat: 52, stamina_stat: 54, dash_stat: 86, tier: "A", pick_rate_pct: 32.0, win_rate_pct: 51.4, trend: "stable", trend_label: "Excéntrico Alto", best_combo: "Dran Buster 1-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punto excéntrico de ataque concentrado a 80mm de altura." },
+    { id: 65, code: "R-180", name: "1-80", category: "ratchet", system: "BX", type_attr: "Attack", weight_grams: 6.8, attack_stat: 92, defense_stat: 52, stamina_stat: 54, dash_stat: 86, tier: "A", pick_rate_pct: 32.0, win_rate_pct: 51.4, trend: "stable", trend_label: "ExcÃ©ntrico Alto", best_combo: "Dran Buster 1-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punto excÃ©ntrico de ataque concentrado a 80mm de altura." },
     { id: 66, code: "R-260", name: "2-60", category: "ratchet", system: "UX", type_attr: "Attack", weight_grams: 6.2, attack_stat: 88, defense_stat: 62, stamina_stat: 72, dash_stat: 84, tier: "A", pick_rate_pct: 38.0, win_rate_pct: 53.5, trend: "stable", trend_label: "Dual Contacto", best_combo: "Samurai Saber 2-60", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "2 puntos de contacto agresivos con perfil bajo de 60mm." },
-    { id: 67, code: "R-270", name: "2-70", category: "ratchet", system: "UX", type_attr: "Balance", weight_grams: 6.5, attack_stat: 82, defense_stat: 68, stamina_stat: 76, dash_stat: 78, tier: "A", pick_rate_pct: 35.0, win_rate_pct: 52.8, trend: "stable", trend_label: "Dual Medio", best_combo: "Whale Wave 2-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "2 salientes simétricos de altura media balanceada." },
+    { id: 67, code: "R-270", name: "2-70", category: "ratchet", system: "UX", type_attr: "Balance", weight_grams: 6.5, attack_stat: 82, defense_stat: 68, stamina_stat: 76, dash_stat: 78, tier: "A", pick_rate_pct: 35.0, win_rate_pct: 52.8, trend: "stable", trend_label: "Dual Medio", best_combo: "Whale Wave 2-70", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "2 salientes simÃ©tricos de altura media balanceada." },
     { id: 68, code: "R-280", name: "2-80", category: "ratchet", system: "BX", type_attr: "Defense", weight_grams: 6.9, attack_stat: 75, defense_stat: 76, stamina_stat: 78, dash_stat: 70, tier: "B", pick_rate_pct: 20.0, win_rate_pct: 47.0, trend: "stable", trend_label: "Dual Alto", best_combo: "Black Shell 2-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "2 alas altas que evitan el contacto rasante de Beys atacantes." },
-    { id: 69, code: "R-385", name: "3-85", category: "ratchet", system: "UX", type_attr: "Defense", weight_grams: 7.4, attack_stat: 52, defense_stat: 88, stamina_stat: 82, dash_stat: 64, tier: "A", pick_rate_pct: 39.0, win_rate_pct: 54.5, trend: "new", trend_label: "Ultra Alto 85mm", best_combo: "Knight Mail 3-85 Bound Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "El ratchet más alto del sistema (85mm), pensado para la máxima disipación de golpes." },
+    { id: 69, code: "R-385", name: "3-85", category: "ratchet", system: "UX", type_attr: "Defense", weight_grams: 7.4, attack_stat: 52, defense_stat: 88, stamina_stat: 82, dash_stat: 64, tier: "A", pick_rate_pct: 39.0, win_rate_pct: 54.5, trend: "new", trend_label: "Ultra Alto 85mm", best_combo: "Knight Mail 3-85 Bound Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "El ratchet mÃ¡s alto del sistema (85mm), pensado para la mÃ¡xima disipaciÃ³n de golpes." },
     { id: 70, code: "R-450", name: "4-50", category: "ratchet", system: "BX", type_attr: "Attack", weight_grams: 6.0, attack_stat: 94, defense_stat: 60, stamina_stat: 66, dash_stat: 92, tier: "S", pick_rate_pct: 58.0, win_rate_pct: 61.2, trend: "new", trend_label: "Ultra Bajo 50mm", best_combo: "Dran Buster 4-50 Low Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Release 2025", description: "Perfil ultra bajo (50mm) para golpear al rival desde abajo hacia arriba (Upper Attack)." },
     { id: 71, code: "R-480", name: "4-80", category: "ratchet", system: "BX", type_attr: "Defense", weight_grams: 7.0, attack_stat: 68, defense_stat: 78, stamina_stat: 80, dash_stat: 68, tier: "B", pick_rate_pct: 22.0, win_rate_pct: 47.5, trend: "stable", trend_label: "4 Contactos Altos", best_combo: "Knight Shield 4-80", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "4 salientes altos para mantener equilibrio ante choques duros." },
-    { id: 72, code: "R-660", name: "6-60", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.6, attack_stat: 76, defense_stat: 82, stamina_stat: 84, dash_stat: 76, tier: "A", pick_rate_pct: 45.0, win_rate_pct: 56.0, trend: "stable", trend_label: "Hexagonal 60mm", best_combo: "Phoenix Wing 6-60 Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "6 contactos simétricos hexagonales de gran estabilidad y baja resistencia." },
-    { id: 73, code: "R-770", name: "7-70", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 7.0, attack_stat: 68, defense_stat: 85, stamina_stat: 90, dash_stat: 72, tier: "S", pick_rate_pct: 52.0, win_rate_pct: 60.5, trend: "up", trend_label: "+1 Tier", best_combo: "Silver Wolf 7-70 Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "7 puntos simétricos a 70mm que otorgan gran inercia centrífuga." },
-    { id: 74, code: "R-780", name: "7-80", category: "ratchet", system: "UX", type_attr: "Defense", weight_grams: 7.3, attack_stat: 64, defense_stat: 88, stamina_stat: 86, dash_stat: 68, tier: "A", pick_rate_pct: 36.0, win_rate_pct: 53.0, trend: "stable", trend_label: "7 Contactos Alto", best_combo: "Leon Crest 7-80 Hexa", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Distribución uniforme de 7 puntos en altura de 80mm." },
-    { id: 75, code: "R-980", name: "9-80", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 7.2, attack_stat: 60, defense_stat: 86, stamina_stat: 92, dash_stat: 65, tier: "A", pick_rate_pct: 42.0, win_rate_pct: 55.0, trend: "up", trend_label: "9 Puntos Alto", best_combo: "Phoenix Rudder 9-80 Glide", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "La máxima resistencia al Burst en 80mm gracias a sus 9 puntos circulares." },
+    { id: 72, code: "R-660", name: "6-60", category: "ratchet", system: "BX", type_attr: "Balance", weight_grams: 6.6, attack_stat: 76, defense_stat: 82, stamina_stat: 84, dash_stat: 76, tier: "A", pick_rate_pct: 45.0, win_rate_pct: 56.0, trend: "stable", trend_label: "Hexagonal 60mm", best_combo: "Phoenix Wing 6-60 Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "6 contactos simÃ©tricos hexagonales de gran estabilidad y baja resistencia." },
+    { id: 73, code: "R-770", name: "7-70", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 7.0, attack_stat: 68, defense_stat: 85, stamina_stat: 90, dash_stat: 72, tier: "S", pick_rate_pct: 52.0, win_rate_pct: 60.5, trend: "up", trend_label: "+1 Tier", best_combo: "Silver Wolf 7-70 Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "7 puntos simÃ©tricos a 70mm que otorgan gran inercia centrÃ­fuga." },
+    { id: 74, code: "R-780", name: "7-80", category: "ratchet", system: "UX", type_attr: "Defense", weight_grams: 7.3, attack_stat: 64, defense_stat: 88, stamina_stat: 86, dash_stat: 68, tier: "A", pick_rate_pct: 36.0, win_rate_pct: 53.0, trend: "stable", trend_label: "7 Contactos Alto", best_combo: "Leon Crest 7-80 Hexa", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "DistribuciÃ³n uniforme de 7 puntos en altura de 80mm." },
+    { id: 75, code: "R-980", name: "9-80", category: "ratchet", system: "UX", type_attr: "Stamina", weight_grams: 7.2, attack_stat: 60, defense_stat: 86, stamina_stat: 92, dash_stat: 65, tier: "A", pick_rate_pct: 42.0, win_rate_pct: 55.0, trend: "up", trend_label: "9 Puntos Alto", best_combo: "Phoenix Rudder 9-80 Glide", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "La mÃ¡xima resistencia al Burst en 80mm gracias a sus 9 puntos circulares." },
 
     // Additional Official Bits
-    { id: 76, code: "B-T", name: "Taper (T)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.2, attack_stat: 85, defense_stat: 50, stamina_stat: 60, dash_stat: 84, tier: "A", pick_rate_pct: 46.0, win_rate_pct: 55.0, trend: "stable", trend_label: "Ataque Semi-Controlado", best_combo: "Hells Scythe 3-60 Taper", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta cónica escalonada que combina ataque agresivo con retención de energía." },
-    { id: 77, code: "B-GT", name: "Gear Taper (GT)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.4, attack_stat: 92, defense_stat: 45, stamina_stat: 50, dash_stat: 94, tier: "A", pick_rate_pct: 42.0, win_rate_pct: 54.2, trend: "stable", trend_label: "Taper Engranado", best_combo: "Dran Sword 3-60 GT", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Dientes de engranaje sobre la punta cónica para agarre rápido en el Xtreme Line." },
-    { id: 78, code: "B-N", name: "Needle (N)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.1, attack_stat: 35, defense_stat: 86, stamina_stat: 75, dash_stat: 45, tier: "B", pick_rate_pct: 28.0, win_rate_pct: 48.0, trend: "stable", trend_label: "Aguja Clásica", best_combo: "Knight Shield 3-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta fina de aguja que mantiene el Bey estacionario en el centro del estadio." },
-    { id: 79, code: "B-S", name: "Spike (S)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.1, attack_stat: 40, defense_stat: 84, stamina_stat: 70, dash_stat: 50, tier: "C", pick_rate_pct: 12.0, win_rate_pct: 40.5, trend: "stable", trend_label: "Punta Puntiaguda", best_combo: "Rhino Horn 3-60 Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta afilada que desvía ataques pero con menor resistencia estática." },
+    { id: 76, code: "B-T", name: "Taper (T)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.2, attack_stat: 85, defense_stat: 50, stamina_stat: 60, dash_stat: 84, tier: "A", pick_rate_pct: 46.0, win_rate_pct: 55.0, trend: "stable", trend_label: "Ataque Semi-Controlado", best_combo: "Hells Scythe 3-60 Taper", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta cÃ³nica escalonada que combina ataque agresivo con retenciÃ³n de energÃ­a." },
+    { id: 77, code: "B-GT", name: "Gear Taper (GT)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.4, attack_stat: 92, defense_stat: 45, stamina_stat: 50, dash_stat: 94, tier: "A", pick_rate_pct: 42.0, win_rate_pct: 54.2, trend: "stable", trend_label: "Taper Engranado", best_combo: "Dran Sword 3-60 GT", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Dientes de engranaje sobre la punta cÃ³nica para agarre rÃ¡pido en el Xtreme Line." },
+    { id: 78, code: "B-N", name: "Needle (N)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.1, attack_stat: 35, defense_stat: 86, stamina_stat: 75, dash_stat: 45, tier: "B", pick_rate_pct: 28.0, win_rate_pct: 48.0, trend: "stable", trend_label: "Aguja ClÃ¡sica", best_combo: "Knight Shield 3-80 Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta fina de aguja que mantiene el Bey estacionario en el centro del estadio." },
+    { id: 79, code: "B-S", name: "Spike (S)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.1, attack_stat: 40, defense_stat: 84, stamina_stat: 70, dash_stat: 50, tier: "C", pick_rate_pct: 12.0, win_rate_pct: 40.5, trend: "stable", trend_label: "Punta Puntiaguda", best_combo: "Rhino Horn 3-60 Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta afilada que desvÃ­a ataques pero con menor resistencia estÃ¡tica." },
     { id: 80, code: "B-GN", name: "Gear Needle (GN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.4, attack_stat: 55, defense_stat: 88, stamina_stat: 72, dash_stat: 65, tier: "B", pick_rate_pct: 25.0, win_rate_pct: 49.0, trend: "stable", trend_label: "Contraataque Defensivo", best_combo: "Sphinx Cowl 9-80 GN", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Aguja rodeada de engranajes para contraatacar si es empujado al carril Xtreme." },
-    { id: 81, code: "B-D", name: "Dot (D)", category: "bit", system: "UX", type_attr: "Defense", weight_grams: 2.3, attack_stat: 42, defense_stat: 89, stamina_stat: 78, dash_stat: 52, tier: "B", pick_rate_pct: 27.0, win_rate_pct: 49.5, trend: "stable", trend_label: "Punto Central Plano", best_combo: "Black Shell 4-70 Dot", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2024", description: "Punta plana con saliente central minúsculo para máxima absorción de retroceso." },
-    { id: 82, code: "B-HSN", name: "High Semi Needle (HSN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.5, attack_stat: 46, defense_stat: 87, stamina_stat: 76, dash_stat: 54, tier: "B", pick_rate_pct: 24.0, win_rate_pct: 48.5, trend: "stable", trend_label: "Semi Aguja Elevada", best_combo: "Knight Lance 4-80 HSN", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta semi-redondeada alta que previene caídas inclinadas ante smash hits." },
-    { id: 83, code: "B-MN", name: "Metal Needle (MN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 3.2, attack_stat: 48, defense_stat: 92, stamina_stat: 82, dash_stat: 50, tier: "A", pick_rate_pct: 35.0, win_rate_pct: 54.0, trend: "up", trend_label: "Punta Metálica", best_combo: "Knight Mail 3-85 Metal Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Núcleo de metal pulido con bajísima fricción y resistencia a la deformación." },
-    { id: 84, code: "B-G", name: "Glide (G)", category: "bit", system: "UX", type_attr: "Stamina", weight_grams: 2.4, attack_stat: 38, defense_stat: 82, stamina_stat: 96, dash_stat: 50, tier: "S", pick_rate_pct: 62.0, win_rate_pct: 65.2, trend: "stable", trend_label: "Deslizamiento Libre", best_combo: "Phoenix Rudder 9-70 Glide", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2024", description: "Punta de baja fricción optimizada para mantener el centro con casi cero resistencia." },
+    { id: 81, code: "B-D", name: "Dot (D)", category: "bit", system: "UX", type_attr: "Defense", weight_grams: 2.3, attack_stat: 42, defense_stat: 89, stamina_stat: 78, dash_stat: 52, tier: "B", pick_rate_pct: 27.0, win_rate_pct: 49.5, trend: "stable", trend_label: "Punto Central Plano", best_combo: "Black Shell 4-70 Dot", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2024", description: "Punta plana con saliente central minÃºsculo para mÃ¡xima absorciÃ³n de retroceso." },
+    { id: 82, code: "B-HSN", name: "High Semi Needle (HSN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 2.5, attack_stat: 46, defense_stat: 87, stamina_stat: 76, dash_stat: 54, tier: "B", pick_rate_pct: 24.0, win_rate_pct: 48.5, trend: "stable", trend_label: "Semi Aguja Elevada", best_combo: "Knight Lance 4-80 HSN", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Punta semi-redondeada alta que previene caÃ­das inclinadas ante smash hits." },
+    { id: 83, code: "B-MN", name: "Metal Needle (MN)", category: "bit", system: "BX", type_attr: "Defense", weight_grams: 3.2, attack_stat: 48, defense_stat: 92, stamina_stat: 82, dash_stat: 50, tier: "A", pick_rate_pct: 35.0, win_rate_pct: 54.0, trend: "up", trend_label: "Punta MetÃ¡lica", best_combo: "Knight Mail 3-85 Metal Needle", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "NÃºcleo de metal pulido con bajÃ­sima fricciÃ³n y resistencia a la deformaciÃ³n." },
+    { id: 84, code: "B-G", name: "Glide (G)", category: "bit", system: "UX", type_attr: "Stamina", weight_grams: 2.4, attack_stat: 38, defense_stat: 82, stamina_stat: 96, dash_stat: 50, tier: "S", pick_rate_pct: 62.0, win_rate_pct: 65.2, trend: "stable", trend_label: "Deslizamiento Libre", best_combo: "Phoenix Rudder 9-70 Glide", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2024", description: "Punta de baja fricciÃ³n optimizada para mantener el centro con casi cero resistencia." },
     { id: 85, code: "B-L", name: "Level (L)", category: "bit", system: "UX", type_attr: "Balance", weight_grams: 2.5, attack_stat: 72, defense_stat: 78, stamina_stat: 80, dash_stat: 75, tier: "A", pick_rate_pct: 44.0, win_rate_pct: 55.4, trend: "new", trend_label: "Anillo Estabilizador", best_combo: "Samurai Saber 2-70 Level", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Anillo de apoyo plano exterior que evita que el Beyblade pierda su postura vertical." },
-    { id: 86, code: "B-A", name: "Accel (A)", category: "bit", system: "UX", type_attr: "Attack", weight_grams: 2.3, attack_stat: 94, defense_stat: 36, stamina_stat: 42, dash_stat: 96, tier: "A", pick_rate_pct: 49.0, win_rate_pct: 57.0, trend: "new", trend_label: "Aceleración Rápida", best_combo: "Aero Pegasus 3-70 Accel", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Punta plana biselada con gran par de arranque para velocidad instantánea." },
-    { id: 87, code: "B-FB", name: "Free Ball (FB)", category: "bit", system: "UX", type_attr: "Stamina", weight_grams: 2.7, attack_stat: 32, defense_stat: 86, stamina_stat: 99, dash_stat: 42, tier: "S", pick_rate_pct: 74.0, win_rate_pct: 68.5, trend: "new", trend_label: "Esfera de Rotación Libre", best_combo: "Wizard Rod 7-70 Free Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Esfera interna de rodamiento libre que anula la fricción al inclinarse." },
+    { id: 86, code: "B-A", name: "Accel (A)", category: "bit", system: "UX", type_attr: "Attack", weight_grams: 2.3, attack_stat: 94, defense_stat: 36, stamina_stat: 42, dash_stat: 96, tier: "A", pick_rate_pct: 49.0, win_rate_pct: 57.0, trend: "new", trend_label: "AceleraciÃ³n RÃ¡pida", best_combo: "Aero Pegasus 3-70 Accel", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Punta plana biselada con gran par de arranque para velocidad instantÃ¡nea." },
+    { id: 87, code: "B-FB", name: "Free Ball (FB)", category: "bit", system: "UX", type_attr: "Stamina", weight_grams: 2.7, attack_stat: 32, defense_stat: 86, stamina_stat: 99, dash_stat: 42, tier: "S", pick_rate_pct: 74.0, win_rate_pct: 68.5, trend: "new", trend_label: "Esfera de RotaciÃ³n Libre", best_combo: "Wizard Rod 7-70 Free Ball", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Esfera interna de rodamiento libre que anula la fricciÃ³n al inclinarse." },
     { id: 88, code: "B-DF", name: "Disc Flat (DF)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.6, attack_stat: 91, defense_stat: 48, stamina_stat: 52, dash_stat: 90, tier: "A", pick_rate_pct: 38.0, win_rate_pct: 53.8, trend: "stable", trend_label: "Disco Plano", best_combo: "Cobalt Drake 4-60 Disc Flat", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Disco exterior estabilizador que asienta el Bey en sus giros de ataque veloz." },
-    { id: 89, code: "B-RA", name: "Rubber Accel (RA)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.8, attack_stat: 99, defense_stat: 32, stamina_stat: 28, dash_stat: 100, tier: "S", pick_rate_pct: 56.0, win_rate_pct: 61.8, trend: "new", trend_label: "Goma de Máximo Agarre", best_combo: "Impact Drake 7-60 Rubber Accel", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Release 2025", description: "Punta de goma de tremendo coeficiente de fricción para los Xtreme Dash más rápidos jamás vistos." },
+    { id: 89, code: "B-RA", name: "Rubber Accel (RA)", category: "bit", system: "BX", type_attr: "Attack", weight_grams: 2.8, attack_stat: 99, defense_stat: 32, stamina_stat: 28, dash_stat: 100, tier: "S", pick_rate_pct: 56.0, win_rate_pct: 61.8, trend: "new", trend_label: "Goma de MÃ¡ximo Agarre", best_combo: "Impact Drake 7-60 Rubber Accel", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy Release 2025", description: "Punta de goma de tremendo coeficiente de fricciÃ³n para los Xtreme Dash mÃ¡s rÃ¡pidos jamÃ¡s vistos." },
     { id: 90, code: "B-BS", name: "Bound Spike (BS)", category: "bit", system: "UX", type_attr: "Defense", weight_grams: 2.9, attack_stat: 50, defense_stat: 96, stamina_stat: 74, dash_stat: 58, tier: "S", pick_rate_pct: 52.0, win_rate_pct: 62.8, trend: "new", trend_label: "Resorte Amortiguador", best_combo: "Knight Mail 3-85 Bound Spike", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "Takara Tomy UX 2025", description: "Muelle con resorte interno que absorbe la fuerza vertical de los impactos rivales." }
   ];
 
@@ -695,7 +694,7 @@ function seedDatabase() {
       id: 1,
       slug: "copa-inaugural-xtreme-2026",
       title: "Copa Inaugural Beyblade X 2026",
-      description: "Torneo Oficial Apertura Temporada 2 con formato Fase de Grupos + Eliminación Directa (Estilo Challonge / WBO).",
+      description: "Torneo Oficial Apertura Temporada 2 con formato Fase de Grupos + EliminaciÃ³n Directa (Estilo Challonge / WBO).",
       organizer_id: 1,
       format: "groups_elim",
       stage_type: "group_stage",
@@ -706,11 +705,10 @@ function seedDatabase() {
       match_target_points: 4,
       stadium_type: "Xtreme Stadium Standard (BX-10)",
       max_participants: 8,
-      entry_fee_ap: 0,
-      prize_pool_ap: 1000,
+      prize_description: "Trofeo de CampeÃ³n + Beyblade EdiciÃ³n Especial",
       status: "in_progress",
       venue_name: "Estadio Central Albrook Mall",
-      venue_address: "Plaza Central, Ciudad de Panamá",
+      venue_address: "Plaza Central, Ciudad de PanamÃ¡",
       country: "PA",
       start_date: now,
       current_round: 1,
@@ -761,7 +759,7 @@ function seedDatabase() {
       id: 1,
       name: "Temporada 1 (Oficial APB)",
       is_active: false,
-      description: "Resultados finales oficiales de la Temporada 1 - Asociación Panameña de Beyblade.",
+      description: "Resultados finales oficiales de la Temporada 1 - AsociaciÃ³n PanameÃ±a de Beyblade.",
       start_date: "2025-01-01T00:00:00Z"
     },
     {
@@ -800,18 +798,18 @@ function seedDatabase() {
     {
       id: 1,
       year: 2025,
-      title: "Campeón Temporada 1 - Ranking General APB",
+      title: "CampeÃ³n Temporada 1 - Ranking General APB",
       user_id: users.find(u => u.display_name === "Yorch")?.id || 4,
-      tournament_name: "Gran Circuito Nacional Beyblade X Panamá (646 Pts)",
+      tournament_name: "Gran Circuito Nacional Beyblade X PanamÃ¡ (646 Pts)",
       signature_deck: "",
       trophy_icon: "trophy-gold",
-      notes: "Máximo anotador de la Temporada 1 con 96 victorias y 519 puntos a favor.",
+      notes: "MÃ¡ximo anotador de la Temporada 1 con 96 victorias y 519 puntos a favor.",
       created_at: now
     },
     {
       id: 2,
       year: 2025,
-      title: "Subcampeón Nacional Temporada 1 APB",
+      title: "SubcampeÃ³n Nacional Temporada 1 APB",
       user_id: users.find(u => u.display_name === "Woonka")?.id || 5,
       tournament_name: "Circuito Oficial APB (483 Pts)",
       signature_deck: "",
@@ -827,7 +825,7 @@ function seedDatabase() {
       tournament_name: "Circuito Oficial APB (480 Pts)",
       signature_deck: "",
       trophy_icon: "trophy-bronze",
-      notes: "Líder en partidas jugadas (157 combates) y 505 puntos anotados.",
+      notes: "LÃ­der en partidas jugadas (157 combates) y 505 puntos anotados.",
       created_at: now
     },
     {
@@ -859,7 +857,7 @@ function seedDatabase() {
     {
       id: 1,
       user_id: 1,
-      content: "Bienvenidos a la plataforma oficial de la Asociación Panameña de Beyblade (AppBey). Sistema de rankings oficiales, registro de torneos y control de arbitraje.",
+      content: "Bienvenidos a la plataforma oficial de la AsociaciÃ³n PanameÃ±a de Beyblade (AppBey). Sistema de rankings oficiales, registro de torneos y control de arbitraje.",
       deck_id: null,
       image_url: null,
       likes_count: 0,
@@ -1261,7 +1259,6 @@ function createWalkinBlader(displayName: string, country?: string, favoriteCombo
     created_at: new Date().toISOString()
   };
   users.push(newUser);
-  getWallet(newUser.id);
   return newUser;
 }
 
@@ -1288,24 +1285,24 @@ api.post("/auth/register", (req, res) => {
     return;
   }
   if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
-    res.status(400).json({ detail: "El nombre de usuario solo puede contener letras, números y guiones bajos" });
+    res.status(400).json({ detail: "El nombre de usuario solo puede contener letras, nÃºmeros y guiones bajos" });
     return;
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-    res.status(400).json({ detail: "El formato de correo electrónico no es válido" });
+    res.status(400).json({ detail: "El formato de correo electrÃ³nico no es vÃ¡lido" });
     return;
   }
   if (cleanPassword.length < 6) {
-    res.status(400).json({ detail: "La contraseña debe tener al menos 6 caracteres" });
+    res.status(400).json({ detail: "La contraseÃ±a debe tener al menos 6 caracteres" });
     return;
   }
 
   if (users.some((u) => u.username.toLowerCase() === cleanUsername.toLowerCase())) {
-    res.status(400).json({ detail: "El nombre de usuario ya está en uso" });
+    res.status(400).json({ detail: "El nombre de usuario ya estÃ¡ en uso" });
     return;
   }
   if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
-    res.status(400).json({ detail: "El correo electrónico ya está registrado" });
+    res.status(400).json({ detail: "El correo electrÃ³nico ya estÃ¡ registrado" });
     return;
   }
 
@@ -1328,7 +1325,6 @@ api.post("/auth/register", (req, res) => {
     created_at: new Date().toISOString()
   };
   users.push(newUser);
-  getWallet(newUser.id);
 
   const token = generateToken(newUser);
   res.json({
@@ -1350,7 +1346,7 @@ api.post("/auth/register", (req, res) => {
 api.post("/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    res.status(400).json({ detail: "Debes ingresar tu correo/usuario y contraseña" });
+    res.status(400).json({ detail: "Debes ingresar tu correo/usuario y contraseÃ±a" });
     return;
   }
   const query = String(email).trim().toLowerCase();
@@ -1379,7 +1375,6 @@ api.post("/auth/login", (req, res) => {
 
 api.get("/auth/me", requireAuth, (req: AuthRequest, res) => {
   const u = req.user!;
-  const w = getWallet(u.id);
   res.json({
     id: u.id,
     username: u.username,
@@ -1393,8 +1388,7 @@ api.get("/auth/me", requireAuth, (req: AuthRequest, res) => {
     elo_rating: u.elo_rating,
     is_active: u.is_active,
     is_verified: u.is_verified,
-    created_at: u.created_at,
-    balance_ap: w.balance
+    created_at: u.created_at
   });
 });
 
@@ -1407,8 +1401,17 @@ api.get("/users", (req, res) => {
   list.sort((a, b) => b.elo_rating - a.elo_rating);
   res.json(
     list.slice(0, Math.min(100, Math.max(1, limit))).map((u) => ({
-      ...u,
-      balance_ap: getWallet(u.id).balance
+      id: u.id,
+      username: u.username,
+      display_name: u.display_name,
+      email: u.email,
+      role: u.role,
+      country: u.country,
+      avatar_url: u.avatar_url,
+      elo_rating: u.elo_rating,
+      is_active: u.is_active,
+      is_verified: u.is_verified,
+      created_at: u.created_at
     }))
   );
 });
@@ -1416,7 +1419,7 @@ api.get("/users", (req, res) => {
 api.get("/users/:id", (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) {
-    res.status(400).json({ detail: "ID de usuario inválido" });
+    res.status(400).json({ detail: "ID de usuario invÃ¡lido" });
     return;
   }
   const u = users.find((user) => user.id === id);
@@ -1424,10 +1427,7 @@ api.get("/users/:id", (req, res) => {
     res.status(404).json({ detail: "Usuario no encontrado" });
     return;
   }
-  res.json({
-    ...u,
-    balance_ap: getWallet(u.id).balance
-  });
+  res.json({ ...u });
 });
 
 api.put("/users/me", requireAuth, (req: AuthRequest, res) => {
@@ -1454,10 +1454,7 @@ api.put("/users/me", requireAuth, (req: AuthRequest, res) => {
     u.favorite_combo = String(favorite_combo).trim().slice(0, 100);
   }
 
-  res.json({
-    ...u,
-    balance_ap: getWallet(u.id).balance
-  });
+  res.json({ ...u });
 });
 
 api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res) => {
@@ -1470,11 +1467,11 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
   const cleanEmail = String(email).trim().toLowerCase();
 
   if (users.some((u) => u.username.toLowerCase() === cleanUsername.toLowerCase())) {
-    res.status(400).json({ detail: "El nombre de usuario ya está en uso" });
+    res.status(400).json({ detail: "El nombre de usuario ya estÃ¡ en uso" });
     return;
   }
   if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
-    res.status(400).json({ detail: "El correo electrónico ya está registrado" });
+    res.status(400).json({ detail: "El correo electrÃ³nico ya estÃ¡ registrado" });
     return;
   }
 
@@ -1500,11 +1497,11 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
     created_at: new Date().toISOString()
   };
   users.push(newUser);
-  getWallet(newUser.id);
   res.json({
-    ...newUser,
-    balance_ap: getWallet(newUser.id).balance
+    ...newUser
   });
+
+
 });
 
 api.put("/users/:id", requireRoles(["admin"]), (req: AuthRequest, res) => {
@@ -1529,9 +1526,10 @@ api.put("/users/:id", requireRoles(["admin"]), (req: AuthRequest, res) => {
   }
 
   res.json({
-    ...target,
-    balance_ap: getWallet(target.id).balance
+    ...target
   });
+
+
 });
 
 api.put("/users/:id/role", requireRoles(["admin"]), (req: AuthRequest, res) => {
@@ -1544,14 +1542,15 @@ api.put("/users/:id/role", requireRoles(["admin"]), (req: AuthRequest, res) => {
   const { role } = req.body;
   const validRoles = ["blader", "referee", "organizer", "admin"];
   if (!validRoles.includes(role)) {
-    res.status(400).json({ detail: "Rol no válido. Opciones permitidas: blader, referee, organizer, admin" });
+    res.status(400).json({ detail: "Rol no vÃ¡lido. Opciones permitidas: blader, referee, organizer, admin" });
     return;
   }
   target.role = role;
   res.json({
-    ...target,
-    balance_ap: getWallet(target.id).balance
+    ...target
   });
+
+
 });
 
 // --- Beyblades & Decks ---
@@ -1599,7 +1598,7 @@ api.post("/beyblades/meta-tierlist/sync", (req, res) => {
   });
 
   const timestampStr = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  metaSyncState.patch_notes.unshift(`[${timestampStr}] Sincronización en vivo completada con la base de datos oficial WBO/TT. Total de combates procesados: ${metaSyncState.total_matches_analyzed}.`);
+  metaSyncState.patch_notes.unshift(`[${timestampStr}] SincronizaciÃ³n en vivo completada con la base de datos oficial WBO/TT. Total de combates procesados: ${metaSyncState.total_matches_analyzed}.`);
   if (metaSyncState.patch_notes.length > 8) {
     metaSyncState.patch_notes.pop();
   }
@@ -1683,7 +1682,7 @@ api.post("/beyblades/decks", requireAuth, (req: AuthRequest, res) => {
   const data = req.body;
 
   if (!data.name || typeof data.name !== "string" || !data.name.trim()) {
-    res.status(400).json({ detail: "El nombre del deck es obligatorio (mínimo 2 caracteres)" });
+    res.status(400).json({ detail: "El nombre del deck es obligatorio (mÃ­nimo 2 caracteres)" });
     return;
   }
   const deckName = String(data.name).trim().slice(0, 60);
@@ -1712,7 +1711,7 @@ api.post("/beyblades/decks", requireAuth, (req: AuthRequest, res) => {
   for (const pid of allProvidedPartIds) {
     const part = parts.find((p) => p.id === pid);
     if (!part) {
-      res.status(400).json({ detail: `La pieza con ID #${pid} no existe en el catálogo de piezas oficial.` });
+      res.status(400).json({ detail: `La pieza con ID #${pid} no existe en el catÃ¡logo de piezas oficial.` });
       return;
     }
   }
@@ -1794,7 +1793,7 @@ api.get("/tournaments", (req, res) => {
 api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {
   const data = req.body;
   if (!data.title || typeof data.title !== "string" || !data.title.trim()) {
-    res.status(400).json({ detail: "El título del torneo es obligatorio (mínimo 3 caracteres)" });
+    res.status(400).json({ detail: "El tÃ­tulo del torneo es obligatorio (mÃ­nimo 3 caracteres)" });
     return;
   }
   const cleanTitle = String(data.title).trim().slice(0, 100);
@@ -1807,8 +1806,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
   const battleType = data.battle_type === "1on1" ? "1on1" : "3on3_deck";
   const targetPoints = Math.max(1, Math.min(10, parseInt(data.match_target_points, 10) || 4));
   const maxParticipants = Math.max(2, Math.min(256, parseInt(data.max_participants, 10) || 128));
-  const entryFee = Math.max(0, Math.min(50000, parseInt(data.entry_fee_ap, 10) || 0));
-  const prizePool = Math.max(0, Math.min(500000, parseInt(data.prize_pool_ap, 10) || 1000));
+  const prizeDescription = data.prize_description ? String(data.prize_description).trim().slice(0, 200) : "";
   const totalRounds = Math.max(1, Math.min(10, parseInt(data.total_rounds, 10) || 4));
 
   const slug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-") + `-${Date.now()}`;
@@ -1826,8 +1824,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
     match_target_points: targetPoints,
     stadium_type: data.stadium_type ? String(data.stadium_type).trim().slice(0, 50) : "Xtreme Stadium (BX-10)",
     max_participants: maxParticipants,
-    entry_fee_ap: entryFee,
-    prize_pool_ap: prizePool,
+    prize_description: prizeDescription,
     status: "registration_open",
     venue_name: data.venue_name ? String(data.venue_name).trim().slice(0, 80) : "Arena Beyblade",
     venue_address: data.venue_address ? String(data.venue_address).trim().slice(0, 120) : "Ciudad",
@@ -1871,31 +1868,22 @@ api.post("/tournaments/:id/register", requireAuth, (req: AuthRequest, res) => {
     return;
   }
   if (!["registration_open", "check_in"].includes(t.status)) {
-    res.status(400).json({ detail: "Las inscripciones para este torneo están cerradas" });
+    res.status(400).json({ detail: "Las inscripciones para este torneo estÃ¡n cerradas" });
     return;
   }
 
   const existing = participants.find((p) => p.tournament_id === id && p.user_id === req.user!.id);
   if (existing) {
-    res.status(400).json({ detail: "Ya estás inscrito en este torneo" });
+    res.status(400).json({ detail: "Ya estÃ¡s inscrito en este torneo" });
     return;
   }
 
   const count = participants.filter((p) => p.tournament_id === id).length;
   if (count >= t.max_participants) {
-    res.status(400).json({ detail: "El cupo máximo de participantes se ha completado" });
+    res.status(400).json({ detail: "El cupo mÃ¡ximo de participantes se ha completado" });
     return;
   }
 
-  if (t.entry_fee_ap > 0) {
-    try {
-      debitWallet(req.user!.id, t.entry_fee_ap, "tournament_entry", `Inscripción a: ${t.title}`, String(t.id));
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error al procesar inscripción";
-      res.status(400).json({ detail: msg });
-      return;
-    }
-  }
 
   const newPart: TournamentParticipant = {
     id: participants.length + 1,
@@ -1915,7 +1903,7 @@ api.post("/tournaments/:id/register", requireAuth, (req: AuthRequest, res) => {
     final_rank: null
   };
   participants.push(newPart);
-  res.json({ message: "Inscripción exitosa", participant_id: newPart.id });
+  res.json({ message: "InscripciÃ³n exitosa", participant_id: newPart.id });
 });
 
 // Admin / Organizer manual participant addition (supports existing users & new walk-in bladers)
@@ -2031,7 +2019,7 @@ api.put("/tournaments/:id/participants/:userId/deck", requireAuth, (req: AuthReq
 
   const part = participants.find((p) => p.tournament_id === tId && p.user_id === userId);
   if (!part) {
-    res.status(404).json({ detail: "El participante no está inscrito en este torneo" });
+    res.status(404).json({ detail: "El participante no estÃ¡ inscrito en este torneo" });
     return;
   }
 
@@ -2066,12 +2054,12 @@ api.post("/matches/:id/assign-referee", requireRoles(["organizer", "admin"]), (r
   }
   const referee = users.find((u) => u.id === parseInt(referee_id, 10));
   if (!referee) {
-    res.status(404).json({ detail: "Árbitro no encontrado" });
+    res.status(404).json({ detail: "Ãrbitro no encontrado" });
     return;
   }
   m.referee_id = referee.id;
   broadcastTournament(m.tournament_id, "match_referee_assigned", { match_id: m.id, referee_id: referee.id, referee_name: referee.display_name });
-  res.json({ message: "Árbitro asignado al match", match: m, referee });
+  res.json({ message: "Ãrbitro asignado al match", match: m, referee });
 });
 
 api.post("/tournaments/:id/checkin", requireAuth, (req: AuthRequest, res) => {
@@ -2089,11 +2077,11 @@ api.post("/tournaments/:id/checkin", requireAuth, (req: AuthRequest, res) => {
 
   const part = participants.find((p) => p.tournament_id === id && p.user_id === userId);
   if (!part) {
-    res.status(404).json({ detail: "El usuario no está inscrito en este torneo" });
+    res.status(404).json({ detail: "El usuario no estÃ¡ inscrito en este torneo" });
     return;
   }
   if (part.checked_in) {
-    res.status(400).json({ detail: "El participante ya realizó su check-in previamente" });
+    res.status(400).json({ detail: "El participante ya realizÃ³ su check-in previamente" });
     return;
   }
   part.checked_in = true;
@@ -2122,13 +2110,13 @@ api.delete("/tournaments/:id/participants/:userId", requireAuth, (req: AuthReque
 
   const pIdx = participants.findIndex((p) => p.tournament_id === id && p.user_id === userId);
   if (pIdx === -1) {
-    res.status(404).json({ detail: "El participante no está inscrito en este torneo" });
+    res.status(404).json({ detail: "El participante no estÃ¡ inscrito en este torneo" });
     return;
   }
 
   participants.splice(pIdx, 1);
   broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Participante removido" });
-  res.json({ message: "Participante removido con éxito", user_id: userId });
+  res.json({ message: "Participante removido con Ã©xito", user_id: userId });
 });
 
 // Admin / Organizer: Edit participant group assignment and/or seed
@@ -2162,7 +2150,7 @@ api.put("/tournaments/:id/participants/:userId/group", requireAuth, (req: AuthRe
 
   // Recalculate stats for the tournament groups
   recalcTournamentStats(id);
-  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Asignación de grupo actualizada" });
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "AsignaciÃ³n de grupo actualizada" });
   res.json({ message: "Grupo y siembra actualizados exitosamente", participant: part });
 });
 
@@ -2180,11 +2168,12 @@ api.put("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  const { title, description, venue_name, country, match_target_points, max_participants } = req.body;
+  const { title, description, venue_name, country, match_target_points, max_participants, prize_description } = req.body;
   if (title) t.title = String(title).trim();
   if (description !== undefined) t.description = String(description).trim();
   if (venue_name) t.venue_name = String(venue_name).trim();
   if (country) t.country = String(country).trim();
+  if (prize_description !== undefined) t.prize_description = String(prize_description).trim().slice(0, 200);
   if (match_target_points && !isNaN(parseInt(match_target_points, 10))) t.match_target_points = parseInt(match_target_points, 10);
   if (max_participants && !isNaN(parseInt(max_participants, 10))) t.max_participants = parseInt(max_participants, 10);
 
@@ -2219,7 +2208,7 @@ api.post("/tournaments/:id/shuffle-seeds", requireAuth, (req: AuthRequest, res) 
     tournamentParts[j].seed = temp;
   }
   broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Siembras reordenadas" });
-  res.json({ message: "Siembras barajadas aleatoriamente con éxito" });
+  res.json({ message: "Siembras barajadas aleatoriamente con Ã©xito" });
 });
 
 // Admin / Organizer: Delete tournament
@@ -2387,7 +2376,7 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
   }
 
   if (t.status === "in_progress" || t.status === "completed") {
-    res.status(400).json({ detail: "El torneo ya ha sido iniciado previamente o ya concluyó" });
+    res.status(400).json({ detail: "El torneo ya ha sido iniciado previamente o ya concluyÃ³" });
     return;
   }
 
@@ -2485,7 +2474,7 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
     return;
   }
   if (t.format !== "groups_elim") {
-    res.status(400).json({ detail: "Solo aplicable a torneos con formato Fase de Grupos + Eliminación" });
+    res.status(400).json({ detail: "Solo aplicable a torneos con formato Fase de Grupos + EliminaciÃ³n" });
     return;
   }
 
@@ -2510,26 +2499,26 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
 
   if (groupLetters.length === 2) {
     // 2 groups (A, B) -> Semifinales (4 qualifiers)
-    // Semi 1: 1º A vs 2º B
-    // Semi 2: 1º B vs 2º A
+    // Semi 1: 1Âº A vs 2Âº B
+    // Semi 2: 1Âº B vs 2Âº A
     const gA = qualifiedByGroup["A"] || [];
     const gB = qualifiedByGroup["B"] || [];
-    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1º Grupo A", labelB: "2º Grupo B" });
-    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1º Grupo B", labelB: "2º Grupo A" });
+    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1Âº Grupo A", labelB: "2Âº Grupo B" });
+    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1Âº Grupo B", labelB: "2Âº Grupo A" });
   } else if (groupLetters.length === 4) {
     // 4 groups (A, B, C, D) -> Cuartos de Final (8 qualifiers)
-    // Cuartos 1: 1º A vs 2º B
-    // Cuartos 2: 1º C vs 2º D
-    // Cuartos 3: 1º B vs 2º A
-    // Cuartos 4: 1º D vs 2º C
+    // Cuartos 1: 1Âº A vs 2Âº B
+    // Cuartos 2: 1Âº C vs 2Âº D
+    // Cuartos 3: 1Âº B vs 2Âº A
+    // Cuartos 4: 1Âº D vs 2Âº C
     const gA = qualifiedByGroup["A"] || [];
     const gB = qualifiedByGroup["B"] || [];
     const gC = qualifiedByGroup["C"] || [];
     const gD = qualifiedByGroup["D"] || [];
-    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1º Grupo A", labelB: "2º Grupo B" });
-    if (gC[0] && gD[1]) pairings.push({ playerA: gC[0], playerB: gD[1], labelA: "1º Grupo C", labelB: "2º Grupo D" });
-    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1º Grupo B", labelB: "2º Grupo A" });
-    if (gD[0] && gC[1]) pairings.push({ playerA: gD[0], playerB: gC[1], labelA: "1º Grupo D", labelB: "2º Grupo C" });
+    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1Âº Grupo A", labelB: "2Âº Grupo B" });
+    if (gC[0] && gD[1]) pairings.push({ playerA: gC[0], playerB: gD[1], labelA: "1Âº Grupo C", labelB: "2Âº Grupo D" });
+    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1Âº Grupo B", labelB: "2Âº Grupo A" });
+    if (gD[0] && gC[1]) pairings.push({ playerA: gD[0], playerB: gC[1], labelA: "1Âº Grupo D", labelB: "2Âº Grupo C" });
   } else if (groupLetters.length === 8) {
     // 8 groups (A to H) -> 8vos de Final (16 qualifiers)
     const pairs = [
@@ -2540,7 +2529,7 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
       const p1 = (qualifiedByGroup[g1] || [])[0];
       const p2 = (qualifiedByGroup[g2] || [])[1];
       if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1Âº Grupo ${g1}`, labelB: `2Âº Grupo ${g2}` });
       }
     }
   } else if (groupLetters.length === 16) {
@@ -2555,7 +2544,7 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
       const p1 = (qualifiedByGroup[g1] || [])[0];
       const p2 = (qualifiedByGroup[g2] || [])[1];
       if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1Âº Grupo ${g1}`, labelB: `2Âº Grupo ${g2}` });
       }
     }
   } else {
@@ -2565,13 +2554,13 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
       const p1 = (qualifiedByGroup[g1] || [])[0];
       const p2 = (qualifiedByGroup[g2] || [])[1];
       if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1Âº Grupo ${g1}`, labelB: `2Âº Grupo ${g2}` });
       }
     }
   }
 
   if (pairings.length === 0) {
-    res.status(400).json({ detail: "No se pudieron clasificar participantes para la fase de eliminación. Verifique que los grupos tengan bladers clasificados." });
+    res.status(400).json({ detail: "No se pudieron clasificar participantes para la fase de eliminaciÃ³n. Verifique que los grupos tengan bladers clasificados." });
     return;
   }
 
@@ -2610,7 +2599,7 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
   }
 
   broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, stage_type: "knockout", current_round: 1, knockout_round_name: stageName });
-  res.json({ message: `¡Cuadro de eliminación generado exitosamente! Ronda inicial: ${stageName}`, stage: stageName, pairings_count: pairings.length });
+  res.json({ message: `Â¡Cuadro de eliminaciÃ³n generado exitosamente! Ronda inicial: ${stageName}`, stage: stageName, pairings_count: pairings.length });
 });
 
 api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {
@@ -2631,7 +2620,7 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
   const unfinishedMatches = currentMatches.filter((m) => m.status !== "finished");
   if (unfinishedMatches.length > 0) {
     res.status(400).json({
-      detail: `No se puede avanzar: aún quedan ${unfinishedMatches.length} combate(s) pendientes de finalizar en la Ronda ${t.current_round}.`
+      detail: `No se puede avanzar: aÃºn quedan ${unfinishedMatches.length} combate(s) pendientes de finalizar en la Ronda ${t.current_round}.`
     });
     return;
   }
@@ -2648,7 +2637,7 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
       if (parts[2]) t.third_place_user_id = parts[2].user_id;
       distributePrizes(t);
       broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, status: "completed" });
-      res.json({ message: "Torneo finalizado con éxito", current_round: t.current_round });
+      res.json({ message: "Torneo finalizado con Ã©xito", current_round: t.current_round });
       return;
     }
 
@@ -2688,7 +2677,7 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
     broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, current_round: nextRound });
     res.json({ message: `Ronda ${nextRound} generada exitosamente`, current_round: nextRound });
   } else {
-    res.json({ message: "Las rondas de eliminación avanzan automáticamente al finalizar cada match" });
+    res.json({ message: "Las rondas de eliminaciÃ³n avanzan automÃ¡ticamente al finalizar cada match" });
   }
 });
 
@@ -2785,11 +2774,11 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
   };
 
   if (!finish_type || pointsMap[finish_type] === undefined) {
-    res.status(400).json({ detail: "Tipo de finalización (finish_type) no válido para Beyblade X" });
+    res.status(400).json({ detail: "Tipo de finalizaciÃ³n (finish_type) no vÃ¡lido para Beyblade X" });
     return;
   }
   if (!["player_a", "player_b", "draw"].includes(awarded_to)) {
-    res.status(400).json({ detail: "Destinatario de puntos (awarded_to) no válido" });
+    res.status(400).json({ detail: "Destinatario de puntos (awarded_to) no vÃ¡lido" });
     return;
   }
 
@@ -3112,7 +3101,7 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
   const { winner_id, notes, finish_reason } = req.body;
   const parsedWinnerId = parseInt(winner_id, 10);
   if (!parsedWinnerId || (parsedWinnerId !== m.player_a_id && parsedWinnerId !== m.player_b_id)) {
-    res.status(400).json({ detail: "ID de ganador no válido para este combate" });
+    res.status(400).json({ detail: "ID de ganador no vÃ¡lido para este combate" });
     return;
   }
 
@@ -3298,12 +3287,12 @@ api.get("/social/posts", (req: AuthRequest, res) => {
 api.post("/social/posts", requireAuth, (req: AuthRequest, res) => {
   const { content, deck_id, image_url } = req.body;
   if (!content || typeof content !== "string" || !content.trim()) {
-    res.status(400).json({ detail: "El contenido de la publicación no puede estar vacío" });
+    res.status(400).json({ detail: "El contenido de la publicaciÃ³n no puede estar vacÃ­o" });
     return;
   }
   const cleanContent = String(content).trim().slice(0, 1000);
   if (cleanContent.length < 3) {
-    res.status(400).json({ detail: "La publicación debe tener al menos 3 caracteres" });
+    res.status(400).json({ detail: "La publicaciÃ³n debe tener al menos 3 caracteres" });
     return;
   }
 
@@ -3342,7 +3331,7 @@ api.post("/social/posts/:id/like", requireAuth, (req: AuthRequest, res) => {
   const id = parseInt(req.params.id, 10);
   const p = communityPosts.find((post) => post.id === id);
   if (!p) {
-    res.status(404).json({ detail: "Publicación no encontrada" });
+    res.status(404).json({ detail: "PublicaciÃ³n no encontrada" });
     return;
   }
 
@@ -3377,13 +3366,13 @@ api.post("/social/posts/:id/comments", requireAuth, (req: AuthRequest, res) => {
   const id = parseInt(req.params.id, 10);
   const p = communityPosts.find((post) => post.id === id);
   if (!p) {
-    res.status(404).json({ detail: "Publicación no encontrada" });
+    res.status(404).json({ detail: "PublicaciÃ³n no encontrada" });
     return;
   }
 
   const { content } = req.body;
   if (!content || typeof content !== "string" || !content.trim()) {
-    res.status(400).json({ detail: "El comentario no puede estar vacío" });
+    res.status(400).json({ detail: "El comentario no puede estar vacÃ­o" });
     return;
   }
   const cleanContent = String(content).trim().slice(0, 500);
@@ -3416,7 +3405,7 @@ api.post("/social/notifications/mark-read", requireAuth, (req: AuthRequest, res)
       n.is_read = true;
     }
   }
-  res.json({ message: "Notificaciones marcadas como leídas" });
+  res.json({ message: "Notificaciones marcadas como leÃ­das" });
 });
 
 // Mount API
@@ -3483,3 +3472,6 @@ app.use((req, res) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`AppBey server is running on http://0.0.0.0:${PORT}`);
 });
+
+
+

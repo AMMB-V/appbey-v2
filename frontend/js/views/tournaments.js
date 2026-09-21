@@ -229,6 +229,11 @@ window.openCreateTournamentModal = () => {
             </select>
           </div>
         </div>
+        <div>
+          <label class="block text-slate-300 mb-1 font-semibold">🏆 Premio / Recompensa del Torneo</label>
+          <input type="text" name="prize_description" placeholder="Ej: Medalla de Oro + Beyblade Edición Especial" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none"/>
+          <p class="text-[11px] text-slate-500 mt-1">Describe libremente cuál será el premio para el campeón.</p>
+        </div>
         <div class="pt-2">
           <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/25 transition active:scale-95">
             ⚡ Publicar Torneo Oficial
@@ -264,8 +269,7 @@ window.submitNewTournament = async (e) => {
     battle_type: form.battle_type.value,
     match_target_points: targetPts,
     max_participants: 128,
-    prize_pool_ap: parseInt(form.prize_pool_ap?.value || "1000", 10),
-    entry_fee_ap: 0,
+    prize_description: form.prize_description?.value?.trim() || "",
     venue_name: form.venue_name.value,
     country: form.country.value.toUpperCase(),
     total_rounds: format === "swiss" ? 4 : 3

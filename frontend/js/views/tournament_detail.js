@@ -1372,7 +1372,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             <div>
               <label class="block text-slate-300 font-semibold mb-1">Seleccionar Usuario de la Plataforma</label>
               ${availableUsers.length ? `
-                <select name="user_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400 text-sm">
+                <div class="mb-2">
+                  <input type="text" id="reg-user-search-input" oninput="window.filterRegUserSelect(this.value)" placeholder="🔍 Buscar por nombre o @usuario..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400 text-xs"/>
+                </div>
+                <select id="reg-user-select" name="user_id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400 text-sm">
                   ${availableUsers.map(u => `<option value="${u.id}">${u.display_name} (@${u.username}) - ${u.country} [${u.role}]</option>`).join("")}
                 </select>
               ` : `
@@ -1423,7 +1426,18 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
           btnNew.className = "py-2 px-3 rounded-lg font-bold text-slate-400 hover:text-white transition";
           formReg.classList.remove("hidden");
           formNew.classList.add("hidden");
-        }
+      };
+
+      window.filterRegUserSelect = (query) => {
+        const sel = document.getElementById("reg-user-select");
+        if (!sel) return;
+        const q = query.toLowerCase().trim();
+        Array.from(sel.options).forEach(opt => {
+          const text = opt.text.toLowerCase();
+          opt.style.display = text.includes(q) ? "" : "none";
+        });
+        const firstVisible = Array.from(sel.options).find(opt => opt.style.display !== "none");
+        if (firstVisible) sel.value = firstVisible.value;
       };
     } catch(err) {
       window.showToast("Error al cargar participantes: " + err.message, "error");
