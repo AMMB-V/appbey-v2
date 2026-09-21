@@ -1,334 +1,134 @@
 // AppBey API Client
-const API_BASE = window.location.origin + "/api/v1";
+const API_BASE = "/api/v1";
+const REQUEST_TIMEOUT_MS = 15000;
 
 class ApiClient {
   constructor() {
     this.token = localStorage.getItem("appbey_token") || null;
-    this.user = JSON.parse(localStorage.getItem("appbey_user") || "null");
+    try {
+      this.user = JSON.parse(localStorage.getItem("appbey_user") || "null");
+    } catch (_error) {
+      this.user = null;
+      localStorage.removeItem("appbey_user");
+    }
     this.cache = new Map();
   }
 
-  clearCache() {
-    this.cache.clear();
-  }
+  clearCache() { this.cache.clear(); }
 
   setAuth(token, user) {
-    this.token = token;
-    this.user = user;
+    this.token = token || null;
+    this.user = user || null;
     this.clearCache();
-    if (token) {
-      localStorage.setItem("appbey_token", token);
-      localStorage.setItem("appbey_user", JSON.stringify(user));
+    if (this.token) {
+      localStorage.setItem("appbey_token", this.token);
+      localStorage.setItem("appbey_user", JSON.stringify(this.user));
     } else {
       localStorage.removeItem("appbey_token");
       localStorage.removeItem("appbey_user");
     }
-    window.dispatchEvent(new CustomEvent("auth-change", { detail: { user } }));
+    window.dispatchEvent(new CustomEvent("auth-change", { detail: { user: this.user } }));
   }
 
   getHeaders() {
-    const headers = { "Content-Type": "application/json" };
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
-    }
+    const headers = { Accept: "application/json", "Content-Type": "application/json" };
+    if (this.token) headers.Authorization = `Bearer ${this.token}`;
     return headers;
   }
 
   async request(endpoint, options = {}) {
     const method = (options.method || "GET").toUpperCase();
     const isGet = method === "GET";
-
-    // Invalidate cache on mutations
-    if (!isGet) {
-      this.clearCache();
-    } else if (!options.noCache) {
+    if (!isGet) this.clearCache();
+    if (isGet && !options.noCache) {
       const cached = this.cache.get(endpoint);
-      if (cached && (Date.now() - cached.time < 5000)) {
-        return JSON.parse(JSON.stringify(cached.data));
-      }
+      if (cached && Date.now() - cached.time < 5000) return structuredClone(cached.data);
     }
 
-    const url = `${API_BASE}${endpoint}`;
-    const headers = this.getHeaders();
-    const config = {
-      headers,
-      ...options
-    };
-
-    if (options.body && typeof options.body === "object") {
-      config.body = JSON.stringify(options.body);
-    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const { noCache: _noCache, ...fetchOptions } = options;
+    const config = { ...fetchOptions, method, headers: { ...this.getHeaders(), ...(options.headers || {}) }, signal: controller.signal };
+    if (config.body && typeof config.body === "object") config.body = JSON.stringify(config.body);
 
     try {
-      const res = await fetch(url, config);
-      if (res.status === 401) {
-        this.setAuth(null, null);
-      }
-      
-      const contentType = res.headers.get("content-type");
-      let data = {};
-      if (contentType && contentType.includes("application/json")) {
-        data = await res.json();
-      } else {
-        const text = await res.text();
-        data = { message: text };
-      }
-
-      if (!res.ok) {
-        const error = new Error(data.detail || data.message || `Error en el servidor (${res.status})`);
-        error.status = res.status;
+      const response = await fetch(`${API_BASE}${endpoint}`, config);
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await response.json() : { message: await response.text() };
+      if (response.status === 401) this.setAuth(null, null);
+      if (!response.ok) {
+        const error = new Error(data.detail || data.message || `Error en el servidor (${response.status})`);
+        error.status = response.status;
         throw error;
       }
-
-      if (isGet) {
-        this.cache.set(endpoint, {
-          time: Date.now(),
-          data: JSON.parse(JSON.stringify(data))
-        });
-      }
-
+      if (isGet) this.cache.set(endpoint, { time: Date.now(), data: structuredClone(data) });
       return data;
-    } catch (err) {
-      if (err.status !== 401) {
-        console.warn(`API Error on ${endpoint}:`, err.message || err);
+    } catch (error) {
+      if (error.name === "AbortError") {
+        const timeoutError = new Error("La solicitud tardó demasiado. Verifica la conexión e inténtalo de nuevo.");
+        timeoutError.status = 408;
+        throw timeoutError;
       }
-      throw err;
+      if (error.status !== 401) console.warn(`API Error on ${endpoint}:`, error.message || error);
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
-  // Auth endpoints
-  login(email, password) {
-    return this.request("/auth/login", { method: "POST", body: { email, password } });
-  }
-
-  register(userData) {
-    return this.request("/auth/register", { method: "POST", body: userData });
-  }
-
-  getMe() {
-    return this.request("/auth/me");
-  }
-
-  // Users
-  getUsers(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/users?${query}`);
-  }
-
-  getUser(id) {
-    return this.request(`/users/${id}`);
-  }
-
-  updateProfile(profileData) {
-    return this.request("/users/me", { method: "PUT", body: profileData });
-  }
-
-  adminCreateUser(userData) {
-    return this.request("/users/admin-create", { method: "POST", body: userData });
-  }
-
-  updateUserRole(userId, role) {
-    return this.request(`/users/${userId}/role`, { method: "PUT", body: { role } });
-  }
-
-  // Beyblades & Decks
-  getParts(category = "") {
-    return this.request(`/beyblades/parts?category=${category}`);
-  }
-
-  getMetaTierList() {
-    return this.request("/beyblades/meta-tierlist");
-  }
-
-  syncMetaTierList() {
-    return this.request("/beyblades/meta-tierlist/sync", { method: "POST" });
-  }
-
-  updatePartTier(partId, data) {
-    return this.request(`/beyblades/parts/${partId}/tier`, { method: "PUT", body: data });
-  }
-
-  getDecks(userId = null) {
-    const query = userId ? `?user_id=${userId}` : "";
-    return this.request(`/beyblades/decks${query}`);
-  }
-
-  createDeck(deckData) {
-    return this.request("/beyblades/decks", { method: "POST", body: deckData });
-  }
-
-  deleteDeck(deckId) {
-    return this.request(`/beyblades/decks/${deckId}`, { method: "DELETE" });
-  }
-
-  // Tournaments
-  getTournaments(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/tournaments?${query}`);
-  }
-
-  getTournament(id) {
-    return this.request(`/tournaments/${id}`);
-  }
-
-  createTournament(tData) {
-    return this.request("/tournaments", { method: "POST", body: tData });
-  }
-
-  registerTournament(id) {
-    return this.request(`/tournaments/${id}/register`, { method: "POST" });
-  }
-
-  checkinParticipant(tId, userId) {
-    return this.request(`/tournaments/${tId}/checkin?user_id=${userId}`, { method: "POST" });
-  }
-
-  removeTournamentParticipant(tId, userId) {
-    return this.request(`/tournaments/${tId}/participants/${userId}`, { method: "DELETE" });
-  }
-
-  shuffleTournamentSeeds(tId) {
-    return this.request(`/tournaments/${tId}/shuffle-seeds`, { method: "POST" });
-  }
-
-  deleteTournament(tId) {
-    return this.request(`/tournaments/${tId}`, { method: "DELETE" });
-  }
-
-  updateTournamentParticipantGroup(tId, userId, groupId, seed) {
-    return this.request(`/tournaments/${tId}/participants/${userId}/group`, {
-      method: "PUT",
-      body: { group_id: groupId, seed }
-    });
-  }
-
-  updateTournament(tId, data) {
-    return this.request(`/tournaments/${tId}`, { method: "PUT", body: data });
-  }
-
-  addTournamentParticipant(tId, data, checkedIn = true) {
-    let body = {};
-    if (typeof data === "object" && data !== null) {
-      body = data;
-    } else {
-      body = { user_id: data, checked_in: checkedIn };
-    }
-    return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body });
-  }
-
-  updateParticipantDeck(tId, userId, deck, deckNotes = "") {
-    return this.request(`/tournaments/${tId}/participants/${userId}/deck`, {
-      method: "PUT",
-      body: { deck, deck_notes: deckNotes }
-    });
-  }
-
-  assignMatchReferee(matchId, refereeId) {
-    return this.request(`/matches/${matchId}/assign-referee`, { method: "POST", body: { referee_id: refereeId } });
-  }
-
-  startTournament(id) {
-    return this.request(`/tournaments/${id}/start`, { method: "POST" });
-  }
-
-  nextRoundTournament(id) {
-    return this.request(`/tournaments/${id}/next-round`, { method: "POST" });
-  }
-
-  generatePlayoffs(id) {
-    return this.request(`/tournaments/${id}/generate-playoffs`, { method: "POST" });
-  }
-
-  getParticipants(tId) {
-    return this.request(`/tournaments/${tId}/participants`);
-  }
-
-  getMatches(tId, round = null) {
-    const query = round ? `?round_number=${round}` : "";
-    return this.request(`/tournaments/${tId}/matches${query}`);
-  }
-
-  // Matches & Referee
-  getMatch(id) {
-    return this.request(`/matches/${id}`);
-  }
-
-  callMatch(id, stationNumber, status = "calling") {
-    return this.request(`/matches/${id}/call`, { method: "POST", body: { station_number: stationNumber, status } });
-  }
-
-  recordFinish(matchId, finishData) {
-    return this.request(`/matches/${matchId}/record-finish`, { method: "POST", body: finishData });
-  }
-
-  undoFinish(matchId) {
-    return this.request(`/matches/${matchId}/undo-finish`, { method: "POST" });
-  }
-
-  reopenMatch(matchId) {
-    return this.request(`/matches/${matchId}/reopen`, { method: "POST" });
-  }
-
-  resetMatch(matchId) {
-    return this.request(`/matches/${matchId}/reset`, { method: "POST" });
-  }
-
-  updateManualScore(matchId, scoreData) {
-    return this.request(`/matches/${matchId}/manual-score`, { method: "PUT", body: scoreData });
-  }
-
-  updateMatchTarget(matchId, targetPoints) {
-    return this.request(`/matches/${matchId}/target-points`, { method: "POST", body: { target_points: targetPoints } });
-  }
-
-  declareWinner(matchId, winnerData) {
-    return this.request(`/matches/${matchId}/declare-winner`, { method: "POST", body: winnerData });
-  }
-
-  // Rankings & Social
-  getLeaderboard(country = "") {
-    return this.request(`/rankings/leaderboard?country=${country}`);
-  }
-
-  getSeasons() {
-    return this.request("/rankings/seasons");
-  }
-
-  getSeasonPoints(seasonId) {
-    return this.request(`/rankings/season/${seasonId}/points`);
-  }
-
-  getSeasonElo(seasonId) {
-    return this.request(`/rankings/season/${seasonId}/elo`);
-  }
-
-  getHallOfFame() {
-    return this.request("/rankings/hall-of-fame");
-  }
-
-  getPosts() {
-    return this.request("/social/posts");
-  }
-
-  createPost(content, deckId = null, imageUrl = null) {
-    return this.request("/social/posts", { method: "POST", body: { content, deck_id: deckId, image_url: imageUrl } });
-  }
-
-  likePost(postId) {
-    return this.request(`/social/posts/${postId}/like`, { method: "POST" });
-  }
-
-  addComment(postId, content) {
-    return this.request(`/social/posts/${postId}/comments`, { method: "POST", body: { content } });
-  }
-
-  getNotifications() {
-    return this.request("/social/notifications");
-  }
-
-  markNotificationsRead() {
-    return this.request("/social/notifications/mark-read", { method: "POST" });
-  }
+  login(email, password) { return this.request("/auth/login", { method: "POST", body: { email, password } }); }
+  register(userData) { return this.request("/auth/register", { method: "POST", body: userData }); }
+  getMe() { return this.request("/auth/me"); }
+  getUsers(params = {}) { const query = new URLSearchParams(params).toString(); return this.request(`/users${query ? `?${query}` : ""}`); }
+  getUser(id) { return this.request(`/users/${id}`); }
+  updateProfile(data) { return this.request("/users/me", { method: "PUT", body: data }); }
+  adminCreateUser(data) { return this.request("/users/admin-create", { method: "POST", body: data }); }
+  updateUserRole(id, role) { return this.request(`/users/${id}/role`, { method: "PUT", body: { role } }); }
+  getParts(category = "") { return this.request(`/beyblades/parts${category ? `?category=${encodeURIComponent(category)}` : ""}`); }
+  getMetaTierList() { return this.request("/beyblades/meta-tierlist"); }
+  syncMetaTierList() { return this.request("/beyblades/meta-tierlist/sync", { method: "POST" }); }
+  updatePartTier(id, data) { return this.request(`/beyblades/parts/${id}/tier`, { method: "PUT", body: data }); }
+  getDecks(userId = null) { return this.request(`/beyblades/decks${userId ? `?user_id=${userId}` : ""}`); }
+  createDeck(data) { return this.request("/beyblades/decks", { method: "POST", body: data }); }
+  deleteDeck(id) { return this.request(`/beyblades/decks/${id}`, { method: "DELETE" }); }
+  getTournaments(params = {}) { const query = new URLSearchParams(params).toString(); return this.request(`/tournaments${query ? `?${query}` : ""}`); }
+  getTournament(id) { return this.request(`/tournaments/${id}`); }
+  createTournament(data) { return this.request("/tournaments", { method: "POST", body: data }); }
+  registerTournament(id) { return this.request(`/tournaments/${id}/register`, { method: "POST" }); }
+  checkinParticipant(tId, userId) { return this.request(`/tournaments/${tId}/checkin?user_id=${encodeURIComponent(userId)}`, { method: "POST" }); }
+  removeTournamentParticipant(tId, userId) { return this.request(`/tournaments/${tId}/participants/${userId}`, { method: "DELETE" }); }
+  shuffleTournamentSeeds(id) { return this.request(`/tournaments/${id}/shuffle-seeds`, { method: "POST" }); }
+  deleteTournament(id) { return this.request(`/tournaments/${id}`, { method: "DELETE" }); }
+  updateTournamentParticipantGroup(tId, userId, groupId, seed) { return this.request(`/tournaments/${tId}/participants/${userId}/group`, { method: "PUT", body: { group_id: groupId, seed } }); }
+  updateTournament(tId, data) { return this.request(`/tournaments/${tId}`, { method: "PUT", body: data }); }
+  addTournamentParticipant(tId, data, checkedIn = true) { return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body: typeof data === "object" ? data : { user_id: data, checked_in: checkedIn } }); }
+  updateParticipantDeck(tId, userId, deck, deckNotes = "") { return this.request(`/tournaments/${tId}/participants/${userId}/deck`, { method: "PUT", body: { deck, deck_notes: deckNotes } }); }
+  assignMatchReferee(matchId, refereeId) { return this.request(`/matches/${matchId}/assign-referee`, { method: "POST", body: { referee_id: refereeId } }); }
+  startTournament(id) { return this.request(`/tournaments/${id}/start`, { method: "POST" }); }
+  nextRoundTournament(id) { return this.request(`/tournaments/${id}/next-round`, { method: "POST" }); }
+  generatePlayoffs(id) { return this.request(`/tournaments/${id}/generate-playoffs`, { method: "POST" }); }
+  getParticipants(id) { return this.request(`/tournaments/${id}/participants`); }
+  getMatches(id, round = null) { return this.request(`/tournaments/${id}/matches${round ? `?round_number=${encodeURIComponent(round)}` : ""}`); }
+  getMatch(id) { return this.request(`/matches/${id}`); }
+  callMatch(id, stationNumber, status = "calling") { return this.request(`/matches/${id}/call`, { method: "POST", body: { station_number: stationNumber, status } }); }
+  recordFinish(id, data) { return this.request(`/matches/${id}/record-finish`, { method: "POST", body: data }); }
+  undoFinish(id) { return this.request(`/matches/${id}/undo-finish`, { method: "POST" }); }
+  reopenMatch(id) { return this.request(`/matches/${id}/reopen`, { method: "POST" }); }
+  resetMatch(id) { return this.request(`/matches/${id}/reset`, { method: "POST" }); }
+  updateManualScore(id, data) { return this.request(`/matches/${id}/manual-score`, { method: "PUT", body: data }); }
+  updateMatchTarget(id, points) { return this.request(`/matches/${id}/target-points`, { method: "POST", body: { target_points: points } }); }
+  declareWinner(id, data) { return this.request(`/matches/${id}/declare-winner`, { method: "POST", body: data }); }
+  getLeaderboard(country = "") { return this.request(`/rankings/leaderboard${country ? `?country=${encodeURIComponent(country)}` : ""}`); }
+  getSeasons() { return this.request("/rankings/seasons"); }
+  getSeasonPoints(id) { return this.request(`/rankings/season/${id}/points`); }
+  getSeasonElo(id) { return this.request(`/rankings/season/${id}/elo`); }
+  getHallOfFame() { return this.request("/rankings/hall-of-fame"); }
+  getPosts() { return this.request("/social/posts"); }
+  createPost(content, deckId = null, imageUrl = null) { return this.request("/social/posts", { method: "POST", body: { content, deck_id: deckId, image_url: imageUrl } }); }
+  likePost(id) { return this.request(`/social/posts/${id}/like`, { method: "POST" }); }
+  addComment(id, content) { return this.request(`/social/posts/${id}/comments`, { method: "POST", body: { content } }); }
+  getNotifications() { return this.request("/social/notifications"); }
+  markNotificationsRead() { return this.request("/social/notifications/mark-read", { method: "POST" }); }
 }
 
 window.api = new ApiClient();
