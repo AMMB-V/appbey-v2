@@ -365,7 +365,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   // Render Challonge Interactive Knockout Bracket Tree
   const renderChallongeKnockoutBracket = (matchesList, tour, isOrganizer) => {
     // Filter matches that are part of the knockout stage
-    const playoffMatches = matchesList.filter(m => !m.group_id || m.stage !== 'group_stage');
+    const playoffMatches = matchesList.filter(m => !m.group_id && m.stage !== "group_stage");
     const isKnockoutActive = tour.stage_type === 'knockout' || playoffMatches.length > 0;
 
     if (!isKnockoutActive) {
@@ -425,6 +425,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       if (!rName || rName === "knockout") {
         rName = `Ronda Playoff ${m.round_number}`;
       }
+      if (rName === "quarterfinal") rName = "Cuartos de Final";
+      if (rName === "semifinal") rName = "Semifinales";
+      if (rName === "final") rName = "Gran Final";
       if (!roundsMap[rName]) roundsMap[rName] = [];
       roundsMap[rName].push(m);
     });
@@ -1202,14 +1205,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     if (existing) existing.remove();
 
     const beys = Array.isArray(currentDeck) ? currentDeck : [];
-    const metaCombos = [
-      "Phoenix Wing 9-60 GF",
-      "Wizard Rod 5-70 B",
-      "Dran Buster 1-60 LF",
-      "Cobalt Dragoon 1-60 E",
-      "Shark Edge 3-60 LF",
-      "Unicorn Sting 5-60 GP"
-    ];
+    const metaCombos = window.APPBEY_META_COMBOS || [];
 
     const modal = document.createElement("div");
     modal.id = "edit-deck-modal";
@@ -1232,7 +1228,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
           <label class="block text-[11px] text-slate-400 font-semibold">Toca un combo popular para rellenar rápido:</label>
           <div class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
             ${metaCombos.map(combo => `
-              <button type="button" onclick="fillDeckInput('${combo}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white border border-slate-700 transition">
+              <button type="button" onclick="fillDeckInput('${combo.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white border border-slate-700 transition">
                 + ${combo}
               </button>
             `).join("")}
@@ -1353,6 +1349,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             <!-- Deck 3on3 Inputs -->
             <div class="bg-slate-950/70 rounded-2xl p-3 border border-slate-800/80 space-y-2">
               <label class="block text-cyan-400 font-bold text-xs">🛡️ Deck Oficial 3on3 del Blader (Opcional)</label>
+              <div class="flex flex-wrap gap-1.5">
+                ${metaCombos.map(combo => `<button type="button" onclick="fillParticipantDeckInput('new','${combo.replace(/'/g, "\\'")}')" class="px-2 py-1 rounded-lg bg-slate-800 text-[10px] text-slate-300 border border-slate-700">+ ${combo}</button>`).join("")}
+              </div>
               <div class="space-y-2">
                 <input type="text" name="deck_1" placeholder="Bey #1 (Lead): Ej: Phoenix Wing 9-60 GF" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-xs"/>
                 <input type="text" name="deck_2" placeholder="Bey #2: Ej: Wizard Rod 5-70 B" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-xs"/>
@@ -1394,6 +1393,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             <!-- Deck 3on3 Inputs for registered user -->
             <div class="bg-slate-950/70 rounded-2xl p-3 border border-slate-800/80 space-y-2">
               <label class="block text-cyan-400 font-bold text-xs">🛡️ Deck Oficial 3on3 del Blader (Opcional)</label>
+              <div class="flex flex-wrap gap-1.5">
+                ${metaCombos.map(combo => `<button type="button" onclick="fillParticipantDeckInput('registered','${combo.replace(/'/g, "\\'")}')" class="px-2 py-1 rounded-lg bg-slate-800 text-[10px] text-slate-300 border border-slate-700">+ ${combo}</button>`).join("")}
+              </div>
               <div class="space-y-2">
                 <input type="text" name="reg_deck_1" placeholder="Bey #1 (Lead): Ej: Phoenix Wing 9-60 GF" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-xs"/>
                 <input type="text" name="reg_deck_2" placeholder="Bey #2: Ej: Wizard Rod 5-70 B" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white placeholder-slate-500 outline-none focus:border-cyan-400 text-xs"/>
@@ -1445,6 +1447,11 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         });
         const firstVisible = Array.from(sel.options).find(opt => opt.style.display !== "none");
         if (firstVisible) sel.value = firstVisible.value;
+      };
+      window.fillParticipantDeckInput = (mode, combo) => {
+        const names = mode === "new" ? ["deck_1", "deck_2", "deck_3"] : ["reg_deck_1", "reg_deck_2", "reg_deck_3"];
+        const firstEmpty = names.map(name => document.querySelector(`#${mode === "new" ? "form-new-blader" : "form-registered-blader"} [name="${name}"]`)).find(input => input && !input.value.trim());
+        if (firstEmpty) firstEmpty.value = combo;
       };
     } catch(err) {
       window.showToast("Error al cargar participantes: " + err.message, "error");

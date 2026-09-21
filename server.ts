@@ -57,7 +57,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true
 }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "768kb" }));
 
 // ---------------------------------------------------------------------------
 // In-Memory Database & Types
@@ -1568,10 +1568,26 @@ api.put("/users/me", requireAuth, (req: AuthRequest, res) => {
     u.country = String(country).trim().toUpperCase().slice(0, 5);
   }
   if (avatar_url !== undefined) {
-    u.avatar_url = String(avatar_url).trim();
+    const cleanAvatar = String(avatar_url).trim();
+    const isDataImage = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(cleanAvatar);
+    const isRemoteImage = /^https?:\/\/[^\s"'<>]+$/i.test(cleanAvatar);
+    if (cleanAvatar && cleanAvatar.length > 600_000) {
+      res.status(400).json({ detail: "La imagen de perfil es demasiado grande" });
+      return;
+    }
+    if (cleanAvatar && !isDataImage && !isRemoteImage) {
+      res.status(400).json({ detail: "La foto de perfil debe ser una URL https o una imagen válida" });
+      return;
+    }
+    u.avatar_url = cleanAvatar;
   }
   if (bio !== undefined) {
-    u.bio = String(bio).trim().slice(0, 300);
+    const cleanBio = String(bio).trim();
+    if (cleanBio.length > 300) {
+      res.status(400).json({ detail: "La biografía no puede superar 300 caracteres" });
+      return;
+    }
+    u.bio = cleanBio;
   }
   if (favorite_combo !== undefined) {
     u.favorite_combo = String(favorite_combo).trim().slice(0, 100);
@@ -2074,11 +2090,11 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
   // Parse deck (3 beys for the tournament day)
   let deckList: string[] = [];
   if (Array.isArray(deck)) {
-    deckList = deck.map((d: unknown) => String(d).trim()).filter(Boolean);
+    deckList = deck.map((d: unknown) => String(d).trim().slice(0, 100)).filter(Boolean).slice(0, 3);
   } else if (typeof deck === "string" && deck.trim()) {
-    deckList = deck.split(",").map((s) => s.trim()).filter(Boolean);
+    deckList = deck.split(",").map((s) => s.trim().slice(0, 100)).filter(Boolean).slice(0, 3);
   } else if (favorite_combo && String(favorite_combo).trim()) {
-    deckList = [String(favorite_combo).trim()];
+    deckList = [String(favorite_combo).trim().slice(0, 100)];
   }
 
   if (candidateName) {
@@ -2171,13 +2187,13 @@ api.put("/tournaments/:id/participants/:userId/deck", requireAuth, (req: AuthReq
   const { deck, deck_notes } = req.body;
   let deckList: string[] = [];
   if (Array.isArray(deck)) {
-    deckList = deck.map((d: unknown) => String(d).trim()).filter(Boolean);
+    deckList = deck.map((d: unknown) => String(d).trim().slice(0, 100)).filter(Boolean).slice(0, 3);
   } else if (typeof deck === "string" && deck.trim()) {
-    deckList = deck.split(",").map((s) => s.trim()).filter(Boolean);
+    deckList = deck.split(",").map((s) => s.trim().slice(0, 100)).filter(Boolean).slice(0, 3);
   }
 
   part.deck = deckList;
-  if (deck_notes !== undefined) part.deck_notes = String(deck_notes).trim();
+  if (deck_notes !== undefined) part.deck_notes = String(deck_notes).trim().slice(0, 300);
 
   // Also update user's primary combo if provided
   const user = users.find((u) => u.id === userId);

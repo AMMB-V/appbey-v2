@@ -1,6 +1,14 @@
 // AppBey API Client
 const API_BASE = "/api/v1";
 const REQUEST_TIMEOUT_MS = 15000;
+window.APPBEY_META_COMBOS = [
+  "Phoenix Wing 9-60 GF",
+  "Wizard Rod 5-70 B",
+  "Dran Buster 1-60 LF",
+  "Cobalt Dragoon 1-60 E",
+  "Shark Edge 3-60 LF",
+  "Unicorn Sting 5-60 GP"
+];
 
 class ApiClient {
   constructor() {

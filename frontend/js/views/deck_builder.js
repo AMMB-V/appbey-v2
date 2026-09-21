@@ -27,6 +27,7 @@ window.renderDeckBuilderView = async (container) => {
   const blades = parts.filter(p => p.category === "blade");
   const ratchets = parts.filter(p => p.category === "ratchet");
   const bits = parts.filter(p => p.category === "bit");
+  const metaCombos = window.APPBEY_META_COMBOS || [];
 
   if (blades.length >= 3 && ratchets.length >= 3 && bits.length >= 3) {
     currentDeck.slot1 = { blade: blades[0], ratchet: ratchets[0], bit: bits[2] }; // Phoenix Wing 9-60 GF
@@ -216,6 +217,13 @@ window.renderDeckBuilderView = async (container) => {
           ${[1, 2, 3].map(slotNum => renderSlotCard(slotNum, currentDeck[`slot${slotNum}`])).join("")}
         </div>
 
+        <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-2">
+          <div class="text-xs font-bold text-cyan-300">Combos populares para copiar al nombre del deck</div>
+          <div class="flex flex-wrap gap-1.5">
+            ${metaCombos.map(combo => `<button type="button" onclick="window.copyDeckCombo('${combo.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700">+ ${combo}</button>`).join("")}
+          </div>
+        </div>
+
         <!-- Saved Decks Section -->
         ${userDecks.length ? `
           <div class="space-y-4 pt-6">
@@ -235,6 +243,11 @@ window.renderDeckBuilderView = async (container) => {
       currentDeck[`slot${slotNum}`][category] = part;
       renderUI();
     }
+  };
+
+  window.copyDeckCombo = (combo) => {
+    const input = document.getElementById("deck-name-input");
+    if (input && !input.value.trim()) input.value = combo;
   };
 
   window.saveCurrentDeck = async () => {

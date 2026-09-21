@@ -1,4 +1,11 @@
 // User Profile & Settings View
+const escapeProfileHtml = (value) => String(value ?? "")
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
 window.renderProfileView = async (container, userId = null) => {
   const currentLoggedIn = window.api.user;
   const targetId = userId || (currentLoggedIn ? currentLoggedIn.id : null);
@@ -118,15 +125,15 @@ window.renderProfileView = async (container, userId = null) => {
 
               <div>
                 <label class="block text-slate-400 font-semibold mb-1">Nombre Visible</label>
-                <input type="text" name="display_name" value="${userProfile.display_name}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
+                <input type="text" name="display_name" maxlength="50" value="${escapeProfileHtml(userProfile.display_name)}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
               </div>
               <div>
                 <label class="block text-slate-400 font-semibold mb-1">Combo Insignia Favorito</label>
-                <input type="text" name="favorite_combo" value="${userProfile.favorite_combo || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
+                <input type="text" name="favorite_combo" maxlength="100" value="${escapeProfileHtml(userProfile.favorite_combo)}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
               </div>
               <div class="sm:col-span-2">
                 <label class="block text-slate-400 font-semibold mb-1">Biografía</label>
-                <input type="text" name="bio" value="${userProfile.bio || ''}" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
+                <textarea name="bio" maxlength="300" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400">${escapeProfileHtml(userProfile.bio)}</textarea>
               </div>
               <div class="sm:col-span-2 flex justify-end">
                 <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 active:scale-95 transition">
@@ -175,14 +182,30 @@ window.handleProfileAvatarUpload = (event) => {
     window.showToast?.("Por favor selecciona un archivo de imagen válido", "error");
     return;
   }
+  if (file.size > 5 * 1024 * 1024) {
+    window.showToast?.("La imagen debe pesar menos de 5 MB", "error");
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    const dataUrl = e.target?.result;
-    if (dataUrl) {
+    const source = e.target?.result;
+    if (typeof source !== "string") return;
+    const image = new Image();
+    image.onload = () => {
+      const maxDimension = 512;
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
       const input = document.getElementById("profile-avatar-url");
       if (input) input.value = dataUrl;
       window.updateProfileAvatarPreview(dataUrl);
-    }
+    };
+    image.onerror = () => window.showToast?.("No se pudo leer la imagen seleccionada", "error");
+    image.src = source;
   };
   reader.readAsDataURL(file);
 };
@@ -192,6 +215,11 @@ window.handleUpdateProfile = async (e) => {
   const form = e.target;
   try {
     const avatarVal = form.avatar_url?.value?.trim() || "";
+    const bioVal = form.bio?.value?.trim() || "";
+    if (bioVal.length > 300) {
+      window.showToast?.("La biografía no puede superar 300 caracteres", "error");
+      return;
+    }
     await window.api.updateProfile({
       display_name: form.display_name.value,
       favorite_combo: form.favorite_combo.value,
