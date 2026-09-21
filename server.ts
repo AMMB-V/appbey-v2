@@ -23,10 +23,13 @@ const isProduction = process.env.NODE_ENV === "production";
 const demoDataEnabled = process.env.APPBEY_DEMO_DATA === "true";
 // Secure secret resolution: environment variable or dynamically hashed project salt to avoid hardcoded credentials (SonarQube CWE-798)
 const DEFAULT_DEV_SECRET = crypto.createHash("sha256").update("appbey_stable_project_secret_key_salt_v2").digest("hex");
-if (isProduction && !process.env.SECRET_KEY?.trim() && !process.env.JWT_SECRET?.trim()) {
-  throw new Error("SECRET_KEY or JWT_SECRET must be configured in production");
+const configuredJwtSecret = process.env.SECRET_KEY?.trim() || process.env.JWT_SECRET?.trim();
+const JWT_SECRET = configuredJwtSecret || (isProduction
+  ? crypto.randomBytes(48).toString("hex")
+  : DEFAULT_DEV_SECRET);
+if (isProduction && !configuredJwtSecret) {
+  console.warn("SECRET_KEY or JWT_SECRET is not configured; using an ephemeral JWT secret. Configure SECRET_KEY in Render to preserve sessions across restarts.");
 }
-const JWT_SECRET = process.env.SECRET_KEY || process.env.JWT_SECRET || DEFAULT_DEV_SECRET;
 
 // Disable technology disclosure header (SonarQube S5689)
 app.disable("x-powered-by");

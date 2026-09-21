@@ -168,6 +168,11 @@ El proyecto está configurado con **Continuous Deployment** conectado a la rama 
   - `APPBEY_ADMIN_EMAIL=(correo inicial de la organización)`
   - `APPBEY_ADMIN_PASSWORD=(mínimo 12 caracteres)`
 
+`SECRET_KEY` es la variable recomendada para Render. Si no está configurada, el
+servidor puede arrancar usando un secreto temporal, pero los JWT se invalidarán
+cuando Render reinicie el servicio. Genera una clave con un gestor de secretos
+y guárdala como variable protegida en Render.
+
 Cuando `GOOGLE_CLIENT_ID` está configurado, el formulario muestra Google Sign-In. El
 servidor valida cada `id_token` con Google antes de crear o vincular la cuenta.
 
