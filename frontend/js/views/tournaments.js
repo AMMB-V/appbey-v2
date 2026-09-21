@@ -155,6 +155,18 @@ window.openCreateTournamentModal = () => {
               <option value="swiss">Sistema Suizo Oficial (WBO Standard)</option>
             </select>
           </div>
+          <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-700/70 space-y-2">
+            <label class="block text-slate-300 mb-1 font-semibold">Prioridad de desempates</label>
+            <p class="text-[11px] text-slate-500">Se aplican en el orden seleccionado; las opciones restantes se usan como respaldo.</p>
+            <div class="grid grid-cols-2 gap-2">
+              <select name="tie_break_1" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
+                <option value="victories_losses">Victorias / derrotas</option><option value="point_difference">Diferencia de puntos</option><option value="head_to_head">Head-to-head</option><option value="points_for_seed">PF / seed</option>
+              </select>
+              <select name="tie_break_2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
+                <option value="point_difference">Diferencia de puntos</option><option value="victories_losses">Victorias / derrotas</option><option value="head_to_head">Head-to-head</option><option value="points_for_seed">PF / seed</option>
+              </select>
+            </div>
+          </div>
           <div>
             <label class="block text-slate-300 mb-1 font-semibold">Tipo de Combate</label>
             <select name="battle_type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:border-cyan-500 outline-none">
@@ -276,6 +288,7 @@ window.submitNewTournament = async (e) => {
     format,
     group_count: groupCount,
     advancers_per_group: advancers,
+    tie_break_priority: [form.tie_break_1?.value, form.tie_break_2?.value, "head_to_head", "points_for_seed"].filter(Boolean),
     battle_type: form.battle_type.value,
     match_target_points: targetPts,
     max_participants: maxParticipants,

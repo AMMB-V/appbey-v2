@@ -124,6 +124,7 @@ class ApiClient {
   updateTournamentParticipantGroup(tId, userId, groupId, seed) { return this.request(`/tournaments/${tId}/participants/${userId}/group`, { method: "PUT", body: { group_id: groupId, seed } }); }
   updateTournament(tId, data) { return this.request(`/tournaments/${tId}`, { method: "PUT", body: data }); }
   addTournamentParticipant(tId, data, checkedIn = true) { return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body: typeof data === "object" ? data : { user_id: data, checked_in: checkedIn } }); }
+  addTournamentParticipantsBulk(tId, participants) { return this.request(`/tournaments/${tId}/add-participants-bulk`, { method: "POST", body: { participants } }); }
   updateParticipantDeck(tId, userId, deck, deckNotes = "") { return this.request(`/tournaments/${tId}/participants/${userId}/deck`, { method: "PUT", body: { deck, deck_notes: deckNotes } }); }
   assignMatchReferee(matchId, refereeId) { return this.request(`/matches/${matchId}/assign-referee`, { method: "POST", body: { referee_id: refereeId } }); }
   startTournament(id) { return this.request(`/tournaments/${id}/start`, { method: "POST" }); }

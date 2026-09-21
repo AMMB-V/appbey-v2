@@ -220,6 +220,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 active:scale-95 transition whitespace-nowrap">
                 + Añadir
               </button>
+              <button type="button" onclick="openBulkParticipantModal(${tour.id})" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs transition whitespace-nowrap">
+                + Carga masiva
+              </button>
             </form>
           </div>
         ` : ''}
@@ -250,9 +253,14 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             // Sort group members by group_rank if available, or tiebreakers
             list.sort((a, b) => {
               if (a.group_rank && b.group_rank) return a.group_rank - b.group_rank;
-              if ((b.group_points || 0) !== (a.group_points || 0)) return (b.group_points || 0) - (a.group_points || 0);
-              if ((b.group_diff || 0) !== (a.group_diff || 0)) return (b.group_diff || 0) - (a.group_diff || 0);
-              if ((b.group_points_scored || 0) !== (a.group_points_scored || 0)) return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+              const priority = tour.tie_break_priority || ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
+              for (const criterion of priority) {
+                if (criterion === "victories_losses") {
+                  if ((b.group_matches_won || 0) !== (a.group_matches_won || 0)) return (b.group_matches_won || 0) - (a.group_matches_won || 0);
+                  if ((a.group_matches_lost || 0) !== (b.group_matches_lost || 0)) return (a.group_matches_lost || 0) - (b.group_matches_lost || 0);
+                } else if (criterion === "point_difference" && (b.group_diff || 0) !== (a.group_diff || 0)) return (b.group_diff || 0) - (a.group_diff || 0);
+                else if (criterion === "points_for_seed" && (b.group_points_scored || 0) !== (a.group_points_scored || 0)) return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+              }
               return (a.seed || 99) - (b.seed || 99);
             });
 
@@ -1002,6 +1010,49 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     } catch(err) {
       if (input) input.disabled = false;
       window.showToast(err.message || "Error al añadir participante", "error");
+    }
+  };
+
+  window.openBulkParticipantModal = (tId) => {
+    const existing = document.getElementById("bulk-part-modal");
+    if (existing) existing.remove();
+    const modal = document.createElement("div");
+    modal.id = "bulk-part-modal";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md";
+    modal.innerHTML = `
+      <div class="glass-card max-w-xl w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="font-extrabold text-white">Carga masiva de participantes</h3>
+          <button onclick="document.getElementById('bulk-part-modal').remove()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-400">Una persona por línea. Usa username, email o nombre visible; opcionalmente añade <code class="text-cyan-300">| Bey 1, Bey 2, Bey 3</code>.</p>
+        <textarea id="bulk-participants-input" rows="10" placeholder="usuario@correo.com | Phoenix Wing 9-60 GF&#10;nombre presencial | Wizard Rod 5-70 B" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-cyan-400"></textarea>
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="document.getElementById('bulk-part-modal').remove()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Cancelar</button>
+          <button type="button" onclick="handleBulkParticipantSubmit(${tId})" class="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold">Inscribir lista</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  };
+
+  window.handleBulkParticipantSubmit = async (tId) => {
+    const input = document.getElementById("bulk-participants-input");
+    const lines = (input?.value || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const participantsToAdd = lines.map(line => {
+      const [identifier, deckText] = line.split("|", 2);
+      return { identifier: identifier.trim(), deck: (deckText || "").split(",").map(item => item.trim()).filter(Boolean), checked_in: true };
+    });
+    if (!participantsToAdd.length) {
+      window.showToast("Añade al menos un participante", "error");
+      return;
+    }
+    try {
+      await window.api.addTournamentParticipantsBulk(tId, participantsToAdd);
+      window.showToast(`${participantsToAdd.length} participantes inscritos`, "success");
+      document.getElementById("bulk-part-modal")?.remove();
+      refreshData();
+    } catch (err) {
+      window.showToast(err.message || "Error en la carga masiva", "error");
     }
   };
 

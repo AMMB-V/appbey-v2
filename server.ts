@@ -177,6 +177,7 @@ interface Tournament {
   stage_type?: "group_stage" | "knockout" | "completed";
   group_count?: number;
   advancers_per_group?: number;
+  tie_break_priority: string[];
   knockout_round_name?: string;
   battle_type: string;
   match_target_points: number;
@@ -1176,26 +1177,31 @@ function recalcTournamentStats(tournamentId: number) {
     p.buchholz = oppIds.reduce((sum, oppId) => sum + (userMap.get(oppId)?.swiss_points || 0), 0);
   }
 
-  // Group stage standings ranking (Challonge tiebreak rule)
+  // Group stage standings ranking (configured tournament tiebreak rule)
   if (tour && tour.format === "groups_elim") {
     const advancers = tour.advancers_per_group || 2;
     const groupLetters = Array.from(new Set(allT.map((p) => p.group_id).filter(Boolean))) as string[];
     for (const gId of groupLetters) {
       const gParts = allT.filter((p) => p.group_id === gId);
       gParts.sort((a, b) => {
-        // 1. Group points
-        if ((b.group_points || 0) !== (a.group_points || 0)) {
-          return (b.group_points || 0) - (a.group_points || 0);
+        for (const criterion of tour.tie_break_priority || ["victories_losses", "point_difference", "head_to_head", "points_for_seed"]) {
+          if (criterion === "victories_losses") {
+            if ((b.group_matches_won || 0) !== (a.group_matches_won || 0)) return (b.group_matches_won || 0) - (a.group_matches_won || 0);
+            if ((a.group_matches_lost || 0) !== (b.group_matches_lost || 0)) return (a.group_matches_lost || 0) - (b.group_matches_lost || 0);
+          } else if (criterion === "point_difference" && (b.group_diff || 0) !== (a.group_diff || 0)) {
+            return (b.group_diff || 0) - (a.group_diff || 0);
+          } else if (criterion === "head_to_head") {
+            const direct = tMatches.find((m) =>
+              m.group_id === gId &&
+              ((m.player_a_id === a.user_id && m.player_b_id === b.user_id) || (m.player_a_id === b.user_id && m.player_b_id === a.user_id))
+            );
+            if (direct && direct.winner_id !== null && direct.winner_id !== a.user_id && direct.winner_id !== b.user_id) continue;
+            if (direct?.winner_id === a.user_id) return -1;
+            if (direct?.winner_id === b.user_id) return 1;
+          } else if (criterion === "points_for_seed" && (b.group_points_scored || 0) !== (a.group_points_scored || 0)) {
+            return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+          }
         }
-        // 2. Point differential
-        if ((b.group_diff || 0) !== (a.group_diff || 0)) {
-          return (b.group_diff || 0) - (a.group_diff || 0);
-        }
-        // 3. Points scored
-        if ((b.group_points_scored || 0) !== (a.group_points_scored || 0)) {
-          return (b.group_points_scored || 0) - (a.group_points_scored || 0);
-        }
-        // 4. Initial seed
         return a.seed - b.seed;
       });
 
@@ -1960,6 +1966,14 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
   }
   const groupCount = data.group_count ? Math.max(2, Math.min(32, parseInt(data.group_count, 10))) : undefined;
   const advancersPerGroup = data.advancers_per_group ? Math.max(1, Math.min(4, parseInt(data.advancers_per_group, 10) || 2)) : 2;
+  const defaultTieBreaks = ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
+  const requestedTieBreaks = Array.isArray(data.tie_break_priority)
+    ? data.tie_break_priority.map((value: unknown) => String(value)).filter((value: string) => defaultTieBreaks.includes(value))
+    : [];
+  const tieBreakPriority = [...new Set(requestedTieBreaks)];
+  for (const fallback of defaultTieBreaks) {
+    if (!tieBreakPriority.includes(fallback)) tieBreakPriority.push(fallback);
+  }
   const battleType = data.battle_type === "1on1" ? "1on1" : "3on3_deck";
   const targetPoints = Math.max(1, Math.min(10, parseInt(data.match_target_points, 10) || 4));
   const maxParticipants = Math.max(2, Math.min(256, parseInt(data.max_participants, 10) || 128));
@@ -1977,6 +1991,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
     stage_type: format === "groups_elim" || format === "round_robin" ? "group_stage" : undefined,
     group_count: groupCount,
     advancers_per_group: advancersPerGroup,
+    tie_break_priority: tieBreakPriority,
     battle_type: battleType,
     match_target_points: targetPoints,
     stadium_type: data.stadium_type ? String(data.stadium_type).trim().slice(0, 50) : "Xtreme Stadium (BX-10)",
@@ -2080,6 +2095,11 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     res.status(400).json({ detail: "Las inscripciones solo están disponibles antes de iniciar el torneo" });
     return;
   }
+  const currentCount = participants.filter((p) => p.tournament_id === id).length;
+  if (currentCount >= t.max_participants) {
+    res.status(400).json({ detail: "El cupo máximo de participantes se ha completado" });
+    return;
+  }
 
   const { user_id, new_blader_name, name, blader_name, display_name, country, favorite_combo, deck, deck_notes, checked_in } = req.body;
   let targetUser: User | undefined;
@@ -2156,6 +2176,91 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
   };
   participants.push(newPart);
   res.json({ message: "Participante agregado exitosamente", participant: { ...newPart, user: publicUser(targetUser) } });
+});
+
+// Admin / Organizer bulk participant addition. Entries may identify an existing user
+// by user_id, username, email, or display_name, or create a walk-in by display name.
+api.post("/tournaments/:id/add-participants-bulk", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Solo los organizadores del torneo o administradores pueden inscribir participantes" });
+    return;
+  }
+  if (!["registration_open", "check_in"].includes(t.status)) {
+    res.status(400).json({ detail: "Las inscripciones solo están disponibles antes de iniciar el torneo" });
+    return;
+  }
+
+  const entries = Array.isArray(req.body?.participants) ? req.body.participants : [];
+  if (!entries.length || entries.length > t.max_participants) {
+    res.status(400).json({ detail: "Debes enviar una lista válida de participantes" });
+    return;
+  }
+  const current = participants.filter((p) => p.tournament_id === id);
+  if (current.length + entries.length > t.max_participants) {
+    res.status(400).json({ detail: `El cupo permite agregar como máximo ${t.max_participants - current.length} participantes` });
+    return;
+  }
+
+  const resolved: Array<{ entry: Record<string, unknown>; user?: User; name?: string; deck: string[] }> = [];
+  const seen = new Set<number>();
+  for (const raw of entries) {
+    const entry = typeof raw === "string" ? { identifier: raw } : (raw || {}) as Record<string, unknown>;
+    const identifier = String(entry.user_id || entry.username || entry.email || entry.display_name || entry.name || entry.identifier || "").trim();
+    if (!identifier) {
+      res.status(400).json({ detail: "Cada participante debe incluir username, email o display_name" });
+      return;
+    }
+    const userId = entry.user_id && !isNaN(parseInt(String(entry.user_id), 10)) ? parseInt(String(entry.user_id), 10) : null;
+    const targetUser = userId
+      ? users.find((u) => u.id === userId)
+      : users.find((u) => u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase() || u.display_name.toLowerCase() === identifier.toLowerCase());
+    const deckValue = entry.deck;
+    const deck = Array.isArray(deckValue)
+      ? deckValue.map((value) => String(value).trim()).filter(Boolean)
+      : typeof deckValue === "string" ? deckValue.split(",").map((value) => value.trim()).filter(Boolean) : [];
+    if (targetUser) {
+      if (current.some((p) => p.user_id === targetUser.id) || seen.has(targetUser.id)) {
+        res.status(400).json({ detail: `El participante ${targetUser.display_name} ya está inscrito o repetido en la lista` });
+        return;
+      }
+      seen.add(targetUser.id);
+      resolved.push({ entry, user: targetUser, deck });
+    } else {
+      if (resolved.some((item) => item.name?.toLowerCase() === identifier.toLowerCase())) {
+        res.status(400).json({ detail: `El nombre ${identifier} está repetido en la lista` });
+        return;
+      }
+      resolved.push({ entry, name: identifier.slice(0, 50), deck });
+    }
+  }
+
+  const added = resolved.map((item, index) => {
+    const targetUser = item.user || createWalkinBlader(item.name!, item.entry.country as string | undefined, item.deck[0]);
+    const count = current.length + index;
+    const newPart: TournamentParticipant = {
+      id: participants.length + 1,
+      tournament_id: id,
+      user_id: targetUser.id,
+      seed: count + 1,
+      checked_in: item.entry.checked_in !== false,
+      checked_in_at: item.entry.checked_in !== false ? new Date().toISOString() : null,
+      swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0,
+      matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0,
+      final_rank: null,
+      deck: item.deck.length ? item.deck : (targetUser.favorite_combo ? [targetUser.favorite_combo] : [])
+    };
+    participants.push(newPart);
+    return { ...newPart, user: publicUser(targetUser) };
+  });
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Participantes agregados" });
+  res.json({ message: `${added.length} participantes agregados exitosamente`, participants: added });
 });
 
 // Update Participant Tournament Deck (for bladers or organizers)
@@ -2344,7 +2449,7 @@ api.put("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  const { title, description, venue_name, country, match_target_points, max_participants, prize_description } = req.body;
+  const { title, description, venue_name, country, match_target_points, max_participants, prize_description, tie_break_priority } = req.body;
   if (title) t.title = String(title).trim();
   if (description !== undefined) t.description = String(description).trim();
   if (venue_name) t.venue_name = String(venue_name).trim();
@@ -2352,6 +2457,14 @@ api.put("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
   if (prize_description !== undefined) t.prize_description = String(prize_description).trim().slice(0, 200);
   if (match_target_points && !isNaN(parseInt(match_target_points, 10))) t.match_target_points = parseInt(match_target_points, 10);
   if (max_participants && !isNaN(parseInt(max_participants, 10))) t.max_participants = parseInt(max_participants, 10);
+  if (Array.isArray(tie_break_priority)) {
+    const allowed = ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
+    const nextPriority = [...new Set(tie_break_priority.map((value: unknown) => String(value)).filter((value: string) => allowed.includes(value)))];
+    for (const fallback of allowed) {
+      if (!nextPriority.includes(fallback)) nextPriority.push(fallback);
+    }
+    t.tie_break_priority = nextPriority;
+  }
 
   broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Ajustes de torneo actualizados" });
   res.json({ message: "Torneo actualizado exitosamente", tournament: t });
@@ -2551,8 +2664,13 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
     return;
   }
 
-  if (t.status === "in_progress" || t.status === "completed") {
-    res.status(400).json({ detail: "El torneo ya ha sido iniciado previamente o ya concluyó" });
+  if (t.status === "completed") {
+    res.status(400).json({ detail: "El torneo ya concluyó" });
+    return;
+  }
+  const existingMatches = matches.filter((match) => match.tournament_id === id);
+  if (t.status === "in_progress" || existingMatches.length > 0) {
+    res.json({ message: "El torneo ya estaba iniciado; se conservaron sus grupos y partidas", current_round: t.current_round });
     return;
   }
 
