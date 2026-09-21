@@ -236,6 +236,7 @@ interface MatchGame {
   finish_type: string;
   awarded_to: "player_a" | "player_b" | "draw";
   points: number;
+  set_number?: number;
   notes?: string;
   created_at: string;
 }
@@ -255,6 +256,10 @@ interface TournamentMatch {
   winner_id: number | null;
   referee_id?: number | null;
   target_points?: number;
+  set_target_points?: number;
+  sets_won_a?: number;
+  sets_won_b?: number;
+  sets?: Array<{ set_number: number; score_a: number; score_b: number; winner_id: number | null }>;
   status: "pending" | "calling" | "in_progress" | "finished";
   is_bye: boolean;
   created_at: string;
@@ -2644,6 +2649,12 @@ api.get("/tournaments/:id/matches", (req, res) => {
       const playerB = users.find((u) => u.id === m.player_b_id) || null;
       return {
         ...m,
+        is_elimination: !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim"),
+        best_of_sets: !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim") ? 3 : 1,
+        set_target_points: m.set_target_points || m.target_points || t?.match_target_points || 4,
+        sets_won_a: m.sets_won_a || 0,
+        sets_won_b: m.sets_won_b || 0,
+        sets: m.sets || [],
         player_a: playerA,
         player_b: playerB,
         player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
@@ -2773,6 +2784,11 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
   }
   if (t.stage_type === "knockout" || matches.some((m) => m.tournament_id === id && !m.group_id)) {
     res.status(400).json({ detail: "La fase de playoffs ya fue generada para este torneo" });
+    return;
+  }
+  const unfinishedGroups = matches.filter((m) => m.tournament_id === id && Boolean(m.group_id) && m.status !== "finished");
+  if (unfinishedGroups.length > 0) {
+    res.status(400).json({ detail: `No se pueden generar playoffs: aún quedan ${unfinishedGroups.length} combate(s) de grupos pendientes.` });
     return;
   }
 
@@ -2990,6 +3006,16 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
 });
 
 // --- Matches & Referee Pad ---
+function getNextCombat(m: TournamentMatch) {
+  return matches
+    .filter((candidate) => candidate.tournament_id === m.tournament_id && candidate.id !== m.id && candidate.status === "pending" && !candidate.is_bye)
+    .sort((a, b) => {
+      if (a.group_id === m.group_id && b.group_id !== m.group_id) return -1;
+      if (a.group_id !== m.group_id && b.group_id === m.group_id) return 1;
+      return a.id - b.id;
+    })[0] || null;
+}
+
 function formatMatchDetails(m: TournamentMatch) {
   const partA = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_a_id);
   const partB = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_b_id);
@@ -2997,10 +3023,20 @@ function formatMatchDetails(m: TournamentMatch) {
   const playerB = users.find((u) => u.id === m.player_b_id) || null;
   const t = tournaments.find((tour) => tour.id === m.tournament_id);
   const target = m.target_points || t?.match_target_points || 4;
+  const isElimination = !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim");
+  const setTarget = m.set_target_points || target;
+  const sets = m.sets || [];
+  const nextCombat = getNextCombat(m);
 
   return {
     ...m,
     target_points: target,
+    is_elimination: isElimination,
+    best_of_sets: isElimination ? 3 : 1,
+    set_target_points: isElimination ? setTarget : undefined,
+    sets_won_a: isElimination ? (m.sets_won_a || 0) : undefined,
+    sets_won_b: isElimination ? (m.sets_won_b || 0) : undefined,
+    sets,
     player_a: playerA,
     player_b: playerB,
     player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
@@ -3016,7 +3052,12 @@ function formatMatchDetails(m: TournamentMatch) {
         player_a: users.find((u) => u.id === tm.player_a_id) || null,
         player_b: users.find((u) => u.id === tm.player_b_id) || null,
         winner: publicUser(users.find((u) => u.id === tm.winner_id))
-      }))
+      })),
+    next_combat: nextCombat ? {
+      ...nextCombat,
+      player_a: users.find((u) => u.id === nextCombat.player_a_id) || null,
+      player_b: users.find((u) => u.id === nextCombat.player_b_id) || null
+    } : null
   };
 }
 
@@ -3028,6 +3069,17 @@ api.get("/matches/:id", (req, res) => {
     return;
   }
   res.json(formatMatchDetails(m));
+});
+
+api.get("/matches/:id/next-combat", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const m = matches.find((match) => match.id === id);
+  if (!m) {
+    res.status(404).json({ detail: "Match no encontrado" });
+    return;
+  }
+  const next = getNextCombat(m);
+  res.json(next ? formatMatchDetails(next) : null);
 });
 
 api.post("/matches/:id/call", requireAuth, (req: AuthRequest, res) => {
@@ -3101,6 +3153,7 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
     finish_type,
     awarded_to,
     points: pts,
+    set_number: (m.sets || []).length + 1,
     notes: notes ? String(notes).trim().slice(0, 200) : undefined,
     created_at: new Date().toISOString()
   };
@@ -3111,11 +3164,35 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
 
   const t = tournaments.find((tour) => tour.id === m.tournament_id);
   const target = m.target_points || t?.match_target_points || 4;
+  const isElimination = !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim");
+  const setTarget = m.set_target_points || target;
+  if (isElimination) {
+    m.set_target_points = setTarget;
+    m.sets_won_a = m.sets_won_a || 0;
+    m.sets_won_b = m.sets_won_b || 0;
+    m.sets = m.sets || [];
+  }
 
-  if (m.score_a >= target || m.score_b >= target) {
-    m.status = "finished";
-    if (m.score_a > m.score_b) m.winner_id = m.player_a_id;
-    else if (m.score_b > m.score_a) m.winner_id = m.player_b_id;
+  if (m.score_a >= (isElimination ? setTarget : target) || m.score_b >= (isElimination ? setTarget : target)) {
+    if (isElimination) {
+      const setWinner = m.score_a > m.score_b ? m.player_a_id : m.player_b_id;
+      m.sets.push({ set_number: m.sets.length + 1, score_a: m.score_a, score_b: m.score_b, winner_id: setWinner });
+      if (setWinner === m.player_a_id) m.sets_won_a = (m.sets_won_a || 0) + 1;
+      else if (setWinner === m.player_b_id) m.sets_won_b = (m.sets_won_b || 0) + 1;
+      m.score_a = 0;
+      m.score_b = 0;
+      if ((m.sets_won_a || 0) >= 2 || (m.sets_won_b || 0) >= 2) {
+        m.status = "finished";
+        m.winner_id = (m.sets_won_a || 0) > (m.sets_won_b || 0) ? m.player_a_id : m.player_b_id;
+      } else {
+        m.status = "in_progress";
+        m.winner_id = null;
+      }
+    } else {
+      m.status = "finished";
+      if (m.score_a > m.score_b) m.winner_id = m.player_a_id;
+      else if (m.score_b > m.score_a) m.winner_id = m.player_b_id;
+    }
 
     updateStatsAfterMatch(m);
     if (m.player_a_id && m.player_b_id && m.winner_id) {
@@ -3137,7 +3214,11 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
     status: m.status,
     winner_id: m.winner_id,
     last_finish: finish_type,
-    awarded_to
+    awarded_to,
+    is_elimination: isElimination,
+    sets_won_a: m.sets_won_a || 0,
+    sets_won_b: m.sets_won_b || 0,
+    sets: m.sets || []
   });
 
   res.json(formatMatchDetails(m));

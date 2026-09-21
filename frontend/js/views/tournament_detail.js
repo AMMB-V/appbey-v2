@@ -289,10 +289,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                       <tr>
                         <th class="py-2.5 px-3 text-center w-8">#</th>
                         <th class="py-2.5 px-3">Blader</th>
-                        <th class="py-2.5 px-2 text-center font-bold text-cyan-300">PTS</th>
+                        <th title="Puntos de clasificación" class="py-2.5 px-2 text-center font-bold text-cyan-300">PTS</th>
                         <th class="py-2.5 px-2 text-center">V-E-D</th>
-                        <th class="py-2.5 px-2 text-center">DIF</th>
-                        <th class="py-2.5 px-2 text-center">PF</th>
+                        <th title="Diferencia de puntos (a favor menos en contra)" class="py-2.5 px-2 text-center">DIF</th>
+                        <th title="Puntos a favor" class="py-2.5 px-2 text-center">PF</th>
                         <th class="py-2.5 px-3 text-center">Estado</th>
                         ${isOrganizer ? '<th class="py-2.5 px-2 text-center">Reasignar Grupo</th>' : ''}
                       </tr>
@@ -541,7 +541,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                             <div class="flex items-center gap-1.5 flex-shrink-0">
                               ${winnerA ? '<span class="text-xs">👑</span>' : ''}
                               <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerA ? 'text-amber-400' : 'text-slate-300'}">
-                                ${m.score_a}
+                                ${m.is_elimination ? `${m.sets_won_a || 0} sets` : m.score_a}
                               </span>
                             </div>
                           </div>
@@ -564,7 +564,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                             <div class="flex items-center gap-1.5 flex-shrink-0">
                               ${winnerB ? '<span class="text-xs">👑</span>' : ''}
                               <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerB ? 'text-amber-400' : 'text-slate-300'}">
-                                ${m.score_b}
+                                ${m.is_elimination ? `${m.sets_won_b || 0} sets` : m.score_b}
                               </span>
                             </div>
                           </div>

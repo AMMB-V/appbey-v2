@@ -170,7 +170,7 @@ window.renderRefereePadView = async (container, matchId) => {
           }
         }
         // Find next pending or in_progress match (excluding current match)
-        nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+        nextMatch = match.next_combat || null;
       }
       if (document.getElementById("score-display-a") && document.getElementById("score-display-b")) {
         updateLiveScoreboardDOM();
@@ -230,7 +230,7 @@ window.renderRefereePadView = async (container, matchId) => {
               <span class="font-extrabold text-amber-300 text-sm sm:text-base">Ganador Oficial: <strong>${winnerName}</strong></span>
             </div>
             <p class="text-slate-300 text-xs mt-0.5">
-              Marcador definitivo: <span class="font-mono font-bold text-white">${m.score_a} - ${m.score_b}</span> (Meta: ${m.target_points || 4} pts).
+              Marcador definitivo: <span class="font-mono font-bold text-white">${m.score_a} - ${m.score_b}</span> (Meta: ${m.target_points || 4} pts${m.is_elimination ? ` • Sets ${m.sets_won_a || 0}-${m.sets_won_b || 0}` : ''}).
             </p>
           </div>
         </div>
@@ -371,20 +371,25 @@ window.renderRefereePadView = async (container, matchId) => {
             </span>
             ${nextMatch ? `
               <button onclick="location.hash='#/referee/${nextMatch.id}'" class="hidden sm:flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition font-bold">
-                <span>➡️ Sig. Mesa #${nextMatch.station_number || nextMatch.bracket_position}</span>
+                <span>➡️ Siguiente combate #${nextMatch.station_number || nextMatch.bracket_position}</span>
               </button>
             ` : ''}
           </div>
 
           <!-- Target Points Quick Selector -->
           <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
-            <span class="text-[10px] uppercase font-bold text-slate-400 px-2">Meta:</span>
+            <span class="text-[10px] uppercase font-bold text-slate-400 px-2">${match.is_elimination ? 'Puntos por set:' : 'Puntos del combate:'}</span>
             ${[3, 4, 5, 7].map(pts => `
               <button data-target-pts="${pts}" onclick="setTargetPoints(${pts})" class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition ${target === pts ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}">
                 ${pts}p ${pts === 4 ? '(Oficial)' : (pts === 5 ? '(Final)' : '')}
               </button>
             `).join("")}
           </div>
+          ${match.is_elimination ? `
+            <div class="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-black font-mono">
+              Serie al mejor de 3: ${match.sets_won_a || 0}-${match.sets_won_b || 0} sets
+            </div>
+          ` : ''}
 
           <div class="flex items-center gap-2">
             ${!isStandalone ? `
@@ -846,7 +851,26 @@ window.renderRefereePadView = async (container, matchId) => {
     match.score_a = newScoreA;
     match.score_b = newScoreB;
     const target = match.target_points || 4;
-    if (match.score_a >= target || match.score_b >= target) {
+    if (match.is_elimination) {
+      match.sets_won_a = match.sets_won_a || 0;
+      match.sets_won_b = match.sets_won_b || 0;
+      match.sets = match.sets || [];
+      if (match.score_a >= target || match.score_b >= target) {
+        const winnerId = match.score_a > match.score_b ? match.player_a_id : match.player_b_id;
+        match.sets.push({ set_number: match.sets.length + 1, score_a: match.score_a, score_b: match.score_b, winner_id: winnerId });
+        if (winnerId === match.player_a_id) match.sets_won_a += 1;
+        else match.sets_won_b += 1;
+        match.score_a = 0;
+        match.score_b = 0;
+      }
+      if (match.sets_won_a >= 2 || match.sets_won_b >= 2) {
+        match.status = 'finished';
+        match.winner_id = match.sets_won_a > match.sets_won_b ? match.player_a_id : match.player_b_id;
+      } else {
+        match.status = 'in_progress';
+        match.winner_id = null;
+      }
+    } else if (match.score_a >= target || match.score_b >= target) {
       match.status = 'finished';
       match.winner_id = match.score_a > match.score_b ? match.player_a_id : match.player_b_id;
     } else {
@@ -867,7 +891,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+          nextMatch = serverUpdated.next_combat || null;
         }
         updateLiveScoreboardDOM();
       }
@@ -908,7 +932,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+          nextMatch = serverUpdated.next_combat || null;
         }
         updateLiveScoreboardDOM();
       } else {
@@ -1006,7 +1030,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+          nextMatch = serverUpdated.next_combat || null;
         }
         updateLiveScoreboardDOM();
       }
@@ -1059,7 +1083,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+          nextMatch = serverUpdated.next_combat || null;
         }
         updateLiveScoreboardDOM();
       } else {
@@ -1095,7 +1119,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+          nextMatch = serverUpdated.next_combat || null;
         }
         updateLiveScoreboardDOM();
       } else {
@@ -1140,7 +1164,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = tournamentMatches.find(m => m.id !== match.id && (m.status === 'in_progress' || m.status === 'calling' || m.status === 'pending')) || null;
+          nextMatch = serverUpdated.next_combat || null;
         }
         updateLiveScoreboardDOM();
       } else {
