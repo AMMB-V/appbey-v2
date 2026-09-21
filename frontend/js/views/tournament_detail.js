@@ -1,4 +1,11 @@
 // Tournament Detail View
+if (typeof window.renderAvatar !== "function") {
+  window.renderAvatar = (user, sizeClass = "w-8 h-8", textClass = "text-xs", borderClass = "border border-slate-700") => {
+    const src = (user?.avatar_url && !user.avatar_url.includes("placeholder")) ? user.avatar_url : "/assets/images/appbey_logo.png";
+    return `<div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center bg-slate-950 shadow-md"><img src="${src}" class="w-full h-full object-cover" onerror="this.src='/assets/images/appbey_logo.png'" alt="Blader"/></div>`;
+  };
+}
+
 window.renderTournamentDetailView = async (container, tournamentId) => {
   const user = window.api.user;
   let tournament = null;
@@ -488,7 +495,12 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">Pendiente</span>';
 
     const editDeckBtn = canEditDeck ? `
-      <div class="pt-1 flex justify-end">
+      <div class="pt-1 flex items-center justify-between gap-2">
+        ${isOrganizer && tour.status !== 'completed' ? `
+          <button onclick="handleRemoveParticipant(${tour.id}, ${p.user_id}, '${(p.user?.display_name || '').replace(/'/g, "\\'")}')" class="px-2.5 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-xs font-semibold flex items-center gap-1 transition active:scale-95">
+            <span>🗑️</span> Remover
+          </button>
+        ` : '<div></div>'}
         <button onclick='openEditDeckModal(${tour.id}, ${p.user_id}, "${(p.user?.display_name || '').replace(/"/g, '&quot;')}", ${JSON.stringify(deck)})' class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-cyan-600/30 text-cyan-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           Editar Deck
@@ -632,10 +644,16 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                   <button onclick="openAddParticipantModal(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition">
                     <span>+</span> Inscribir Blader & Deck
                   </button>
+                  <button onclick="handleShuffleSeeds(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition">
+                    <span>🎲</span> Barajar Siembras
+                  </button>
                   <button onclick="handleStartTournament(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow active:scale-95 transition flex items-center gap-1.5">
                     <span>▶</span> ${isGroupsFormat ? 'Iniciar Torneo & Generar Grupos (Challonge)' : 'Iniciar Torneo & Generar Ronda 1'}
                   </button>
                 ` : ''}
+                <button onclick="handleDeleteTournament(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition ml-auto">
+                  <span>🗑️</span> Eliminar Torneo
+                </button>
 
                 ${tournament.status === 'in_progress' && isGroupsFormat && !isKnockout ? `
                   <button onclick="handleGeneratePlayoffs(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow active:scale-95 transition flex items-center gap-1.5">
@@ -813,6 +831,42 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       refreshData();
     } catch(err) {
       window.showToast(err.message || "Error al iniciar torneo", "error");
+    }
+  };
+
+  window.handleShuffleSeeds = async (tId) => {
+    const ok = await window.showAppConfirm("Barajar Siembras (Challonge)", "¿Deseas reordenar y barajar aleatoriamente los números de siembra de todos los participantes inscritos antes de iniciar?");
+    if (!ok) return;
+    try {
+      await window.api.shuffleTournamentSeeds(tId);
+      window.showToast("¡Siembras barajadas aleatoriamente con éxito!", "success");
+      refreshData();
+    } catch(err) {
+      window.showToast(err.message || "Error al barajar siembras", "error");
+    }
+  };
+
+  window.handleRemoveParticipant = async (tId, userId, bladerName) => {
+    const ok = await window.showAppConfirm("Remover Participante", `¿Estás seguro de que deseas retirar a ${bladerName || 'este blader'} del torneo?`);
+    if (!ok) return;
+    try {
+      await window.api.removeTournamentParticipant(tId, userId);
+      window.showToast("Participante retirado exitosamente", "success");
+      refreshData();
+    } catch(err) {
+      window.showToast(err.message || "Error al remover participante", "error");
+    }
+  };
+
+  window.handleDeleteTournament = async (tId) => {
+    const ok = await window.showAppConfirm("Eliminar Torneo", "¿Estás seguro de que deseas eliminar este torneo por completo? Esta acción es definitiva.");
+    if (!ok) return;
+    try {
+      await window.api.deleteTournament(tId);
+      window.showToast("Torneo eliminado exitosamente", "success");
+      location.hash = "#/tournaments";
+    } catch(err) {
+      window.showToast(err.message || "Error al eliminar torneo", "error");
     }
   };
 

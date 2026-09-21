@@ -183,6 +183,18 @@ class ApiClient {
     return this.request(`/tournaments/${tId}/checkin?user_id=${userId}`, { method: "POST" });
   }
 
+  removeTournamentParticipant(tId, userId) {
+    return this.request(`/tournaments/${tId}/participants/${userId}`, { method: "DELETE" });
+  }
+
+  shuffleTournamentSeeds(tId) {
+    return this.request(`/tournaments/${tId}/shuffle-seeds`, { method: "POST" });
+  }
+
+  deleteTournament(tId) {
+    return this.request(`/tournaments/${tId}`, { method: "DELETE" });
+  }
+
   addTournamentParticipant(tId, data, checkedIn = true) {
     let body = {};
     if (typeof data === "object" && data !== null) {

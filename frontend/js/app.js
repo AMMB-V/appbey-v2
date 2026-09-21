@@ -43,38 +43,17 @@
     }, duration);
   };
 
-  // Clean, modern initials avatar component (No stock or AI generated images)
+  // Official Logo & Avatar Renderer
   window.renderAvatar = (user, sizeClass = "w-8 h-8", textClass = "text-xs", borderClass = "border border-slate-700") => {
     const name = (user?.display_name || user?.username || "Blader").trim();
-    const initial = (name.charAt(0) || "B").toUpperCase();
-    const colors = [
-      "bg-cyan-600 text-white",
-      "bg-blue-600 text-white",
-      "bg-indigo-600 text-white",
-      "bg-emerald-600 text-white",
-      "bg-amber-600 text-white",
-      "bg-rose-600 text-white",
-      "bg-violet-600 text-white",
-      "bg-teal-600 text-white"
-    ];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    const color = colors[Math.abs(hash) % colors.length];
-
     const customUrl = (user?.avatar_url || "").trim();
-    const isCleanCustomUrl = customUrl && !customUrl.includes("unsplash.com") && !customUrl.includes("placeholder");
-
-    if (isCleanCustomUrl) {
-      return `
-        <div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center">
-          <img src="${customUrl}" class="w-full h-full object-cover" onerror="this.parentElement.outerHTML='<div class=\\'${sizeClass} rounded-full ${color} ${borderClass} flex-shrink-0 flex items-center justify-center font-black ${textClass} select-none\\'>${initial}</div>'" alt="${name}"/>
-        </div>
-      `;
-    }
+    const isCleanCustomUrl = customUrl && !customUrl.includes("unsplash.com") && !customUrl.includes("placeholder") && !customUrl.includes("via.placeholder");
+    const logoSrc = "/assets/images/appbey_logo.png";
+    const src = isCleanCustomUrl ? customUrl : logoSrc;
 
     return `
-      <div class="${sizeClass} rounded-full ${color} ${borderClass} flex-shrink-0 flex items-center justify-center font-black ${textClass} select-none shadow-sm">
-        ${initial}
+      <div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center bg-slate-950 shadow-md">
+        <img src="${src}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${logoSrc}'" alt="${name}"/>
       </div>
     `;
   };

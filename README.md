@@ -1,49 +1,64 @@
-﻿# AppBey — Plataforma Competitiva de Torneos Beyblade X (Web & Mobile PWA)
+﻿# AppBey — Plataforma Competitiva Oficial Beyblade X (Web & Mobile PWA)
 
-AppBey es la nueva generación de software diseñada para la comunidad competitiva de **Beyblade X** (y formatos compatibles). Reemplaza arquitecturas pesadas con un backend ultrarrápido en **FastAPI (Python)**, persistencia relacional con **SQLite WAL / PostgreSQL Ready**, sincronización en tiempo real vía **WebSockets**, y una aplicación frontend **PWA offline-first** descargable en dispositivos móviles (iOS y Android).
+AppBey es la plataforma integral de software de alto rendimiento diseñada para la organización, arbitraje y gestión de torneos competitivos de **Beyblade X**. Desarrollada con un backend ágil en **Node.js / Express / TypeScript**, frontend **PWA offline-first** responsivo, sincronización instantánea vía **WebSockets**, y desplegada 24/7 en la nube en **Render.com**.
+
+- 🌐 **Sitio Web Oficial en Producción:** [https://appbey-v2.onrender.com/](https://appbey-v2.onrender.com/)
+- 📦 **Repositorio GitHub:** [https://github.com/AMMB-V/appbey-v2](https://github.com/AMMB-V/appbey-v2)
 
 ---
 
-## 🚀 Características Principales
+## 🏆 Motor de Torneos y Compatibilidad Challonge
 
-1. **Frontend PWA Ultraligero & Móvil**:
-   - Carga inicial en `<200ms` (pesando menos de 180KB en comparación con los 25MB de Flutter Web).
-   - Compatible e instalable como aplicación nativa en iOS (Safari "Añadir a pantalla de inicio") y Android (WebAPK).
-   - Soporte **Offline-First** con Service Worker para operar mesas de arbitraje sin interrupciones si falla el Wi-Fi del recinto.
+AppBey ofrece una suite completa inspirada en las mejores mecánicas de **Challonge** y las normativas internacionales de la **World Beyblade Organization (WBO)**:
 
-2. **Motor Oficial de Torneos Beyblade X**:
-   - **Sistema Suizo WBO**: Emparejamientos automáticos evitando repeticiones, gestión de Byes y desempates con Buchholz y Sonneborn-Berger.
-   - **Eliminación Directa (Single Elimination)**: Generación dinámica de brackets y progresión automática.
-   - **Formato Oficial 3on3 Deck (4 Puntos)** y **1on1 Tradicional (3 Puntos)**.
-
-3. **Mesa de Arbitraje Táctil (Referee Scorekeeper)**:
-   - Panel de 1-toque optimizado para celulares:
+1. **Fase de Grupos + Eliminación Directa (Estilo Challonge)**:
+   - Distribución de participantes mediante **Siembra en Serpentina (Serpentine Seeding)**: 1º al Grupo A, 2º al Grupo B, 3º al Grupo B, 4º al Grupo A...
+   - Tablas de posiciones en vivo con criterios oficiales de desempate: Puntos (3V-1E) &rarr; Diferencia de Puntos &rarr; Puntos a favor &rarr; Seed inicial.
+   - Generación automática de cruces de Playoffs (16vos, 8vos, Cuartos, Semifinales y Gran Final).
+2. **Eliminación Directa y Sistema Suizo Oficial**:
+   - Árbol de llaves interactivo con avance dinámico de ganadores.
+   - Emparejamientos Suizos evitando combates repetidos y cálculo automático de Buchholz.
+3. **Gestión de Participantes en Torneo Real**:
+   - Inscripción de Bladers registrados y Bladers invitados (Walk-in bladers) en el día del evento.
+   - Registro y edición de Deck oficial 3on3 por Blader.
+   - Barajado aleatorio de siembras (**Challonge Shuffle Seeds**).
+   - Check-in individual o masivo.
+   - Retiro/Remoción de participantes antes del inicio.
+4. **Mesa de Arbitraje Táctil & Marcador BeyScore**:
+   - Panel de 1-toque optimizado para smartphones y tablets:
      - **Spin Finish (+1 pt)**
      - **Over Finish (+2 pts)**
      - **Burst Finish (+2 pts)**
      - **Xtreme Finish (+3 pts)**
-     - **Penalizaciones y Faltas**
-   - Transmisión instantánea del marcador por WebSocket a espectadores y pantalla gigante.
+     - **Faltas y Penalizaciones (+1 pt al oponente)**
+     - **Empate / Draw (0 pts)**
+   - Deshacer última jugada (**Undo**), reinicio de marcador y reanudación de combates cerrados por error.
+   - Selección de meta de puntos (4 puntos estándar, 5 o 7 en finales).
+5. **Pantalla de Estadio / Proyector TV (Stadium Display)**:
+   - Pantalla completa en vivo para proyector o pantalla gigante en el recinto.
+   - Convocatoria en tiempo real a mesas de combate ("Mesa #1: Yorch vs Woonka — EN COMBATE").
+   - Transmisión en tiempo real vía WebSockets sin recargar página.
 
-4. **Modo Proyector TV / Pantalla de Estadio (Stadium Display)**:
-   - Vista a pantalla completa para televisores y proyectores en el torneo.
-   - Llamados en tiempo real a mesas: *"MESA 1: Jan Kraft vs Ryu Kusanagi — EN COMBATE"*.
-   - Marcador en vivo y resultados recientes sin necesidad de recargar la página.
+---
 
-5. **Beyblade X Deck Builder 3-on-3**:
-   - Catálogo oficial Takara Tomy de piezas (Blades: Phoenix Wing, Wizard Rod, Dran Buster; Ratchets: 9-60, 5-60, 5-70; Bits: Gear Flat, Disc Ball, Ball, Point, Hexa).
-   - Cálculo dinámico de peso combinado (gramos) y balance de estadísticas (Ataque, Defensa, Resistencia, Xtreme Dash).
-   - Validador estricto de la regla de no duplicación de piezas de la WBO.
+## 📊 Base de Datos Real & Rankings Temporada #1 y #2
 
-6. **Economía de AP Coins & Billetera Virtual**:
-   - Bono de registro (+250 AP) y recompensas diarias de entrenamiento (+50 AP).
-   - Pago de inscripciones a torneos y distribución automática del pozo de premios (60% al 1er lugar, 25% al 2do, 15% al 3ro).
-   - Transferencias entre Bladers con historial de transacciones auditable.
+AppBey cuenta con la base de datos oficial del Ranking Nacional Individual (Asociación Panameña de Beyblade):
+- **Temporada 1 (Histórica y Oficial)**: 96 Bladers registrados con su puntaje acumulado, victorias, derrotas, porcentaje de winrate y podio nacional:
+  - 🥇 **#1 Yorch** (Campeón Nacional)
+  - 🥈 **#2 Woonka** (2do Lugar)
+  - 🥉 **#3 Kanghy** (3er Lugar)
+- **Temporada 2 (Nueva Temporada Activa)**: Sistema de ranking por Elo competitivo ($K=32$) con base inicial de 1500 Elo.
+- **Salón de la Fama**: Registro histórico de campeones y combos insignia.
 
-7. **Meta Tier List & Rankings Elo**:
-   - Clasificación por Tiers (S, A, B, C) de piezas competitivas.
-   - Tabla global de Bladers con cálculo dinámico de Elo ($K=32$) tras cada partida oficial.
-   - Salón de la Fama histórico con combos ganadores de torneos pasados.
+---
+
+## 🛡️ Control de Roles y Seguridad (RBAC)
+
+- **Blader**: Rol por defecto al registrarse (los nuevos usuarios solo pueden registrarse como Bladers).
+- **Árbitro (Referee)**: Asignación a mesas de combate y control del marcador táctil en vivo.
+- **Organizador (Organizer)**: Creación de torneos, inicio de grupos, avance de llaves y gestión de inscripciones.
+- **Administrador (Admin)**: Acceso total al panel de administración para nombrar árbitros, organizadores, ascender admins y gestionar el estado de los usuarios.
 
 ---
 
@@ -51,67 +66,86 @@ AppBey es la nueva generación de software diseñada para la comunidad competiti
 
 ```
 appbey_v2/
-├── backend/
-│   ├── app/
-│   │   ├── config.py              # Configuraciones, paths y claves JWT
-│   │   ├── database.py            # Motor SQLAlchemy con PRAGMA WAL
-│   │   ├── main.py                # Entrada FastAPI, CORS, WebSockets y estáticos
-│   │   ├── models/                # Modelos ORM (User, Tournament, Match, Part, Deck, Wallet, etc.)
-│   │   ├── schemas/               # Validadores Pydantic v2
-│   │   ├── services/              # Lógica de negocio (Torneos, Elo, Arbitraje, AP Coins, Seed)
-│   │   └── routers/               # Endpoints REST (/api/v1/...) y WebSockets
-├── frontend/
-│   ├── index.html                 # Shell SPA con tema Cyber Beyblade
-│   ├── manifest.json              # Manifiesto PWA para instalación móvil
-│   ├── sw.js                      # Service Worker para caché y modo offline
-│   ├── css/styles.css             # Estilos y efectos Neón Xtreme Dash
+├── server.ts                      # Servidor backend Express + WebSockets + Motor de Torneos
+├── package.json                   # Dependencias Node.js y scripts de compilación
+├── tsconfig.json                  # Configuración TypeScript
+├── Dockerfile                     # Contenedor de producción para Render.com (Node 20 Alpine)
+├── frontend/                      # Frontend PWA SPA (Carga rápida <150ms)
+│   ├── index.html                 # Shell principal con tema Cyber Beyblade
+│   ├── manifest.json              # Manifiesto PWA para instalación en Android e iOS
+│   ├── sw.js                      # Service Worker con soporte offline y caché v2.1
+│   ├── assets/
+│   │   ├── icons/                 # Favicon e iconos PWA oficiales
+│   │   └── images/                # Logo oficial AppBey y recursos gráficos
+│   ├── css/
+│   │   └── styles.css             # Estilos y efectos Neón Xtreme Stadium
 │   └── js/
-│       ├── api.js                 # Cliente REST con inyección de JWT
-│       ├── ws.js                  # Hub de WebSockets con reconexión automática
+│       ├── api.js                 # Cliente REST con gestión de JWT
+│       ├── ws.js                  # Hub de WebSockets con reconexión activa
+│       ├── components.js          # Componentes globales (RenderAvatar, Toasts, Confirm)
 │       ├── app.js                 # Enrutador cliente SPA
-│       └── views/                 # Vistas (Home, Torneos, Árbitro, TV, Decks, TierList, Rankings, Wallet, etc.)
-├── tests/
-│   ├── test_tournament_engine.py  # Tests unitarios de emparejamientos y puntuación
-│   └── test_api.py                # Tests de integración de endpoints REST
+│       └── views/                 # Vistas modulares:
+│           ├── home.js            # Portada y accesos rápidos
+│           ├── tournaments.js     # Explorador y creador de torneos
+│           ├── tournament_detail.js # Brackets, grupos Challonge y participantes
+│           ├── referee_pad.js     # Marcador táctil WBO BeyScore
+│           ├── stadium_display.js # Proyector TV para estadios
+│           ├── deck_builder.js    # Constructor de Decks 3on3
+│           ├── tier_list.js       # Meta Tier List de piezas
+│           ├── rankings.js        # Tablas de clasificación T1 y T2
+│           ├── hall_of_fame.js    # Salón de la Fama
+│           ├── wallet.js          # Billetera virtual AP Coins
+│           ├── social.js          # Muro de la comunidad
+│           ├── profile.js         # Perfil y combo insignia
+│           ├── admin_users.js     # Panel de gestión de usuarios y roles
+│           └── auth.js            # Registro e inicio de sesión
 └── README.md
 ```
 
 ---
 
-## ⚡ Cómo Ejecutar la Plataforma
+## ⚡ Ejecución Local
 
-### 1. Iniciar el Servidor Backend & Servir la App
-Desde la carpeta raíz del proyecto (`appbey_v2`):
-```bash
-python backend/app/main.py
-```
-O usando Uvicorn:
-```bash
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-```
+### Requisitos
+- Node.js 18+ o 20+
+- npm o bun
 
-La aplicación web estará disponible en: **`http://localhost:8000`**  
-La documentación interactiva de la API estará en: **`http://localhost:8000/docs`**
+```bash
+# 1. Instalar dependencias
+npm install
+
+# 2. Ejecutar en modo desarrollo
+npm run dev
+
+# 3. Compilar para producción
+npm run build
+
+# 4. Iniciar servidor de producción
+npm start
+```
+La plataforma estará disponible en: `http://localhost:3000`
 
 ---
 
-## 👤 Cuentas de Acceso para Pruebas
+## 👤 Cuentas Principales de Acceso
 
-| Rol | Usuario / Email | Contraseña | Propósito |
+| Rol | Correo Electrónico | Contraseña | Funciones |
 |---|---|---|---|
-| **Admin Principal** | `byjankraftyt@gmail.com` | `123456` | Administrador general de AppBey y creador de torneos |
-| **Organizador** | `organizer@appbey.app` | `123456` | Creación de torneos, inicio de rondas y gestión |
-| **Árbitro Oficial** | `referee@appbey.app` | `123456` | Marcador táctil de mesa en vivo |
-| **Blader Pro** | `ryu@appbey.app` | `123456` | Jugador competitivo (Shark Edge 3-60 LF) |
+| **Administrador** | `byjankraftyt@gmail.com` | `123456` | Gestión total, creación de torneos, asignación de roles y control global |
+| **Organizador** | `organizer@appbey.app` | `123456` | Creación de torneos, siembra Challonge, avance de llaves |
+| **Árbitro** | `referee@appbey.app` | `123456` | Arbitraje de combates asignados en el BeyScore pad |
+| **Blader #1 (T1)** | `yorch@appbey.app` | `123456` | Perfil del Campeón Nacional Temporada 1 (646 pts) |
+| **Blader #2 (T1)** | `woonka@appbey.app` | `123456` | Perfil del 2do Lugar Nacional Temporada 1 (483 pts) |
+| **Blader #3 (T1)** | `kanghy@appbey.app` | `123456` | Perfil del 3er Lugar Nacional Temporada 1 (480 pts) |
+| **Cualquier Blader T1** | `<username>@appbey.app` | `123456` | 96 cuentas reales precargadas listas para usar |
 
 ---
 
-## 🧪 Ejecutar Tests Automatizados
+## 🚀 Despliegue Continuo en Render.com
 
-```bash
-# Test del motor de torneos y reglas Beyblade X
-python tests/test_tournament_engine.py
-
-# Test de endpoints de autenticación, torneos, billetera y rankings
-python tests/test_api.py
-```
+El proyecto está configurado con **Continuous Deployment** conectado a la rama `main` del repositorio de GitHub:
+- Cada `push` a `main` desencadena la construcción automática del contenedor Docker en Render.
+- Las variables de entorno recomendadas en Render son:
+  - `PORT=3000`
+  - `NODE_ENV=production`
+  - `JWT_SECRET=(tu_clave_secreta)`

@@ -2167,6 +2167,94 @@ api.post("/tournaments/:id/checkin", requireAuth, (req: AuthRequest, res) => {
   res.json({ message: "Check-in confirmado", user_id: userId });
 });
 
+// Admin / Organizer: Remove participant from tournament
+api.delete("/tournaments/:id/participants/:userId", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const userId = parseInt(req.params.userId, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Solo los organizadores o administradores pueden remover participantes" });
+    return;
+  }
+  if (t.status === "completed") {
+    res.status(400).json({ detail: "No se puede remover participantes de un torneo completado" });
+    return;
+  }
+
+  const pIdx = participants.findIndex((p) => p.tournament_id === id && p.user_id === userId);
+  if (pIdx === -1) {
+    res.status(404).json({ detail: "El participante no está inscrito en este torneo" });
+    return;
+  }
+
+  participants.splice(pIdx, 1);
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Participante removido" });
+  res.json({ message: "Participante removido con éxito", user_id: userId });
+});
+
+// Admin / Organizer: Randomize / Shuffle seeds (Challonge feature)
+api.post("/tournaments/:id/shuffle-seeds", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "No tienes permisos para reordenar las siembras" });
+    return;
+  }
+  if (t.status !== "upcoming") {
+    res.status(400).json({ detail: "Solo se pueden alterar las siembras antes de iniciar el torneo" });
+    return;
+  }
+
+  const tournamentParts = participants.filter((p) => p.tournament_id === id);
+  // Fisher-Yates shuffle
+  for (let i = tournamentParts.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = tournamentParts[i].seed;
+    tournamentParts[i].seed = tournamentParts[j].seed;
+    tournamentParts[j].seed = temp;
+  }
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Siembras reordenadas" });
+  res.json({ message: "Siembras barajadas aleatoriamente con éxito" });
+});
+
+// Admin / Organizer: Delete tournament
+api.delete("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const tIdx = tournaments.findIndex((tour) => tour.id === id);
+  if (tIdx === -1) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const t = tournaments[tIdx];
+  const isAuthorized = req.user && (req.user.role === "admin" || (req.user.role === "organizer" && t.organizer_id === req.user.id));
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Solo el organizador o un administrador pueden eliminar este torneo" });
+    return;
+  }
+
+  // Remove tournament matches and participants
+  for (let i = matches.length - 1; i >= 0; i--) {
+    if (matches[i].tournament_id === id) matches.splice(i, 1);
+  }
+  for (let i = participants.length - 1; i >= 0; i--) {
+    if (participants[i].tournament_id === id) participants.splice(i, 1);
+  }
+  tournaments.splice(tIdx, 1);
+
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, status: "deleted" });
+  res.json({ message: "Torneo eliminado correctamente" });
+});
+
 function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentParticipant[]) {
   const N = checkedInParts.length;
   let groupCount = t.group_count;

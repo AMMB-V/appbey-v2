@@ -35,9 +35,7 @@ window.renderRefereePadView = async (container, matchId) => {
           <div class="glass-card rounded-3xl p-6 sm:p-8 border-2 border-cyan-500/50 bg-gradient-to-b from-slate-900/90 to-slate-950/95 space-y-5 shadow-2xl">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5">
               <div class="flex items-center gap-3 text-center sm:text-left">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center font-black text-2xl text-white shadow-lg shadow-cyan-500/30">
-                  ⚡
-                </div>
+                <img src="/assets/images/appbey_logo.png" class="w-14 h-14 rounded-2xl object-cover shadow-lg shadow-cyan-500/30 border border-cyan-400/40 shrink-0" alt="AppBey Logo"/>
                 <div>
                   <h2 class="text-xl sm:text-2xl font-black text-white">Marcador BeyScore</h2>
                   <p class="text-xs text-slate-400">Reglamento Oficial Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>

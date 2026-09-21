@@ -95,6 +95,18 @@ window.renderTournamentsView = async (container) => {
       `).join("");
     } catch(err) {
       console.error(err);
+      const grid = document.getElementById("tournaments-grid");
+      if (grid) {
+        grid.innerHTML = `
+          <div class="col-span-full glass-card rounded-2xl p-8 text-center space-y-3 border border-rose-500/30">
+            <div class="text-3xl">⚠️</div>
+            <div class="text-rose-400 font-bold text-sm">Error al cargar la lista de torneos: ${err.message || 'Fallo de conexión'}</div>
+            <button onclick="loadTournamentsList()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold transition">
+              Reintentar
+            </button>
+          </div>
+        `;
+      }
     }
   };
 

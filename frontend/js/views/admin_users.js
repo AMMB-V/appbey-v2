@@ -56,7 +56,7 @@ window.openAdminUserManagementModal = async () => {
               </div>
               <div class="flex-1 space-y-1">
                 <input type="text" id="admin-create-avatar-url" name="avatar_url" placeholder="URL de foto (opcional, o sube archivo)" oninput="window.updateAdminCreateAvatarPreview(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white outline-none focus:border-cyan-400 text-[11px]"/>
-                <div class="text-[10px] text-slate-500">Dejar vacío para iniciales de blader</div>
+                <div class="text-[10px] text-slate-500">Dejar vacío para el logo oficial de AppBey</div>
               </div>
             </div>
           </div>
