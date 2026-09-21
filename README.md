@@ -134,8 +134,10 @@ Health checks disponibles:
 
 ## 👤 Configuración inicial de producción
 
-La aplicación no crea cuentas, rankings ni torneos ficticios en producción. Para
-crear el primer administrador, configura en Render:
+La aplicación conserva los usuarios y rankings oficiales precargados. En
+producción no crea el torneo de prueba ni sus resultados. Las cuentas
+precargadas pueden cambiar su contraseña desde su perfil. Para habilitar el
+primer administrador configurable, usa:
 
 - `APPBEY_DEMO_DATA=false`
 - `APPBEY_ADMIN_EMAIL=correo-de-la-organizacion`

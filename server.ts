@@ -482,36 +482,6 @@ const APB_SEASON_1_RANKINGS: HistoricalBladerData[] = [
 
 // Seed Database Function
 function seedDatabase() {
-  if (!demoDataEnabled) {
-    const adminEmail = process.env.APPBEY_ADMIN_EMAIL?.trim().toLowerCase();
-    const adminPassword = process.env.APPBEY_ADMIN_PASSWORD;
-    if (adminEmail && adminPassword && adminPassword.length >= 12) {
-      const now = new Date().toISOString();
-      const admin: User = {
-        id: 1,
-        username: adminEmail.split("@")[0].replace(/[^a-z0-9_]+/gi, "_").slice(0, 24) || "admin",
-        email: adminEmail,
-        password_hash: bcrypt.hashSync(adminPassword, 10),
-        display_name: "Administrador AppBey",
-        role: "admin",
-        country: process.env.APPBEY_ADMIN_COUNTRY?.trim().toUpperCase() || "PA",
-        avatar_url: "",
-        bio: "",
-        favorite_combo: "",
-        elo_rating: 1200,
-        is_active: true,
-        is_verified: true,
-        created_at: now
-      };
-      users = [admin];
-      wallets = [{ id: 1, user_id: admin.id, balance: 0, created_at: now }];
-      transactions = [];
-    } else {
-      console.warn("Demo data disabled. Configure APPBEY_ADMIN_EMAIL and APPBEY_ADMIN_PASSWORD (12+ chars) to bootstrap the first administrator.");
-    }
-    return;
-  }
-
   const hash = (pw: string) => bcrypt.hashSync(pw, 10);
   const now = new Date().toISOString();
 
@@ -921,6 +891,15 @@ function seedDatabase() {
   postComments = [];
 
   notifications = [];
+
+  // Keep the verified historical users, rankings and catalog available in
+  // production, but never publish the seeded tournament or its match results.
+  if (!demoDataEnabled) {
+    tournaments = [];
+    participants = [];
+    matches = [];
+    matchGames = [];
+  }
 }
 
 seedDatabase();
@@ -1592,6 +1571,22 @@ api.put("/users/me", requireAuth, (req: AuthRequest, res) => {
   }
 
   res.json(publicUser(u));
+});
+
+api.put("/auth/password", requireAuth, (req: AuthRequest, res) => {
+  const u = req.user!;
+  const currentPassword = String(req.body?.current_password || "");
+  const newPassword = String(req.body?.new_password || "");
+  if (!bcrypt.compareSync(currentPassword, u.password_hash)) {
+    res.status(400).json({ detail: "La contraseña actual no es correcta" });
+    return;
+  }
+  if (newPassword.length < 12) {
+    res.status(400).json({ detail: "La nueva contraseña debe tener al menos 12 caracteres" });
+    return;
+  }
+  u.password_hash = bcrypt.hashSync(newPassword, 10);
+  res.json({ success: true });
 });
 
 api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res) => {

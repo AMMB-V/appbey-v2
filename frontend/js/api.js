@@ -90,6 +90,7 @@ class ApiClient {
 
   login(email, password) { return this.request("/auth/login", { method: "POST", body: { email, password } }); }
   googleLogin(credential) { return this.request("/auth/google", { method: "POST", body: { credential } }); }
+  changePassword(currentPassword, newPassword) { return this.request("/auth/password", { method: "PUT", body: { current_password: currentPassword, new_password: newPassword } }); }
   register(userData) { return this.request("/auth/register", { method: "POST", body: userData }); }
   getMe() { return this.request("/auth/me"); }
   getUsers(params = {}) { const query = new URLSearchParams(params).toString(); return this.request(`/users${query ? `?${query}` : ""}`); }

@@ -135,6 +135,17 @@ window.renderProfileView = async (container, userId = null) => {
               </div>
             </form>
           </div>
+          <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h3 class="font-bold text-white text-base">Cambiar credenciales</h3>
+            <p class="text-xs text-slate-400">Actualiza tu contraseña sin cambiar tu rol ni tus puntos.</p>
+            <form onsubmit="handleChangePassword(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <input type="password" name="current_password" required autocomplete="current-password" placeholder="Contraseña actual" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
+              <input type="password" name="new_password" required minlength="12" autocomplete="new-password" placeholder="Nueva contraseña (12+ caracteres)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white outline-none focus:border-cyan-400"/>
+              <div class="sm:col-span-2 flex justify-end">
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs">Actualizar contraseña</button>
+              </div>
+            </form>
+          </div>
         ` : ''}
       </div>
     `;
@@ -191,5 +202,17 @@ window.handleUpdateProfile = async (e) => {
     setTimeout(() => location.reload(), 400);
   } catch(err) {
     window.showToast?.(err.message || "Error al actualizar perfil", "error");
+  }
+};
+
+window.handleChangePassword = async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    await window.api.changePassword(form.current_password.value, form.new_password.value);
+    form.reset();
+    window.showToast?.("Contraseña actualizada correctamente", "success");
+  } catch (err) {
+    window.showToast?.(err.message || "No se pudo actualizar la contraseña", "error");
   }
 };
