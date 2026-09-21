@@ -72,6 +72,18 @@ interface User {
   created_at: string;
 }
 
+const publicUser = (user?: User | null) => {
+  if (!user) return null;
+  const {
+    id, username, display_name, role, country, avatar_url, bio,
+    favorite_combo, elo_rating, is_active, is_verified, created_at
+  } = user;
+  return {
+    id, username, display_name, role, country, avatar_url, bio,
+    favorite_combo, elo_rating, is_active, is_verified, created_at
+  };
+};
+
 interface Wallet {
   id: number;
   user_id: number;
@@ -1442,7 +1454,7 @@ api.get("/users/:id", (req, res) => {
     res.status(404).json({ detail: "Usuario no encontrado" });
     return;
   }
-  res.json({ ...u });
+  res.json(publicUser(u));
 });
 
 api.put("/users/me", requireAuth, (req: AuthRequest, res) => {
@@ -1469,7 +1481,7 @@ api.put("/users/me", requireAuth, (req: AuthRequest, res) => {
     u.favorite_combo = String(favorite_combo).trim().slice(0, 100);
   }
 
-  res.json({ ...u });
+  res.json(publicUser(u));
 });
 
 api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res) => {
@@ -1512,9 +1524,7 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
     created_at: new Date().toISOString()
   };
   users.push(newUser);
-  res.json({
-    ...newUser
-  });
+  res.json(publicUser(newUser));
 
 
 });
@@ -1540,9 +1550,7 @@ api.put("/users/:id", requireRoles(["admin"]), (req: AuthRequest, res) => {
     target.elo_rating = Math.max(100, Math.min(3500, Math.round(Number(elo_rating))));
   }
 
-  res.json({
-    ...target
-  });
+  res.json(publicUser(target));
 
 
 });
@@ -1561,9 +1569,7 @@ api.put("/users/:id/role", requireRoles(["admin"]), (req: AuthRequest, res) => {
     return;
   }
   target.role = role;
-  res.json({
-    ...target
-  });
+  res.json(publicUser(target));
 
 
 });
@@ -1678,7 +1684,7 @@ api.get("/beyblades/decks", (req, res) => {
   res.json(
     list.map((d) => ({
       ...d,
-      user: users.find((u) => u.id === d.user_id),
+      user: publicUser(users.find((u) => u.id === d.user_id)),
       slot1_blade: parts.find((p) => p.id === d.slot1_blade_id),
       slot1_ratchet: parts.find((p) => p.id === d.slot1_ratchet_id),
       slot1_bit: parts.find((p) => p.id === d.slot1_bit_id),
@@ -1798,8 +1804,8 @@ api.get("/tournaments", (req, res) => {
   res.json(
     list.map((t) => ({
       ...t,
-      organizer: users.find((u) => u.id === t.organizer_id),
-      winner: users.find((u) => u.id === t.winner_user_id),
+      organizer: publicUser(users.find((u) => u.id === t.organizer_id)),
+      winner: publicUser(users.find((u) => u.id === t.winner_user_id)),
       participants_count: participants.filter((p) => p.tournament_id === t.id).length
     }))
   );
@@ -1854,7 +1860,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
   tournaments.unshift(newT);
   res.json({
     ...newT,
-    organizer: req.user,
+    organizer: publicUser(req.user),
     winner: null,
     participants_count: 0
   });
@@ -1869,8 +1875,8 @@ api.get("/tournaments/:id", (req, res) => {
   }
   res.json({
     ...t,
-    organizer: users.find((u) => u.id === t.organizer_id),
-    winner: users.find((u) => u.id === t.winner_user_id),
+    organizer: publicUser(users.find((u) => u.id === t.organizer_id)),
+    winner: publicUser(users.find((u) => u.id === t.winner_user_id)),
     participants_count: participants.filter((p) => p.tournament_id === t.id).length
   });
 });
@@ -1988,7 +1994,7 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     if (deckList.length > 0) existing.deck = deckList;
     if (deck_notes) existing.deck_notes = String(deck_notes).trim();
     if (checked_in !== undefined) existing.checked_in = checked_in !== false;
-    res.json({ message: "Participante ya registrado; deck y estado actualizados", participant: { ...existing, user: targetUser } });
+    res.json({ message: "Participante ya registrado; deck y estado actualizados", participant: { ...existing, user: publicUser(targetUser) } });
     return;
   }
 
@@ -2013,7 +2019,7 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     deck_notes: deck_notes ? String(deck_notes).trim() : undefined
   };
   participants.push(newPart);
-  res.json({ message: "Participante agregado exitosamente", participant: { ...newPart, user: targetUser } });
+  res.json({ message: "Participante agregado exitosamente", participant: { ...newPart, user: publicUser(targetUser) } });
 });
 
 // Update Participant Tournament Deck (for bladers or organizers)
@@ -2369,7 +2375,7 @@ api.get("/tournaments/:id/participants", (req, res) => {
   res.json(
     list.map((p) => ({
       ...p,
-      user: users.find((u) => u.id === p.user_id)
+      user: publicUser(users.find((u) => u.id === p.user_id))
     }))
   );
 });
@@ -2393,7 +2399,7 @@ api.get("/tournaments/:id/matches", (req, res) => {
         player_b: playerB,
         player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
         player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
-        winner: users.find((u) => u.id === m.winner_id) || null,
+        winner: publicUser(users.find((u) => u.id === m.winner_id)),
         referee: users.find((u) => u.id === m.referee_id) || null,
         games: matchGames.filter((g) => g.match_id === m.id)
       };
@@ -2745,7 +2751,7 @@ function formatMatchDetails(m: TournamentMatch) {
     player_b: playerB,
     player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
     player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
-    winner: users.find((u) => u.id === m.winner_id) || null,
+    winner: publicUser(users.find((u) => u.id === m.winner_id)),
     referee: users.find((u) => u.id === m.referee_id) || null,
     tournament: t,
     games: matchGames.filter((g) => g.match_id === m.id),
@@ -2755,7 +2761,7 @@ function formatMatchDetails(m: TournamentMatch) {
         ...tm,
         player_a: users.find((u) => u.id === tm.player_a_id) || null,
         player_b: users.find((u) => u.id === tm.player_b_id) || null,
-        winner: users.find((u) => u.id === tm.winner_id) || null
+        winner: publicUser(users.find((u) => u.id === tm.winner_id))
       }))
   };
 }
@@ -3321,11 +3327,11 @@ api.get("/social/posts", (req: AuthRequest, res) => {
         ...p,
         likes_count: likesForPost.length,
         has_liked: hasLiked,
-        user: users.find((u) => u.id === p.user_id),
+        user: publicUser(users.find((u) => u.id === p.user_id)),
         deck: decks.find((d) => d.id === p.deck_id),
         comments: postComments.filter((c) => c.post_id === p.id).map((c) => ({
           ...c,
-          user: users.find((u) => u.id === c.user_id)
+          user: publicUser(users.find((u) => u.id === c.user_id))
         }))
       };
     })
