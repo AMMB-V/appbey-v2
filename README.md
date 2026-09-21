@@ -155,5 +155,9 @@ El proyecto está configurado con **Continuous Deployment** conectado a la rama 
   - `NODE_ENV=production`
   - `JWT_SECRET=(tu_clave_secreta)`
   - `ALLOWED_ORIGINS=https://appbey-v2.onrender.com`
+  - `GOOGLE_CLIENT_ID=(Web client ID de Google; opcional)`
+
+Cuando `GOOGLE_CLIENT_ID` está configurado, el formulario muestra Google Sign-In. El
+servidor valida cada `id_token` con Google antes de crear o vincular la cuenta.
 
 El shell SPA se sirve con `Cache-Control: no-cache`, mientras que los assets estáticos usan caché con ETag y expiración corta. Esto evita que un despliegue deje el HTML apuntando a recursos antiguos.

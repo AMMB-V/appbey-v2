@@ -1,4 +1,4 @@
-const CACHE_VERSION = "3.3.0";
+const CACHE_VERSION = "3.4.0";
 const CACHE_NAME = `appbey-shell-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   `/?v=${CACHE_VERSION}`,

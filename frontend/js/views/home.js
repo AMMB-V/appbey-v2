@@ -12,7 +12,7 @@ window.renderHomeView = async (container) => {
               En Vivo • Beyblade X Championship
             </div>
             <div class="flex items-center gap-3.5 mb-2">
-              <img src="/assets/images/appbey_official_logo.png?v=3.0" class="w-12 h-12 rounded-2xl object-contain shadow-xl border border-cyan-400/40 shrink-0" alt="AppBey Logo"/>
+              <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-12 h-12 rounded-2xl object-contain shadow-xl border border-cyan-400/40 shrink-0" alt="AppBey Logo"/>
               <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white">
                 AppBey
               </h1>

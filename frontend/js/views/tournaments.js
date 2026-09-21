@@ -7,13 +7,13 @@ window.renderTournamentsView = async (container) => {
     <div class="space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-white">Torneos y Competencias</h1>
-          <p class="text-slate-400 text-sm">Gestiona y participa en torneos oficiales y comunitarios de Beyblade X.</p>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-white">Torneos</h1>
+          <p class="text-slate-400 text-sm">Participa o gestiona tus competencias.</p>
         </div>
         ${isOrganizer ? `
           <button onclick="window.openCreateTournamentModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold shadow-lg shadow-cyan-500/25 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Crear Nuevo Torneo
+            Crear torneo
           </button>
         ` : ''}
       </div>
@@ -59,25 +59,25 @@ window.renderTournamentsView = async (container) => {
 
             <div>
               <h3 class="font-extrabold text-xl text-white group-hover:text-cyan-400 transition">${t.title}</h3>
-              <p class="text-xs text-slate-400 line-clamp-2 mt-1">${t.description || "Torneo competitivo oficial AppBey."}</p>
+              ${t.description ? `<p class="text-xs text-slate-400 line-clamp-2 mt-1">${t.description}</p>` : ''}
             </div>
 
             <div class="grid grid-cols-2 gap-2 text-xs py-2 border-y border-slate-800">
               <div>
-                <span class="text-slate-500 block">Formato:</span>
+                <span class="text-slate-500 block">Formato</span>
                 <span class="font-semibold text-slate-200">${t.format === 'groups_elim' ? 'Grupos + Playoff (Challonge)' : t.format === 'swiss' ? 'Sistema Suizo' : 'Eliminación Directa'}</span>
               </div>
               <div>
-                <span class="text-slate-500 block">Regla:</span>
+                <span class="text-slate-500 block">Regla</span>
                 <span class="font-semibold text-slate-200">${t.battle_type === '3on3_deck' ? '3on3 Deck (4 pts)' : '1on1 (3 pts)'}</span>
               </div>
               <div>
-                <span class="text-slate-500 block">Lugar:</span>
+                <span class="text-slate-500 block">Lugar</span>
                 <span class="font-semibold text-slate-200 truncate block">${t.venue_name}</span>
               </div>
               <div>
-                <span class="text-slate-500 block">Estadios:</span>
-                <span class="font-bold text-cyan-400">4 Mesas Activas</span>
+                <span class="text-slate-500 block">Participantes</span>
+                <span class="font-bold text-cyan-400">${t.participants_count} / ${t.max_participants || '∞'}</span>
               </div>
             </div>
           </div>
@@ -86,10 +86,10 @@ window.renderTournamentsView = async (container) => {
             <span class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
               <span>👥</span>
               <strong class="text-cyan-400 font-bold">${t.participants_count}</strong>
-              <span>${t.participants_count === 1 ? 'Blader inscrito' : 'Bladers inscritos'}</span>
+              <span>inscritos</span>
             </span>
             <button type="button" onclick="location.hash='#/tournaments/${t.id}'" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" aria-label="Abrir torneo ${t.title}">
-              Ver Bracket & Detalles &rarr;
+              Abrir torneo
             </button>
           </div>
         </div>

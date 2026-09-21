@@ -11,7 +11,7 @@ window.showAuthModal = (initialMode = "login") => {
     <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
-          <img src="/assets/images/appbey_official_logo.png?v=3.0" class="w-8 h-8 rounded-xl object-contain shadow" alt="AppBey Logo"/>
+          <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-8 h-8 rounded-xl object-contain shadow" alt="AppBey Logo"/>
           <h2 class="text-xl font-extrabold text-white">AppBey</h2>
         </div>
         <button onclick="document.getElementById('auth-modal').remove()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
@@ -22,16 +22,20 @@ window.showAuthModal = (initialMode = "login") => {
         <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 py-2 rounded-lg bg-blue-600 text-white shadow">Iniciar Sesión</button>
         <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white">Registrarse</button>
       </div>
+      <div id="google-signin-section" class="hidden space-y-2">
+        <div class="text-center text-[11px] text-slate-500">o continúa con</div>
+        <div id="google-signin-button" class="flex justify-center min-h-10"></div>
+      </div>
 
       <!-- Login Form -->
       <form id="login-form" onsubmit="submitLogin(event)" class="space-y-3 text-xs">
         <div>
           <label class="block text-slate-300 font-semibold mb-1">Email o Nombre de Usuario</label>
-          <input type="text" name="email" value="byjankraftyt@gmail.com" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400 text-sm"/>
+          <input type="text" name="email" autocomplete="username" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400 text-sm"/>
         </div>
         <div>
           <label class="block text-slate-300 font-semibold mb-1">Contraseña</label>
-          <input type="password" name="password" value="123456" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400 text-sm"/>
+          <input type="password" name="password" autocomplete="current-password" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-400 text-sm"/>
         </div>
         <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black text-sm shadow-lg shadow-cyan-500/25 transition active:scale-95">
           Entrar a AppBey
@@ -94,7 +98,37 @@ window.showAuthModal = (initialMode = "login") => {
   `;
 
   document.body.appendChild(modal);
+  setupGoogleSignIn();
   if (initialMode === "register") switchAuthTab("register");
+};
+
+window.setupGoogleSignIn = () => {
+  const clientId = window.__APP_CONFIG__?.googleClientId;
+  const section = document.getElementById("google-signin-section");
+  const button = document.getElementById("google-signin-button");
+  if (!clientId || !section || !button) return;
+  const render = () => {
+    if (!window.google?.accounts?.id) return false;
+    window.google.accounts.id.initialize({ client_id: clientId, callback: window.handleGoogleCredential });
+    window.google.accounts.id.renderButton(button, { theme: "outline", size: "large", width: 300, text: "continue_with" });
+    section.classList.remove("hidden");
+    return true;
+  };
+  if (!render()) {
+    window.setTimeout(render, 500);
+  }
+};
+
+window.handleGoogleCredential = async (response) => {
+  try {
+    const result = await window.api.googleLogin(response.credential);
+    window.api.setAuth(result.access_token, result.user);
+    document.getElementById("auth-modal")?.remove();
+    window.showToast?.("Sesión iniciada con Google", "success");
+    window.setTimeout(() => location.reload(), 400);
+  } catch (error) {
+    window.showToast?.(error.message || "No se pudo iniciar sesión con Google", "error");
+  }
 };
 
 window.switchAuthTab = (mode) => {

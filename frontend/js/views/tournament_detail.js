@@ -1,8 +1,8 @@
 // Tournament Detail View
 if (typeof window.renderAvatar !== "function") {
   window.renderAvatar = (user, sizeClass = "w-8 h-8", textClass = "text-xs", borderClass = "border border-slate-700") => {
-    const src = (user?.avatar_url && !user.avatar_url.includes("placeholder")) ? user.avatar_url : "/assets/images/appbey_official_logo.png?v=3.1";
-    return `<div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center bg-slate-950 shadow-md"><img src="${src}" class="w-full h-full object-cover" onerror="this.src='/assets/images/appbey_official_logo.png?v=3.1'" alt="Blader"/></div>`;
+    const src = (user?.avatar_url && !user.avatar_url.includes("placeholder")) ? user.avatar_url : "/assets/images/appbey_logo_transparent.png?v=3.4";
+    return `<div class="${sizeClass} rounded-full overflow-hidden ${borderClass} flex-shrink-0 flex items-center justify-center bg-slate-950 shadow-md"><img src="${src}" class="w-full h-full object-contain" onerror="this.src='/assets/images/appbey_logo_transparent.png?v=3.4'" alt="Blader"/></div>`;
   };
 }
 
@@ -734,14 +734,13 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                   ${statusText}
                 </span>
                 <span class="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-cyan-300 border border-cyan-500/30">${formatTitle}</span>
-                <span class="px-2.5 py-1 rounded bg-slate-800 text-xs font-semibold text-amber-300 border border-amber-500/30">${tournament.battle_type === '3on3_deck' ? '3on3 Deck' : '1on1'} (Meta: ${tournament.match_target_points} pts)</span>
               </div>
               <h1 class="text-2xl md:text-3xl font-extrabold text-white">${tournament.title}</h1>
               <p class="text-slate-300 text-sm max-w-2xl">${tournament.description || ""}</p>
               <div class="text-xs text-slate-400 flex flex-wrap gap-4 pt-1">
                 <span>📍 ${tournament.venue_name} (${tournament.country})</span>
-                <span>🛡️ Modalidad: <strong class="text-amber-400">${tournament.battle_type === '3on3_deck' ? '3on3 Deck Battle' : '1on1'}</strong></span>
-                <span>👥 Participantes: <strong class="text-cyan-400 font-bold">${participants.length}</strong> Bladers inscritos</span>
+                <span>⚔️ <strong class="text-amber-400">${tournament.battle_type === '3on3_deck' ? '3on3 Deck' : '1on1'}</strong></span>
+                <span>👥 <strong class="text-cyan-400 font-bold">${participants.length}</strong> inscritos</span>
               </div>
             </div>
 
@@ -761,14 +760,20 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
               <button onclick="location.hash='#/stadium-display/${tournament.id}'" class="px-4 py-2 rounded-xl bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                Pantalla Proyector TV
+                Pantalla
               </button>
             </div>
           </div>
 
           <!-- Organizer Management Bar -->
           ${isOrganizer ? `
-            <div class="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+            <details class="mt-5 pt-3 border-t border-slate-800/80 group">
+              <summary class="cursor-pointer list-none min-h-11 flex items-center text-sm text-amber-300 font-bold">
+                Opciones del organizador
+                <span class="ml-2 text-xs text-slate-500 group-open:hidden">Mostrar</span>
+                <span class="ml-2 text-xs text-slate-500 hidden group-open:inline">Ocultar</span>
+              </summary>
+            <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
               <div class="text-xs text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
                 Panel de Control del Organizador
@@ -776,13 +781,13 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               <div class="flex flex-wrap gap-2">
                 ${tournament.status === 'registration_open' ? `
                   <button onclick="openAddParticipantModal(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition">
-                    <span>+</span> Inscribir Blader & Deck
+                    <span>+</span> Inscribir participante
                   </button>
                   <button onclick="handleShuffleSeeds(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition">
-                    <span>🎲</span> Barajar Siembras
+                    <span>🎲</span> Barajar siembras
                   </button>
                   <button onclick="handleStartTournament(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow active:scale-95 transition flex items-center gap-1.5">
-                    <span>▶</span> ${isGroupsFormat ? 'Iniciar Torneo & Generar Grupos (Challonge)' : 'Iniciar Torneo & Generar Ronda 1'}
+                    <span>▶</span> ${isGroupsFormat ? 'Iniciar y generar grupos' : 'Iniciar y generar ronda 1'}
                   </button>
                 ` : ''}
                 <button onclick="handleDeleteTournament(${tournament.id})" class="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 font-bold text-xs shadow flex items-center gap-1 active:scale-95 transition ml-auto">
@@ -791,10 +796,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
                 ${tournament.status === 'in_progress' && isGroupsFormat && !isKnockout ? `
                   <button onclick="handleGeneratePlayoffs(${tournament.id})" class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow active:scale-95 transition flex items-center gap-1.5">
-                    <span>🏆</span> Finalizar Grupos & Generar Fase Eliminatoria (Playoffs)
+                    <span>🏆</span> Generar playoffs
                   </button>
                   <button onclick="openSerpentineModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
-                    ℹ️ Siembra Serpentina
+                    ℹ️ Siembra
                   </button>
                 ` : ''}
 
@@ -805,6 +810,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                 ` : ''}
               </div>
             </div>
+            </details>
           ` : ''}
         </div>
 
@@ -812,13 +818,13 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <div class="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto text-xs sm:text-sm">
           ${isGroupsFormat ? `
             <button onclick="switchTTab('groups')" id="ttab-btn-groups" class="ttab-btn px-4 py-2 rounded-xl font-bold whitespace-nowrap bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition">
-              📊 Fase de Grupos (${allGroupIds.length || tournament.group_count || 4})
+              Grupos (${allGroupIds.length || tournament.group_count || 4})
             </button>
             <button onclick="switchTTab('matches')" id="ttab-btn-matches" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
-              ⚔️ Partidas de Grupos (${groupStageMatches.length})
+              Partidas (${groupStageMatches.length})
             </button>
             <button onclick="switchTTab('bracket')" id="ttab-btn-bracket" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
-              🏆 Cuadro de Eliminación (Playoffs)
+              Playoffs
             </button>
           ` : `
             <button onclick="switchTTab('matches')" id="ttab-btn-matches" class="ttab-btn px-4 py-2 rounded-xl font-bold whitespace-nowrap bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 transition">

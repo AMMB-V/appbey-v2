@@ -1400,6 +1400,81 @@ api.post("/auth/login", (req, res) => {
   });
 });
 
+api.post("/auth/google", async (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const credential = typeof req.body?.credential === "string" ? req.body.credential.trim() : "";
+  if (!clientId) {
+    res.status(503).json({ detail: "El acceso con Google aún no está configurado" });
+    return;
+  }
+  if (!credential) {
+    res.status(400).json({ detail: "Falta la credencial de Google" });
+    return;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const googleResponse = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
+      { headers: { Accept: "application/json" }, signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    if (!googleResponse.ok) {
+      res.status(401).json({ detail: "La credencial de Google no es válida" });
+      return;
+    }
+    const claims = await googleResponse.json() as {
+      aud?: string;
+      sub?: string;
+      email?: string;
+      email_verified?: string;
+      name?: string;
+      picture?: string;
+    };
+    if (claims.aud !== clientId || !claims.sub || !claims.email || claims.email_verified !== "true") {
+      res.status(401).json({ detail: "No se pudo verificar la cuenta de Google" });
+      return;
+    }
+
+    let user = users.find((candidate) => candidate.email.toLowerCase() === claims.email!.toLowerCase());
+    if (!user) {
+      const baseUsername = claims.email.split("@")[0].replace(/[^a-z0-9_]+/gi, "_").slice(0, 24) || "blader";
+      let username = baseUsername;
+      let suffix = 1;
+      while (users.some((candidate) => candidate.username.toLowerCase() === username.toLowerCase())) {
+        username = `${baseUsername}_${suffix++}`;
+      }
+      user = {
+        id: users.length + 1,
+        username,
+        email: claims.email.toLowerCase(),
+        password_hash: bcrypt.hashSync(crypto.randomBytes(32).toString("hex"), 10),
+        display_name: (claims.name || username).slice(0, 50),
+        role: "blader",
+        country: "PA",
+        avatar_url: claims.picture || "",
+        elo_rating: 1200,
+        is_active: true,
+        is_verified: true,
+        created_at: new Date().toISOString()
+      };
+      users.push(user);
+    } else if (claims.picture && !user.avatar_url) {
+      user.avatar_url = claims.picture;
+    }
+
+    res.json({
+      access_token: generateToken(user),
+      token_type: "bearer",
+      user: publicUser(user)
+    });
+  } catch (error) {
+    console.error("Google authentication failed:", error);
+    res.status(502).json({ detail: "No se pudo verificar Google en este momento" });
+  }
+});
+
 api.get("/auth/me", requireAuth, (req: AuthRequest, res) => {
   const u = req.user!;
   res.json({
@@ -3534,6 +3609,13 @@ app.get("/sw.js", (req, res) => {
   } else {
     res.send("");
   }
+});
+
+app.get("/config.js", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.type("application/javascript").send(
+    `window.__APP_CONFIG__ = ${JSON.stringify({ googleClientId: process.env.GOOGLE_CLIENT_ID || "" })};`
+  );
 });
 
 app.use((req, res) => {
