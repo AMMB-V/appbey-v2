@@ -259,18 +259,19 @@ window.submitNewTournament = async (e) => {
   const format = form.format.value;
   const groupCount = form.group_count?.value ? parseInt(form.group_count.value, 10) : undefined;
   const advancers = form.advancers_per_group?.value ? parseInt(form.advancers_per_group.value, 10) : 2;
+  const maxParticipants = parseInt(form.max_participants?.value || "64", 10);
 
   const data = {
-    title: form.title.value,
-    description: form.description.value,
+    title: form.title.value.trim(),
+    description: form.description.value.trim(),
     format,
     group_count: groupCount,
     advancers_per_group: advancers,
     battle_type: form.battle_type.value,
     match_target_points: targetPts,
-    max_participants: 128,
+    max_participants: maxParticipants,
     prize_description: form.prize_description?.value?.trim() || "",
-    venue_name: form.venue_name.value,
+    venue_name: form.venue_name.value.trim(),
     country: form.country.value.toUpperCase(),
     total_rounds: format === "swiss" ? 4 : 3
   };

@@ -693,7 +693,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const isOrganizer = user && (user.role === "organizer" || user.role === "admin" || user.id === tournament.organizer_id);
     const isParticipant = user && participants.some(p => p.user_id === user.id);
     const userParticipation = user && participants.find(p => p.user_id === user.id);
-    const isGroupsFormat = tournament.format === "groups_elim";
+    const isGroupsFormat = tournament.format === "groups_elim" || tournament.format === "round_robin";
     const isKnockout = tournament.stage_type === "knockout";
 
     // Format labels

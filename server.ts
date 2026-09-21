@@ -153,7 +153,7 @@ interface Tournament {
   title: string;
   description: string;
   organizer_id: number;
-  format: "groups_elim" | "swiss" | "single_elim";
+  format: "groups_elim" | "round_robin" | "swiss" | "single_elim";
   stage_type?: "group_stage" | "knockout" | "completed";
   group_count?: number;
   advancers_per_group?: number;
@@ -1186,7 +1186,7 @@ function advanceSingleElimination(m: TournamentMatch) {
   const t = tournaments.find((tour) => tour.id === m.tournament_id);
   if (!t) return;
 
-  const isPlayoffOrElim = t.format === "single_elim" || (t.format === "groups_elim" && t.stage_type === "knockout");
+  const isPlayoffOrElim = t.format === "single_elim" || t.stage_type === "knockout";
   if (!isPlayoffOrElim) return;
 
   const nextRound = m.round_number + 1;
@@ -1812,8 +1812,8 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
     return;
   }
   const cleanTitle = String(data.title).trim().slice(0, 100);
-  let format: "groups_elim" | "single_elim" | "swiss" = "groups_elim";
-  if (data.format === "single_elim" || data.format === "swiss") {
+  let format: "groups_elim" | "round_robin" | "single_elim" | "swiss" = "groups_elim";
+  if (data.format === "single_elim" || data.format === "round_robin" || data.format === "swiss") {
     format = data.format;
   }
   const groupCount = data.group_count ? Math.max(2, Math.min(32, parseInt(data.group_count, 10))) : undefined;
@@ -1832,7 +1832,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
     description: data.description ? String(data.description).trim().slice(0, 500) : "",
     organizer_id: req.user!.id,
     format,
-    stage_type: format === "groups_elim" ? "group_stage" : undefined,
+    stage_type: format === "groups_elim" || format === "round_robin" ? "group_stage" : undefined,
     group_count: groupCount,
     advancers_per_group: advancersPerGroup,
     battle_type: battleType,
@@ -1932,6 +1932,10 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
   const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
   if (!isAuthorized) {
     res.status(403).json({ detail: "Solo los organizadores del torneo o administradores pueden inscribir participantes" });
+    return;
+  }
+  if (t.status !== "registration_open" && t.status !== "check_in") {
+    res.status(400).json({ detail: "Las inscripciones solo están disponibles antes de iniciar el torneo" });
     return;
   }
 
@@ -2072,6 +2076,10 @@ api.post("/matches/:id/assign-referee", requireRoles(["organizer", "admin"]), (r
     res.status(404).json({ detail: "Ãrbitro no encontrado" });
     return;
   }
+  if (!["referee", "admin", "organizer"].includes(referee.role)) {
+    res.status(400).json({ detail: "El usuario seleccionado no tiene rol de árbitro" });
+    return;
+  }
   m.referee_id = referee.id;
   broadcastTournament(m.tournament_id, "match_referee_assigned", { match_id: m.id, referee_id: referee.id, referee_name: referee.display_name });
   res.json({ message: "Ãrbitro asignado al match", match: m, referee });
@@ -2096,7 +2104,7 @@ api.post("/tournaments/:id/checkin", requireAuth, (req: AuthRequest, res) => {
     return;
   }
   if (part.checked_in) {
-    res.status(400).json({ detail: "El participante ya realizÃ³ su check-in previamente" });
+    res.json({ message: "El participante ya tenía el check-in confirmado", user_id: userId });
     return;
   }
   part.checked_in = true;
@@ -2157,10 +2165,21 @@ api.put("/tournaments/:id/participants/:userId/group", requireAuth, (req: AuthRe
 
   const { group_id, seed } = req.body;
   if (group_id !== undefined) {
-    part.group_id = String(group_id).toUpperCase().trim();
+    const nextGroup = String(group_id).toUpperCase().trim();
+    if (!/^[A-Z]+$/.test(nextGroup)) {
+      res.status(400).json({ detail: "Identificador de grupo no válido" });
+      return;
+    }
+    part.group_id = nextGroup;
   }
   if (seed !== undefined && !isNaN(parseInt(seed, 10))) {
     part.seed = parseInt(seed, 10);
+  }
+  if (part.group_id) {
+    const groupParts = participants
+      .filter((p) => p.tournament_id === id && p.group_id === part.group_id)
+      .sort((a, b) => (a.seed || 999) - (b.seed || 999));
+    groupParts.forEach((p, index) => { p.group_seed = index + 1; });
   }
 
   // Recalculate stats for the tournament groups
@@ -2492,6 +2511,10 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
     res.status(400).json({ detail: "Solo aplicable a torneos con formato Fase de Grupos + EliminaciÃ³n" });
     return;
   }
+  if (t.stage_type === "knockout" || matches.some((m) => m.tournament_id === id && !m.group_id)) {
+    res.status(400).json({ detail: "La fase de playoffs ya fue generada para este torneo" });
+    return;
+  }
 
   recalcTournamentStats(t.id);
   const tParts = participants.filter((p) => p.tournament_id === id);
@@ -2512,7 +2535,17 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
   }
   const pairings: PlayoffPairing[] = [];
 
-  if (groupLetters.length === 2) {
+  if (advancersCount === 1) {
+    for (let i = 0; i + 1 < groupLetters.length; i += 2) {
+      const g1 = groupLetters[i];
+      const g2 = groupLetters[i + 1];
+      const p1 = (qualifiedByGroup[g1] || [])[0];
+      const p2 = (qualifiedByGroup[g2] || [])[0];
+      if (p1 && p2) {
+        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `1º Grupo ${g2}` });
+      }
+    }
+  } else if (groupLetters.length === 2) {
     // 2 groups (A, B) -> Semifinales (4 qualifiers)
     // Semi 1: 1Âº A vs 2Âº B
     // Semi 2: 1Âº B vs 2Âº A
@@ -3533,7 +3566,6 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
   }
   res.status(500).send("Error interno del servidor");
 });
-
 server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.requestTimeout = 30_000;
@@ -3560,4 +3592,3 @@ function shutdown(signal: string) {
 
 process.once("SIGTERM", () => shutdown("SIGTERM"));
 process.once("SIGINT", () => shutdown("SIGINT"));
-
