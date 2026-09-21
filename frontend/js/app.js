@@ -72,7 +72,21 @@
     }
 
     updateActiveNav(hash);
-    dispatchRoute(hash, main);
+    try {
+      dispatchRoute(hash, main);
+    } catch (error) {
+      console.error("AppBey route error:", error);
+      main.innerHTML = `
+        <section class="glass-card rounded-2xl p-8 text-center space-y-4 border border-rose-500/30" role="alert">
+          <div class="text-3xl" aria-hidden="true">⚠️</div>
+          <h1 class="text-lg font-bold text-white">No se pudo cargar esta sección</h1>
+          <p class="text-sm text-slate-400">Recarga la página o vuelve al inicio para continuar.</p>
+          <button type="button" onclick="location.hash='#/'" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition focus:outline-none focus:ring-2 focus:ring-cyan-300">
+            Volver al inicio
+          </button>
+        </section>
+      `;
+    }
     window.scrollTo(0, 0);
   };
 

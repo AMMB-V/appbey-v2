@@ -1426,6 +1426,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
           btnNew.className = "py-2 px-3 rounded-lg font-bold text-slate-400 hover:text-white transition";
           formReg.classList.remove("hidden");
           formNew.classList.add("hidden");
+        }
       };
 
       window.filterRegUserSelect = (query) => {

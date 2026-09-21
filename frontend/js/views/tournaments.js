@@ -20,10 +20,10 @@ window.renderTournamentsView = async (container) => {
 
       <!-- Filters Tab Bar -->
       <div class="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
-        <button onclick="filterTournaments('')" id="tab-all" class="t-tab px-4 py-2 rounded-lg text-sm font-bold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30">Todos</button>
-        <button onclick="filterTournaments('in_progress')" id="tab-in_progress" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white">En Curso</button>
-        <button onclick="filterTournaments('registration_open')" id="tab-registration_open" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white">Inscripciones Abiertas</button>
-        <button onclick="filterTournaments('completed')" id="tab-completed" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white">Finalizados</button>
+        <button type="button" onclick="window.filterTournaments('')" id="tab-all" class="t-tab px-4 py-2 rounded-lg text-sm font-bold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-300">Todos</button>
+        <button type="button" onclick="window.filterTournaments('in_progress')" id="tab-in_progress" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">En Curso</button>
+        <button type="button" onclick="window.filterTournaments('registration_open')" id="tab-registration_open" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">Inscripciones Abiertas</button>
+        <button type="button" onclick="window.filterTournaments('completed')" id="tab-completed" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">Finalizados</button>
       </div>
 
       <!-- Tournaments Grid -->
@@ -37,6 +37,7 @@ window.renderTournamentsView = async (container) => {
     try {
       const tournaments = await window.api.getTournaments(statusFilter ? { status: statusFilter } : {});
       const grid = document.getElementById("tournaments-grid");
+      if (!grid) return;
       if (!tournaments.length) {
         grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No se encontraron torneos en esta categoría.</div>`;
         return;
@@ -87,7 +88,7 @@ window.renderTournamentsView = async (container) => {
               <strong class="text-cyan-400 font-bold">${t.participants_count}</strong>
               <span>${t.participants_count === 1 ? 'Blader inscrito' : 'Bladers inscritos'}</span>
             </span>
-            <button onclick="location.hash='#/tournaments/${t.id}'" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition active:scale-95">
+            <button type="button" onclick="location.hash='#/tournaments/${t.id}'" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow transition active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" aria-label="Abrir torneo ${t.title}">
               Ver Bracket & Detalles &rarr;
             </button>
           </div>
@@ -101,7 +102,7 @@ window.renderTournamentsView = async (container) => {
           <div class="col-span-full glass-card rounded-2xl p-8 text-center space-y-3 border border-rose-500/30">
             <div class="text-3xl">⚠️</div>
             <div class="text-rose-400 font-bold text-sm">Error al cargar la lista de torneos: ${err.message || 'Fallo de conexión'}</div>
-            <button onclick="loadTournamentsList()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold transition">
+            <button type="button" onclick="window.loadTournamentsList()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300">
               Reintentar
             </button>
           </div>
@@ -248,13 +249,21 @@ window.openCreateTournamentModal = () => {
 window.toggleGroupOptions = (format) => {
   const panel = document.getElementById("group-config-panel");
   if (panel) {
-    panel.style.display = format === "groups_elim" ? "block" : "none";
+    panel.style.display = format === "groups_elim" || format === "round_robin" ? "block" : "none";
   }
 };
 
 window.submitNewTournament = async (e) => {
   e.preventDefault();
   const form = e.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton?.disabled) return;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.setAttribute("aria-busy", "true");
+    submitButton.dataset.originalText = submitButton.textContent;
+    submitButton.textContent = "Publicando torneo...";
+  }
   const targetPts = parseInt(form.match_target_points?.value || "4", 10);
   const format = form.format.value;
   const groupCount = form.group_count?.value ? parseInt(form.group_count.value, 10) : undefined;
@@ -283,5 +292,11 @@ window.submitNewTournament = async (e) => {
     location.hash = `#/tournaments/${created.id}`;
   } catch(err) {
     window.showToast?.(err.message || "Error al crear torneo", "error");
+  } finally {
+    if (submitButton?.isConnected) {
+      submitButton.disabled = false;
+      submitButton.removeAttribute("aria-busy");
+      submitButton.textContent = submitButton.dataset.originalText || "⚡ Publicar Torneo Oficial";
+    }
   }
 };

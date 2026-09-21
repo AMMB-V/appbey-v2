@@ -18,6 +18,24 @@ body {
   overflow-x: hidden;
 }
 
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(34, 211, 238, 0.9);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Glassmorphism Card */
 .glass-card {
   background: var(--card-bg);
