@@ -153,7 +153,17 @@
 
   window.addEventListener("hashchange", router);
   window.addEventListener("auth-change", updateAuthUI);
-  window.addEventListener("DOMContentLoaded", () => {
+  window.addEventListener("DOMContentLoaded", async () => {
+    if (window.api.token) {
+      try {
+        const currentUser = await window.api.getMe();
+        window.api.setAuth(window.api.token, currentUser);
+      } catch (error) {
+        if (error.status === 401) {
+          window.api.setAuth(null, null);
+        }
+      }
+    }
     updateAuthUI();
     router();
   });

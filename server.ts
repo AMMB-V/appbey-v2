@@ -1030,7 +1030,11 @@ function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
 
 function requireRoles(roles: string[]) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user) {
+      res.status(401).json({ detail: "Tu sesión expiró. Inicia sesión nuevamente." });
+      return;
+    }
+    if (!roles.includes(req.user.role)) {
       res.status(403).json({ detail: "Permisos insuficientes" });
       return;
     }
