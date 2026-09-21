@@ -1598,6 +1598,10 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
     res.status(400).json({ detail: "Username, email y password son obligatorios" });
     return;
   }
+  if (String(password).length < 12) {
+    res.status(400).json({ detail: "La contraseña debe tener al menos 12 caracteres" });
+    return;
+  }
   const cleanUsername = String(username).trim();
   const cleanEmail = String(email).trim().toLowerCase();
 
