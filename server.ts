@@ -498,22 +498,6 @@ function seedDatabase() {
   // Base Staff Users
   const staffUsers: User[] = [
     {
-      id: 1,
-      username: "byjankraftyt",
-      email: "byjankraftyt@gmail.com",
-      password_hash: hash("123456"),
-      display_name: "Jan Kraft (Admin)",
-      role: "admin",
-      country: "PA",
-      avatar_url: "",
-      bio: "Organizador Oficial de Torneos Beyblade X en Panamá.",
-      favorite_combo: "",
-      elo_rating: 1850,
-      is_active: true,
-      is_verified: true,
-      created_at: now
-    },
-    {
       id: 2,
       username: "blader_master",
       email: "organizer@appbey.app",
@@ -568,6 +552,12 @@ function seedDatabase() {
       created_at: now
     };
   });
+
+  const kanghyUser = bladerUsers.find((user) => user.username === "kanghy");
+  if (kanghyUser) {
+    kanghyUser.role = "admin";
+    kanghyUser.bio = "Administrador y blader oficial de AppBey.";
+  }
 
   users = [...staffUsers, ...bladerUsers];
 
@@ -697,7 +687,7 @@ function seedDatabase() {
   decks = [
     {
       id: 1,
-      user_id: 1,
+      user_id: 6,
       name: "Deck Campeon Jan Kraft",
       description: "Deck 3on3 optimizado para control de Xtreme Line y resistencia pura.",
       is_public: true,
@@ -725,7 +715,7 @@ function seedDatabase() {
       slug: "copa-inaugural-xtreme-2026",
       title: "Copa Inaugural Beyblade X 2026",
       description: "Torneo Oficial Apertura Temporada 2 con formato Fase de Grupos + Eliminación Directa (Estilo Challonge / WBO).",
-      organizer_id: 1,
+      organizer_id: 6,
       format: "groups_elim",
       stage_type: "group_stage",
       group_count: 2,
@@ -751,7 +741,7 @@ function seedDatabase() {
   // Participants (8 players distributed into 2 groups using Challonge Serpentine Seeding)
   // Serpentine: Seed 1 -> A, Seed 2 -> B, Seed 3 -> B, Seed 4 -> A, Seed 5 -> A, Seed 6 -> B, Seed 7 -> B, Seed 8 -> A
   participants = [
-    { id: 1, tournament_id: 1, user_id: 1, seed: 1, group_id: "A", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
+    { id: 1, tournament_id: 1, user_id: 6, seed: 1, group_id: "A", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
     { id: 2, tournament_id: 1, user_id: 2, seed: 2, group_id: "B", group_seed: 1, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
     { id: 3, tournament_id: 1, user_id: 4, seed: 3, group_id: "B", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
     { id: 4, tournament_id: 1, user_id: 5, seed: 4, group_id: "A", group_seed: 2, checked_in: true, checked_in_at: now, swiss_points: 0, buchholz: 0, points_scored: 0, points_conceded: 0, matches_played: 0, matches_won: 0, matches_drawn: 0, matches_lost: 0, deck: [] },
@@ -886,7 +876,7 @@ function seedDatabase() {
   communityPosts = [
     {
       id: 1,
-      user_id: 1,
+      user_id: 6,
       content: "Bienvenidos a la plataforma oficial de la Asociación Panameña de Beyblade (AppBey). Sistema de rankings oficiales, registro de torneos y control de arbitraje.",
       deck_id: null,
       image_url: null,
