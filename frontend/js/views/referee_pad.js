@@ -116,6 +116,15 @@ window.renderRefereePadView = async (container, matchId) => {
   let nextMatch = null;
   let lastLocalActionTime = 0;
 
+  const refreshNextMatch = async (currentMatch) => {
+    if (!currentMatch?.tournament_id || !currentMatch.id) return null;
+    try {
+      return await window.api.getNextCombat(currentMatch.id);
+    } catch (_error) {
+      return currentMatch.next_combat || null;
+    }
+  };
+
   // Standalone local state
   let localState = {
     player_a_name: "Blader 1 (Azul)",
@@ -169,8 +178,9 @@ window.renderRefereePadView = async (container, matchId) => {
             tournamentMatches = [];
           }
         }
-        // Find next pending or in_progress match (excluding current match)
-        nextMatch = match.next_combat || null;
+        // Always resolve the next match from its dedicated API response so
+        // player names and playoff state are not left from a cached snapshot.
+        nextMatch = await refreshNextMatch(match);
       }
       if (document.getElementById("score-display-a") && document.getElementById("score-display-b")) {
         updateLiveScoreboardDOM();
@@ -891,7 +901,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = serverUpdated.next_combat || null;
+          nextMatch = await refreshNextMatch(serverUpdated);
         }
         updateLiveScoreboardDOM();
       }
@@ -932,7 +942,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = serverUpdated.next_combat || null;
+          nextMatch = await refreshNextMatch(serverUpdated);
         }
         updateLiveScoreboardDOM();
       } else {
@@ -1030,7 +1040,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = serverUpdated.next_combat || null;
+          nextMatch = await refreshNextMatch(serverUpdated);
         }
         updateLiveScoreboardDOM();
       }
@@ -1083,7 +1093,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = serverUpdated.next_combat || null;
+          nextMatch = await refreshNextMatch(serverUpdated);
         }
         updateLiveScoreboardDOM();
       } else {
@@ -1119,7 +1129,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = serverUpdated.next_combat || null;
+          nextMatch = await refreshNextMatch(serverUpdated);
         }
         updateLiveScoreboardDOM();
       } else {
@@ -1164,7 +1174,7 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = serverUpdated.next_combat || null;
+          nextMatch = await refreshNextMatch(serverUpdated);
         }
         updateLiveScoreboardDOM();
       } else {

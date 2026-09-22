@@ -133,7 +133,7 @@ class ApiClient {
   getParticipants(id) { return this.request(`/tournaments/${id}/participants`); }
   getMatches(id, round = null) { return this.request(`/tournaments/${id}/matches${round ? `?round_number=${encodeURIComponent(round)}` : ""}`); }
   getMatch(id) { return this.request(`/matches/${id}`); }
-  getNextCombat(id) { return this.request(`/matches/${id}/next-combat`); }
+  getNextCombat(id) { return this.request(`/matches/${id}/next-combat`, { noCache: true }); }
   callMatch(id, stationNumber, status = "calling") { return this.request(`/matches/${id}/call`, { method: "POST", body: { station_number: stationNumber, status } }); }
   recordFinish(id, data) { return this.request(`/matches/${id}/record-finish`, { method: "POST", body: data }); }
   undoFinish(id) { return this.request(`/matches/${id}/undo-finish`, { method: "POST" }); }

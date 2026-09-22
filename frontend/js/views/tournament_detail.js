@@ -11,6 +11,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   let tournament = null;
   let matches = [];
   let participants = [];
+  const metaCombos = window.APPBEY_META_COMBOS || [];
 
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando datos del torneo #${tournamentId}...</div>`;
 
@@ -1256,8 +1257,6 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     if (existing) existing.remove();
 
     const beys = Array.isArray(currentDeck) ? currentDeck : [];
-    const metaCombos = window.APPBEY_META_COMBOS || [];
-
     const modal = document.createElement("div");
     modal.id = "edit-deck-modal";
     modal.className = "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto";
