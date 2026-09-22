@@ -1185,6 +1185,8 @@ function recalcTournamentStats(tournamentId: number) {
   // Group stage standings ranking (configured tournament tiebreak rule)
   if (tour && tour.format === "groups_elim") {
     const advancers = tour.advancers_per_group || 2;
+    const groupStageMatches = matches.filter((match) => match.tournament_id === tournamentId && (match.group_id || match.stage === "group_stage"));
+    const groupStageComplete = groupStageMatches.length > 0 && groupStageMatches.every((match) => match.status === "finished");
     const groupLetters = Array.from(new Set(allT.map((p) => p.group_id).filter(Boolean))) as string[];
     for (const gId of groupLetters) {
       const gParts = allT.filter((p) => p.group_id === gId);
@@ -1212,7 +1214,7 @@ function recalcTournamentStats(tournamentId: number) {
 
       gParts.forEach((p, idx) => {
         p.group_rank = idx + 1;
-        p.is_qualified_playoffs = idx < advancers;
+        p.is_qualified_playoffs = groupStageComplete && idx < advancers;
       });
     }
   }

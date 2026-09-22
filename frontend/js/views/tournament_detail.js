@@ -166,6 +166,34 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   // Render Challonge Group Stage Cards (Group A, B, C, D...)
   const renderChallongeGroupCards = (parts, tour, isOrganizer) => {
     const advancers = tour.advancers_per_group || 2;
+    const groupStageMatches = matches.filter(m => m.group_id || m.stage === "group_stage");
+    const groupStageComplete = groupStageMatches.length > 0 && groupStageMatches.every(m => m.status === "finished");
+    const getHeadToHead = (participant, groupId) => {
+      const directMatches = groupStageMatches.filter(m =>
+        m.group_id === groupId &&
+        ((m.player_a_id === participant.user_id && m.player_b_id) || (m.player_b_id === participant.user_id && m.player_a_id))
+      );
+      if (!directMatches.length) return "—";
+      let wins = 0;
+      let draws = 0;
+      let losses = 0;
+      directMatches.forEach(m => {
+        if (m.winner_id === null) draws += 1;
+        else if (m.winner_id === participant.user_id) wins += 1;
+        else losses += 1;
+      });
+      return `${wins}-${draws}-${losses}`;
+    };
+    const compareHeadToHead = (a, b, groupId) => {
+      const direct = groupStageMatches.find(m =>
+        m.status === "finished" &&
+        m.group_id === groupId &&
+        ((m.player_a_id === a.user_id && m.player_b_id === b.user_id) ||
+          (m.player_a_id === b.user_id && m.player_b_id === a.user_id))
+      );
+      if (!direct || direct.winner_id === null) return 0;
+      return direct.winner_id === a.user_id ? -1 : 1;
+    };
     // Collect group IDs
     let groupMap = {};
     const hasAssignedGroups = parts.some(p => p.group_id);
@@ -253,16 +281,19 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             const list = groupMap[gid];
             // Sort group members by group_rank if available, or tiebreakers
             list.sort((a, b) => {
-              if (a.group_rank && b.group_rank) return a.group_rank - b.group_rank;
               const priority = tour.tie_break_priority || ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
               for (const criterion of priority) {
                 if (criterion === "victories_losses") {
                   if ((b.group_matches_won || 0) !== (a.group_matches_won || 0)) return (b.group_matches_won || 0) - (a.group_matches_won || 0);
                   if ((a.group_matches_lost || 0) !== (b.group_matches_lost || 0)) return (a.group_matches_lost || 0) - (b.group_matches_lost || 0);
                 } else if (criterion === "point_difference" && (b.group_diff || 0) !== (a.group_diff || 0)) return (b.group_diff || 0) - (a.group_diff || 0);
+                else if (criterion === "head_to_head") {
+                  const directResult = compareHeadToHead(a, b, gid);
+                  if (directResult) return directResult;
+                }
                 else if (criterion === "points_for_seed" && (b.group_points_scored || 0) !== (a.group_points_scored || 0)) return (b.group_points_scored || 0) - (a.group_points_scored || 0);
               }
-              return (a.seed || 99) - (b.seed || 99);
+              return (a.group_rank || 99) - (b.group_rank || 99) || (a.seed || 99) - (b.seed || 99);
             });
 
             return `
@@ -290,10 +321,11 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                       <tr>
                         <th class="py-2.5 px-3 text-center w-8">#</th>
                         <th class="py-2.5 px-3">Blader</th>
-                        <th title="Puntos de clasificación" class="py-2.5 px-2 text-center font-bold text-cyan-300">PTS</th>
-                        <th class="py-2.5 px-2 text-center">V-E-D</th>
+                        <th class="py-2.5 px-2 text-center">Victorias</th>
+                        <th class="py-2.5 px-2 text-center">Empates</th>
+                        <th class="py-2.5 px-2 text-center">Derrotas</th>
                         <th title="Diferencia de puntos (a favor menos en contra)" class="py-2.5 px-2 text-center">DIF</th>
-                        <th title="Puntos a favor" class="py-2.5 px-2 text-center">PF</th>
+                        <th title="Resultado contra rivales empatados" class="py-2.5 px-2 text-center">Enfrentamiento directo</th>
                         <th class="py-2.5 px-3 text-center">Estado</th>
                         ${isOrganizer ? '<th class="py-2.5 px-2 text-center">Reasignar Grupo</th>' : ''}
                       </tr>
@@ -301,7 +333,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                     <tbody class="divide-y divide-slate-800/60">
                       ${list.map((p, pIdx) => {
                         const rank = p.group_rank || (pIdx + 1);
-                        const isQual = rank <= advancers;
+                        const isQual = groupStageComplete && rank <= advancers;
+                        const statusLabel = !groupStageComplete
+                          ? (groupStageMatches.length ? "En competencia" : "Inscrito")
+                          : isQual ? "Clasificado" : "Eliminado";
                         const diffVal = p.group_diff || 0;
                         const diffStr = diffVal > 0 ? `+${diffVal}` : `${diffVal}`;
                         const diffColor = diffVal > 0 ? 'text-emerald-400' : diffVal < 0 ? 'text-rose-400' : 'text-slate-400';
@@ -322,26 +357,33 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                                 </div>
                               </div>
                             </td>
-                            <td class="py-2.5 px-2 text-center font-black text-cyan-300 text-sm">
-                              ${p.group_points || 0}
+                            <td class="py-2.5 px-2 text-center text-slate-300 font-mono text-[11px]">
+                              ${p.group_matches_won || 0}
                             </td>
                             <td class="py-2.5 px-2 text-center text-slate-300 font-mono text-[11px]">
-                              ${p.matches_won || 0}-${p.matches_drawn || 0}-${p.matches_lost || 0}
+                              ${p.group_matches_drawn || 0}
+                            </td>
+                            <td class="py-2.5 px-2 text-center text-slate-300 font-mono text-[11px]">
+                              ${p.group_matches_lost || 0}
                             </td>
                             <td class="py-2.5 px-2 text-center font-mono font-bold text-[11px] ${diffColor}">
                               ${diffStr}
                             </td>
-                            <td class="py-2.5 px-2 text-center text-slate-400 font-mono text-[11px]">
-                              ${p.group_points_scored || p.points_scored || 0}
+                            <td class="py-2.5 px-2 text-center text-slate-300 font-mono text-[11px]">
+                              ${getHeadToHead(p, gid)}
                             </td>
                             <td class="py-2.5 px-3 text-center">
-                              ${isQual ? `
+                              ${groupStageComplete ? (isQual ? `
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
                                   ✓ Clasificado
                                 </span>
                               ` : `
                                 <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-500 bg-slate-900 border border-slate-800">
                                   Eliminado
+                                </span>
+                              `) : `
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold text-slate-400 bg-slate-900 border border-slate-800">
+                                  ${statusLabel}
                                 </span>
                               `}
                             </td>

@@ -158,13 +158,27 @@ window.openCreateTournamentModal = () => {
           <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-700/70 space-y-2">
             <label class="block text-slate-300 mb-1 font-semibold">Prioridad de desempates</label>
             <p class="text-[11px] text-slate-500">Se aplican en el orden seleccionado; las opciones restantes se usan como respaldo.</p>
-            <div class="grid grid-cols-2 gap-2">
-              <select name="tie_break_1" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
-                <option value="victories_losses">Victorias / derrotas</option><option value="point_difference">Diferencia de puntos</option><option value="head_to_head">Head-to-head</option><option value="points_for_seed">PF / seed</option>
-              </select>
-              <select name="tie_break_2" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
-                <option value="point_difference">Diferencia de puntos</option><option value="victories_losses">Victorias / derrotas</option><option value="head_to_head">Head-to-head</option><option value="points_for_seed">PF / seed</option>
-              </select>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label class="text-[11px] text-slate-400">1.º criterio
+                <select name="tie_break_1" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
+                  <option value="victories_losses">Victorias / derrotas</option><option value="point_difference">Diferencia de puntos</option><option value="head_to_head">Enfrentamiento directo</option><option value="points_for_seed">Puntos a favor / seed</option>
+                </select>
+              </label>
+              <label class="text-[11px] text-slate-400">2.º criterio
+                <select name="tie_break_2" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
+                  <option value="point_difference">Diferencia de puntos</option><option value="victories_losses">Victorias / derrotas</option><option value="head_to_head">Enfrentamiento directo</option><option value="points_for_seed">Puntos a favor / seed</option>
+                </select>
+              </label>
+              <label class="text-[11px] text-slate-400">3.º criterio
+                <select name="tie_break_3" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
+                  <option value="head_to_head">Enfrentamiento directo</option><option value="point_difference">Diferencia de puntos</option><option value="victories_losses">Victorias / derrotas</option><option value="points_for_seed">Puntos a favor / seed</option>
+                </select>
+              </label>
+              <label class="text-[11px] text-slate-400">4.º criterio
+                <select name="tie_break_4" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-white text-xs">
+                  <option value="points_for_seed">Puntos a favor / seed</option><option value="point_difference">Diferencia de puntos</option><option value="head_to_head">Enfrentamiento directo</option><option value="victories_losses">Victorias / derrotas</option>
+                </select>
+              </label>
             </div>
           </div>
           <div>
@@ -288,7 +302,9 @@ window.submitNewTournament = async (e) => {
     format,
     group_count: groupCount,
     advancers_per_group: advancers,
-    tie_break_priority: [form.tie_break_1?.value, form.tie_break_2?.value, "head_to_head", "points_for_seed"].filter(Boolean),
+    tie_break_priority: [1, 2, 3, 4]
+      .map(index => form[`tie_break_${index}`]?.value)
+      .filter(Boolean),
     battle_type: form.battle_type.value,
     match_target_points: targetPts,
     max_participants: maxParticipants,
