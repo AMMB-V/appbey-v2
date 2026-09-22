@@ -198,6 +198,14 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     let groupMap = {};
     const hasAssignedGroups = parts.some(p => p.group_id);
 
+    (tour.group_ids || []).forEach(gid => { groupMap[gid] = []; });
+    if (!(tour.group_ids || []).length) {
+      const configuredCount = tour.group_count || 0;
+      for (let i = 0; i < configuredCount; i++) {
+        groupMap[String.fromCharCode(65 + i)] = groupMap[String.fromCharCode(65 + i)] || [];
+      }
+    }
+
     if (hasAssignedGroups) {
       parts.forEach(p => {
         const gid = p.group_id || "A";
@@ -208,7 +216,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       // Preview serpentine groups before tournament starts
       const count = tour.group_count || (parts.length >= 64 ? 16 : parts.length >= 32 ? 8 : parts.length >= 16 ? 4 : 2);
       for (let i = 0; i < count; i++) {
-        groupMap[String.fromCharCode(65 + i)] = [];
+        groupMap[String.fromCharCode(65 + i)] = groupMap[String.fromCharCode(65 + i)] || [];
       }
       parts.forEach((p, idx) => {
         const cycle = Math.floor(idx / count);
@@ -251,6 +259,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               </button>
               <button type="button" onclick="openBulkParticipantModal(${tour.id})" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs transition whitespace-nowrap">
                 + Carga masiva
+              </button>
+              <button type="button" onclick="handleCreateTournamentGroup(${tour.id})" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs transition whitespace-nowrap">
+                + Grupo manual
               </button>
             </form>
           </div>
@@ -1041,11 +1052,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       input.disabled = true;
       const res = await window.api.addTournamentParticipant(tId, {
         new_blader_name: name,
-        checked_in: true
+        checked_in: true,
+        group_id: targetGroup
       });
-      if (targetGroup && res?.participant?.user_id) {
-        await window.api.updateTournamentParticipantGroup(tId, res.participant.user_id, targetGroup);
-      }
       window.showToast(`¡Blader "${name}" añadido e inscrito con éxito!`, "success");
       input.value = "";
       input.disabled = false;
@@ -1053,6 +1062,18 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     } catch(err) {
       if (input) input.disabled = false;
       window.showToast(err.message || "Error al añadir participante", "error");
+    }
+  };
+
+  window.handleCreateTournamentGroup = async (tId) => {
+    const groupId = window.prompt("Identificador del nuevo grupo (por ejemplo, C):", "");
+    if (!groupId) return;
+    try {
+      const res = await window.api.createTournamentGroup(tId, groupId);
+      window.showToast(res.message || "Grupo creado correctamente", "success");
+      refreshData();
+    } catch (err) {
+      window.showToast(err.message || "Error al crear grupo", "error");
     }
   };
 

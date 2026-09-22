@@ -122,6 +122,7 @@ class ApiClient {
   shuffleTournamentSeeds(id) { return this.request(`/tournaments/${id}/shuffle-seeds`, { method: "POST" }); }
   deleteTournament(id) { return this.request(`/tournaments/${id}`, { method: "DELETE" }); }
   updateTournamentParticipantGroup(tId, userId, groupId, seed) { return this.request(`/tournaments/${tId}/participants/${userId}/group`, { method: "PUT", body: { group_id: groupId, seed } }); }
+  createTournamentGroup(tId, groupId) { return this.request(`/tournaments/${tId}/groups`, { method: "POST", body: { group_id: groupId } }); }
   updateTournament(tId, data) { return this.request(`/tournaments/${tId}`, { method: "PUT", body: data }); }
   addTournamentParticipant(tId, data, checkedIn = true) { return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body: typeof data === "object" ? data : { user_id: data, checked_in: checkedIn } }); }
   addTournamentParticipantsBulk(tId, participants) { return this.request(`/tournaments/${tId}/add-participants-bulk`, { method: "POST", body: { participants } }); }

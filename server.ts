@@ -176,6 +176,7 @@ interface Tournament {
   format: "groups_elim" | "round_robin" | "swiss" | "single_elim";
   stage_type?: "group_stage" | "knockout" | "completed";
   group_count?: number;
+  group_ids?: string[];
   advancers_per_group?: number;
   tie_break_priority: string[];
   knockout_round_name?: string;
@@ -1220,6 +1221,30 @@ function recalcTournamentStats(tournamentId: number) {
   }
 }
 
+function tournamentGroupIds(t: Tournament, tournamentId: number): string[] {
+  const ids = new Set<string>();
+  (t.group_ids || []).forEach((groupId) => ids.add(groupId));
+  if (!t.group_ids?.length) {
+    const configuredCount = Math.max(0, t.group_count || 0);
+    for (let index = 0; index < configuredCount; index++) {
+      ids.add(String.fromCharCode(65 + index));
+    }
+  }
+  participants
+    .filter((participant) => participant.tournament_id === tournamentId && participant.group_id)
+    .forEach((participant) => ids.add(participant.group_id!));
+  return Array.from(ids).sort();
+}
+
+function normalizeGroupId(value: unknown): string | null {
+  const groupId = String(value || "").trim().toUpperCase();
+  return /^[A-Z]+$/.test(groupId) ? groupId : null;
+}
+
+function groupCapacity(t: Tournament, groupCount: number): number {
+  return Math.max(1, Math.ceil(t.max_participants / Math.max(1, groupCount)));
+}
+
 function updateStatsAfterMatch(m: TournamentMatch) {
   recalcTournamentStats(m.tournament_id);
 }
@@ -2108,7 +2133,16 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     return;
   }
 
-  const { user_id, new_blader_name, name, blader_name, display_name, country, favorite_combo, deck, deck_notes, checked_in } = req.body;
+  const { user_id, new_blader_name, name, blader_name, display_name, country, favorite_combo, deck, deck_notes, checked_in, group_id } = req.body;
+  let requestedGroup: string | undefined;
+  if (group_id !== undefined && group_id !== "") {
+    const normalizedGroup = normalizeGroupId(group_id);
+    if (!normalizedGroup) {
+      res.status(400).json({ detail: "Identificador de grupo no válido" });
+      return;
+    }
+    requestedGroup = normalizedGroup;
+  }
   let targetUser: User | undefined;
 
   // Resolve raw name from any common field
@@ -2154,14 +2188,24 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
 
   const existing = participants.find((p) => p.tournament_id === id && p.user_id === targetUser!.id);
   if (existing) {
-    if (deckList.length > 0) existing.deck = deckList;
-    if (deck_notes) existing.deck_notes = String(deck_notes).trim();
-    if (checked_in !== undefined) existing.checked_in = checked_in !== false;
-    res.json({ message: "Participante ya registrado; deck y estado actualizados", participant: { ...existing, user: publicUser(targetUser) } });
+    res.status(400).json({ detail: `El participante ${targetUser!.display_name} ya está inscrito en este torneo` });
     return;
   }
 
   const count = participants.filter((p) => p.tournament_id === id).length;
+  if (requestedGroup) {
+    const groupIds = tournamentGroupIds(t, id);
+    const effectiveGroupCount = groupIds.includes(requestedGroup) ? groupIds.length : groupIds.length + 1;
+    const groupSize = participants.filter((p) => p.tournament_id === id && p.group_id === requestedGroup).length;
+    if (groupSize >= groupCapacity(t, effectiveGroupCount)) {
+      res.status(400).json({ detail: `El Grupo ${requestedGroup} alcanzó su capacidad máxima (${groupCapacity(t, effectiveGroupCount)} participantes)` });
+      return;
+    }
+    if (!groupIds.includes(requestedGroup)) {
+      t.group_ids = [...groupIds, requestedGroup].sort();
+      t.group_count = Math.max(t.group_count || 0, t.group_ids.length);
+    }
+  }
   const newPart: TournamentParticipant = {
     id: participants.length + 1,
     tournament_id: t.id,
@@ -2169,6 +2213,10 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     seed: count + 1,
     checked_in: checked_in !== false,
     checked_in_at: checked_in !== false ? new Date().toISOString() : null,
+    group_id: requestedGroup || null,
+    group_seed: requestedGroup
+      ? participants.filter((p) => p.tournament_id === id && p.group_id === requestedGroup).length + 1
+      : null,
     swiss_points: 0,
     buchholz: 0,
     points_scored: 0,
@@ -2182,7 +2230,48 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     deck_notes: deck_notes ? String(deck_notes).trim() : undefined
   };
   participants.push(newPart);
+  if (requestedGroup) {
+    recalcTournamentStats(id);
+    broadcastTournament(id, "tournament_updated", { tournament_id: id, message: `Participante agregado al Grupo ${requestedGroup}` });
+  }
   res.json({ message: "Participante agregado exitosamente", participant: { ...newPart, user: publicUser(targetUser) } });
+});
+
+// Admin / Organizer: Create an empty manual group without reassigning participants.
+api.post("/tournaments/:id/groups", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Solo los organizadores o administradores pueden crear grupos" });
+    return;
+  }
+  if (t.format !== "groups_elim") {
+    res.status(400).json({ detail: "Solo se pueden crear grupos en torneos con fase de grupos" });
+    return;
+  }
+  if (t.status === "completed") {
+    res.status(400).json({ detail: "No se pueden crear grupos en un torneo completado" });
+    return;
+  }
+  const groupId = normalizeGroupId(req.body?.group_id);
+  if (!groupId) {
+    res.status(400).json({ detail: "Debes indicar un identificador de grupo válido" });
+    return;
+  }
+  const groupIds = tournamentGroupIds(t, id);
+  if (groupIds.includes(groupId)) {
+    res.status(400).json({ detail: `El Grupo ${groupId} ya existe` });
+    return;
+  }
+  t.group_ids = [...groupIds, groupId].sort();
+  t.group_count = t.group_ids.length;
+  broadcastTournament(id, "tournament_updated", { tournament_id: id, message: `Grupo ${groupId} creado` });
+  res.json({ message: `Grupo ${groupId} creado correctamente`, group_id: groupId, group_count: t.group_count });
 });
 
 // Admin / Organizer bulk participant addition. Entries may identify an existing user
@@ -2419,23 +2508,27 @@ api.put("/tournaments/:id/participants/:userId/group", requireAuth, (req: AuthRe
 
   const { group_id, seed } = req.body;
   if (group_id !== undefined) {
-    const nextGroup = String(group_id).toUpperCase().trim();
-    if (!/^[A-Z]+$/.test(nextGroup)) {
+    const nextGroup = normalizeGroupId(group_id);
+    if (!nextGroup) {
       res.status(400).json({ detail: "Identificador de grupo no válido" });
       return;
     }
+    const groupIds = tournamentGroupIds(t, id);
+    if (!groupIds.includes(nextGroup)) {
+      res.status(400).json({ detail: `El Grupo ${nextGroup} no existe; créalo antes de mover participantes` });
+      return;
+    }
+    const targetSize = participants.filter((p) => p.tournament_id === id && p.group_id === nextGroup && p.user_id !== userId).length;
+    if (targetSize >= groupCapacity(t, groupIds.length)) {
+      res.status(400).json({ detail: `El Grupo ${nextGroup} alcanzó su capacidad máxima (${groupCapacity(t, groupIds.length)} participantes)` });
+      return;
+    }
     part.group_id = nextGroup;
+    part.group_seed = targetSize + 1;
   }
   if (seed !== undefined && !isNaN(parseInt(seed, 10))) {
     part.seed = parseInt(seed, 10);
   }
-  if (part.group_id) {
-    const groupParts = participants
-      .filter((p) => p.tournament_id === id && p.group_id === part.group_id)
-      .sort((a, b) => (a.seed || 999) - (b.seed || 999));
-    groupParts.forEach((p, index) => { p.group_seed = index + 1; });
-  }
-
   // Recalculate stats for the tournament groups
   recalcTournamentStats(id);
   broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Asignación de grupo actualizada" });
@@ -2537,7 +2630,11 @@ api.delete("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
 
 function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentParticipant[]) {
   const N = checkedInParts.length;
+  const configuredGroupIds = tournamentGroupIds(t, t.id);
   let groupCount = t.group_count;
+  if (configuredGroupIds.length > 0) {
+    groupCount = configuredGroupIds.length;
+  }
   if (!groupCount || groupCount <= 0) {
     if (N >= 48) groupCount = 16;
     else if (N >= 24) groupCount = 8;
@@ -2549,6 +2646,10 @@ function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentPart
     groupCount = Math.max(1, Math.floor(N / 2));
   }
   t.group_count = groupCount;
+  const groupIds = configuredGroupIds.length === groupCount
+    ? configuredGroupIds
+    : Array.from({ length: groupCount }, (_, index) => String.fromCharCode(65 + index));
+  t.group_ids = groupIds;
   t.advancers_per_group = t.advancers_per_group || 2;
   t.stage_type = "group_stage";
 
@@ -2560,7 +2661,7 @@ function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentPart
 
   for (let i = 0; i < sorted.length; i++) {
     const p = sorted[i];
-    const letter = String.fromCharCode(65 + groupIdx);
+    const letter = groupIds[groupIdx];
     p.group_id = letter;
     p.group_seed = groups[groupIdx].length + 1;
     groups[groupIdx].push(p);
@@ -2584,7 +2685,7 @@ function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentPart
   let stationCounter = 1;
   for (let g = 0; g < groupCount; g++) {
     const gList = groups[g];
-    const letter = String.fromCharCode(65 + g);
+    const letter = groupIds[g];
     let matchInGroup = 1;
     for (let i = 0; i < gList.length; i++) {
       for (let j = i + 1; j < gList.length; j++) {
