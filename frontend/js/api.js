@@ -1,5 +1,5 @@
 // AppBey API Client
-const API_BASE = "/api/v1";
+const API_BASE = String(window.APPBEY_CONFIG?.apiBaseUrl || "/api/v1").replace(/\/+$/, "");
 const REQUEST_TIMEOUT_MS = 15000;
 window.APPBEY_META_COMBOS = [
   "Phoenix Wing 9-60 GF",

@@ -52,8 +52,14 @@ app.use((_req, res, next) => {
 });
 
 // Explicit CORS configuration (SonarQube S5122)
+const configuredOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => {
+    const normalized = origin.trim();
+    return normalized && !normalized.includes("://") ? `https://${normalized}` : normalized;
+  }).filter(Boolean)
+  : true;
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : true,
+  origin: configuredOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true
 }));

@@ -24,10 +24,11 @@ class WebSocketHub {
     }
 
     this.tournamentId = tournamentId;
+    const configuredBase = String(window.APPBEY_CONFIG?.wsBaseUrl || "").replace(/\/+$/, "");
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
     const path = tournamentId ? `/ws/tournaments/${tournamentId}` : `/ws/global`;
-    const url = `${protocol}//${host}${path}`;
+    const url = configuredBase ? `${configuredBase}${path}` : `${protocol}//${host}${path}`;
 
     try {
       this.socket = new WebSocket(url);
