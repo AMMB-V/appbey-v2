@@ -143,11 +143,17 @@ primer administrador configurable, usa:
 - `APPBEY_ADMIN_EMAIL=correo-de-la-organizacion`
 - `APPBEY_ADMIN_PASSWORD=una-clave-de-12-o-mas-caracteres`
 - `APPBEY_ADMIN_COUNTRY=PA`
+- `APPBEY_ADMIN_NAME=Nombre visible del administrador`
+
+Cuando se configuran `APPBEY_ADMIN_EMAIL` y `APPBEY_ADMIN_PASSWORD`, el arranque
+crea o eleva esa cuenta a `admin` de forma idempotente. Configúralas como
+variables protegidas en Render; nunca las escribas en el repositorio.
 
 `APPBEY_DEMO_DATA=true` solo debe usarse en desarrollo o demostraciones. No se
 deben publicar ni reutilizar credenciales de demostración.
 
-**Importante:** esta versión todavía usa almacenamiento en memoria. Los usuarios,
+**Importante:** esta versión todavía usa almacenamiento en memoria; no existe
+una base de datos accesible detrás de la aplicación. Los usuarios,
 torneos y resultados se pierden al reiniciar el proceso o al hacer redeploy en
 Render. Por esa razón no se puede declarar lista para operación oficial hasta
 conectar una base de datos persistente y probar restauración de datos.

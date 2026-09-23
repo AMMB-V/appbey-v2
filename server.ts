@@ -561,6 +561,40 @@ function seedDatabase() {
 
   users = [...staffUsers, ...bladerUsers];
 
+  const bootstrapAdminEmail = String(process.env.APPBEY_ADMIN_EMAIL || "").trim().toLowerCase();
+  const bootstrapAdminPassword = String(process.env.APPBEY_ADMIN_PASSWORD || "");
+  if (bootstrapAdminEmail || bootstrapAdminPassword) {
+    if (!bootstrapAdminEmail || bootstrapAdminPassword.length < 12) {
+      throw new Error("APPBEY_ADMIN_EMAIL and APPBEY_ADMIN_PASSWORD (minimum 12 characters) must be configured together");
+    }
+
+    const existingBootstrapAdmin = users.find((user) => user.email.toLowerCase() === bootstrapAdminEmail);
+    if (existingBootstrapAdmin) {
+      existingBootstrapAdmin.role = "admin";
+      existingBootstrapAdmin.is_active = true;
+      existingBootstrapAdmin.is_verified = true;
+    } else {
+      const usernameBase = bootstrapAdminEmail.split("@")[0].replace(/[^a-z0-9_]+/g, "_").replace(/^_|_$/g, "") || "admin";
+      const username = `${usernameBase}_${Date.now().toString(36).slice(-5)}`;
+      users.push({
+        id: Math.max(...users.map((user) => user.id), 0) + 1,
+        username,
+        email: bootstrapAdminEmail,
+        password_hash: hash(bootstrapAdminPassword),
+        display_name: String(process.env.APPBEY_ADMIN_NAME || "AppBey Administrator").trim().slice(0, 80),
+        role: "admin",
+        country: String(process.env.APPBEY_ADMIN_COUNTRY || "PA").trim().toUpperCase(),
+        avatar_url: "",
+        bio: "Administrador de AppBey.",
+        favorite_combo: "",
+        elo_rating: 1850,
+        is_active: true,
+        is_verified: true,
+        created_at: now
+      });
+    }
+  }
+
   // Wallets
   wallets = users.map((u, i) => ({
     id: i + 1,
