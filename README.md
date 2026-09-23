@@ -144,6 +144,7 @@ primer administrador configurable, usa:
 - `APPBEY_ADMIN_PASSWORD=una-clave-de-12-o-mas-caracteres`
 - `APPBEY_ADMIN_COUNTRY=PA`
 - `APPBEY_ADMIN_NAME=Nombre visible del administrador`
+- `DATABASE_URL=URL privada de PostgreSQL`
 
 Cuando se configuran `APPBEY_ADMIN_EMAIL` y `APPBEY_ADMIN_PASSWORD`, el arranque
 crea o eleva esa cuenta a `admin` de forma idempotente. Configúralas como
@@ -152,11 +153,13 @@ variables protegidas en Render; nunca las escribas en el repositorio.
 `APPBEY_DEMO_DATA=true` solo debe usarse en desarrollo o demostraciones. No se
 deben publicar ni reutilizar credenciales de demostración.
 
-**Importante:** esta versión todavía usa almacenamiento en memoria; no existe
-una base de datos accesible detrás de la aplicación. Los usuarios,
+Con `DATABASE_URL` configurada, AppBey crea una tabla privada `appbey_state` y
+migra/carga el estado completo de la aplicación como JSONB. Esto conserva los
+datos actuales y permite sobrevivir reinicios mientras se completa una
+migración relacional por dominio. Los usuarios,
 torneos y resultados se pierden al reiniciar el proceso o al hacer redeploy en
-Render. Por esa razón no se puede declarar lista para operación oficial hasta
-conectar una base de datos persistente y probar restauración de datos.
+Render solamente cuando `DATABASE_URL` no está configurada. La URL debe
+mantenerse como secreto de Render y nunca entrar al repositorio.
 
 ---
 

@@ -7,6 +7,7 @@ import cors from "cors";
 import { WebSocketServer, WebSocket } from "ws";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import pg from "pg";
 
 export type Request = express.Request<Record<string, string>>;
 export type { Response, NextFunction };
@@ -29,6 +30,23 @@ const JWT_SECRET = configuredJwtSecret || (isProduction
 if (isProduction && !configuredJwtSecret) {
   console.warn("SECRET_KEY or JWT_SECRET is not configured; using an ephemeral JWT secret. Configure SECRET_KEY in Render to preserve sessions across restarts.");
 }
+
+const persistencePool = process.env.DATABASE_URL
+  ? new pg.Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+    max: 5,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000
+  })
+  : null;
+if (persistencePool) {
+  persistencePool.on("error", (error) => {
+    console.error("PostgreSQL pool error:", error);
+  });
+}
+let persistenceReady = false;
+let persistenceWrite: Promise<void> = Promise.resolve();
 
 // Disable technology disclosure header (SonarQube S5689)
 app.disable("x-powered-by");
@@ -380,6 +398,91 @@ let metaSyncState: MetaSyncState = {
     "Regla de Deck 3on3: No se permiten piezas repetidas según el reglamento oficial WBO y TT."
   ] : []
 };
+
+type PersistedState = {
+  users: User[];
+  wallets: Wallet[];
+  transactions: Transaction[];
+  parts: BeybladePart[];
+  decks: BladerDeck[];
+  tournaments: Tournament[];
+  participants: TournamentParticipant[];
+  matches: TournamentMatch[];
+  matchGames: MatchGame[];
+  seasons: Season[];
+  seasonRankings: SeasonRanking[];
+  hallOfFame: HallOfFame[];
+  communityPosts: CommunityPost[];
+  postLikes: PostLike[];
+  postComments: PostComment[];
+  notifications: Notification[];
+  metaSyncState: MetaSyncState;
+};
+
+function getPersistedState(): PersistedState {
+  return {
+    users, wallets, transactions, parts, decks, tournaments, participants,
+    matches, matchGames, seasons, seasonRankings, hallOfFame, communityPosts,
+    postLikes, postComments, notifications, metaSyncState
+  };
+}
+
+async function initializePersistence() {
+  if (!persistencePool) return;
+  await persistencePool.query(`
+    CREATE TABLE IF NOT EXISTS appbey_state (
+      state_key TEXT PRIMARY KEY,
+      state JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  const result = await persistencePool.query<{ state: PersistedState }>(
+    "SELECT state FROM appbey_state WHERE state_key = $1",
+    ["production"]
+  );
+  if (result.rows[0]?.state) {
+    const state = result.rows[0].state;
+    users = state.users || [];
+    wallets = state.wallets || [];
+    transactions = state.transactions || [];
+    parts = state.parts || [];
+    decks = state.decks || [];
+    tournaments = state.tournaments || [];
+    participants = state.participants || [];
+    matches = state.matches || [];
+    matchGames = state.matchGames || [];
+    seasons = state.seasons || [];
+    seasonRankings = state.seasonRankings || [];
+    hallOfFame = state.hallOfFame || [];
+    communityPosts = state.communityPosts || [];
+    postLikes = state.postLikes || [];
+    postComments = state.postComments || [];
+    notifications = state.notifications || [];
+    metaSyncState = state.metaSyncState || metaSyncState;
+    console.log("Loaded AppBey state from PostgreSQL");
+  } else {
+    await persistState();
+    console.log("Migrated seeded AppBey state to PostgreSQL");
+  }
+  persistenceReady = true;
+}
+
+function persistState(): Promise<void> {
+  if (!persistencePool) return Promise.resolve();
+  const state = getPersistedState();
+  persistenceWrite = persistenceWrite.then(async () => {
+    await persistencePool.query(
+      `INSERT INTO appbey_state (state_key, state, updated_at)
+       VALUES ($1, $2::jsonb, NOW())
+       ON CONFLICT (state_key) DO UPDATE
+       SET state = EXCLUDED.state, updated_at = NOW()`,
+      ["production", JSON.stringify(state)]
+    );
+  }).catch((error) => {
+    console.error("Failed to persist AppBey state:", error);
+  });
+  return persistenceWrite;
+}
 
 // Official Season 1 Data from Asociacion Panamena de Beyblade
 interface HistoricalBladerData {
@@ -3936,7 +4039,8 @@ const healthPayload = () => ({
   version: "2.0.0",
   uptime: Math.round(process.uptime()),
   started_at: startedAt,
-  storage: "in-memory",
+  storage: persistencePool ? "postgresql" : "in-memory",
+  database: persistencePool ? (persistenceReady ? "connected" : "initializing") : "not_configured",
   demo_data: demoDataEnabled
 });
 
@@ -3954,6 +4058,15 @@ app.get("/readyz", (_req, res) => {
     return;
   }
   res.status(200).json({ ...healthPayload(), ready: true });
+});
+
+app.use((_req, res, next) => {
+  res.on("finish", () => {
+    if (persistenceReady && res.statusCode < 500 && !["GET", "HEAD", "OPTIONS"].includes(_req.method)) {
+      void persistState();
+    }
+  });
+  next();
 });
 
 app.use("/api/v1", api);
@@ -4016,11 +4129,22 @@ server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.requestTimeout = 30_000;
 
-// Start Server
-server.listen(PORT, HOST, () => {
-  isReady = true;
-  console.log(`AppBey server is running on http://${HOST}:${PORT}`);
-});
+// Start Server after the database has been initialized. This prevents requests
+// from reaching the in-memory seed while PostgreSQL is still being loaded.
+async function startServer() {
+  try {
+    await initializePersistence();
+    server.listen(PORT, HOST, () => {
+      isReady = true;
+      console.log(`AppBey server is running on http://${HOST}:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Unable to initialize PostgreSQL persistence:", error);
+    process.exitCode = 1;
+  }
+}
+
+void startServer();
 
 function shutdown(signal: string) {
   console.log(`Received ${signal}; shutting down gracefully`);
