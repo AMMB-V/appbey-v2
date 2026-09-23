@@ -2,7 +2,6 @@ import express, { Response, NextFunction } from "express";
 import compression from "compression";
 import http from "http";
 import path from "path";
-import fs from "fs";
 import crypto from "crypto";
 import cors from "cors";
 import { WebSocketServer, WebSocket } from "ws";
@@ -3961,7 +3960,7 @@ app.use("/api/v1", api);
 app.use("/api", api);
 
 // ---------------------------------------------------------------------------
-// Static Assets & Frontend Serving
+// Backend status and shared image assets
 // ---------------------------------------------------------------------------
 
 const frontendPath = path.join(process.cwd(), "frontend");
@@ -3973,45 +3972,15 @@ const staticCacheConfig = {
   lastModified: true
 };
 
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    service: "AppBey API",
+    message: "Frontend disponible en el dominio de Vercel"
+  });
+});
+
 app.use("/assets", express.static(path.join(frontendPath, "assets"), staticCacheConfig));
-app.use("/css", express.static(path.join(frontendPath, "css"), { ...staticCacheConfig, maxAge: "7d", immutable: false }));
-app.use("/js", express.static(path.join(frontendPath, "js"), { ...staticCacheConfig, maxAge: "7d", immutable: false }));
-
-app.get("/manifest.json", (req, res) => {
-  res.setHeader("Cache-Control", "no-cache");
-  const manifestFile = path.join(frontendPath, "manifest.json");
-  if (fs.existsSync(manifestFile)) {
-    res.sendFile(manifestFile);
-  } else {
-    res.json({ name: "AppBey" });
-  }
-});
-
-app.get("/favicon.ico", (req, res) => {
-  const faviconFile = path.join(frontendPath, "assets", "icons", "favicon.png");
-  if (fs.existsSync(faviconFile)) {
-    res.type("image/png").sendFile(faviconFile);
-  } else {
-    res.status(204).end();
-  }
-});
-
-app.get("/sw.js", (req, res) => {
-  res.setHeader("Cache-Control", "no-cache");
-  const swFile = path.join(frontendPath, "sw.js");
-  if (fs.existsSync(swFile)) {
-    res.type("application/javascript").sendFile(swFile);
-  } else {
-    res.send("");
-  }
-});
-
-app.get("/config.js", (_req, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.type("application/javascript").send(
-    `window.__APP_CONFIG__ = ${JSON.stringify({ googleClientId: process.env.GOOGLE_CLIENT_ID || "" })};`
-  );
-});
 
 app.use((req, res) => {
   if (req.path.startsWith("/api/") || req.path === "/api") {
@@ -4022,13 +3991,7 @@ app.use((req, res) => {
     res.status(404).type("text/plain").send("Asset no encontrado");
     return;
   }
-  const indexFile = path.join(frontendPath, "index.html");
-  if (fs.existsSync(indexFile)) {
-    res.setHeader("Cache-Control", "no-cache");
-    res.sendFile(indexFile);
-  } else {
-    res.send("AppBey Server Online");
-  }
+  res.status(404).json({ detail: "Ruta de backend no encontrada" });
 });
 
 // Express reports malformed JSON through the error middleware. Keep API errors
