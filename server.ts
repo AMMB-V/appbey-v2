@@ -862,6 +862,7 @@ function seedDatabase() {
       stage_type: "group_stage",
       group_count: 2,
       advancers_per_group: 2,
+      tie_break_priority: ["victories_losses", "point_difference", "head_to_head", "points_for_seed"],
       knockout_round_name: "Semifinales",
       battle_type: "3on3_deck",
       match_target_points: 4,
@@ -2131,10 +2132,10 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
   const groupCount = data.group_count ? Math.max(2, Math.min(32, parseInt(data.group_count, 10))) : undefined;
   const advancersPerGroup = data.advancers_per_group ? Math.max(1, Math.min(4, parseInt(data.advancers_per_group, 10) || 2)) : 2;
   const defaultTieBreaks = ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
-  const requestedTieBreaks = Array.isArray(data.tie_break_priority)
+  const requestedTieBreaks: string[] = Array.isArray(data.tie_break_priority)
     ? data.tie_break_priority.map((value: unknown) => String(value)).filter((value: string) => defaultTieBreaks.includes(value))
     : [];
-  const tieBreakPriority = [...new Set(requestedTieBreaks)];
+  const tieBreakPriority: string[] = [...new Set(requestedTieBreaks)];
   for (const fallback of defaultTieBreaks) {
     if (!tieBreakPriority.includes(fallback)) tieBreakPriority.push(fallback);
   }
@@ -2715,7 +2716,7 @@ api.post("/tournaments/:id/shuffle-seeds", requireAuth, (req: AuthRequest, res) 
     res.status(403).json({ detail: "No tienes permisos para reordenar las siembras" });
     return;
   }
-  if (t.status !== "upcoming" && t.status !== "registration_open") {
+  if (t.status !== "registration_open") {
     res.status(400).json({ detail: "Solo se pueden alterar las siembras antes de iniciar el torneo" });
     return;
   }
@@ -2871,6 +2872,7 @@ api.get("/tournaments/:id/participants", (req, res) => {
 
 api.get("/tournaments/:id/matches", (req, res) => {
   const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
   const round = req.query.round_number ? parseInt(req.query.round_number as string, 10) : null;
   let list = matches.filter((m) => m.tournament_id === id);
   if (round) list = list.filter((m) => m.round_number === round);
@@ -4069,6 +4071,15 @@ app.use((_req, res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  const isHealthRoute = req.path === "/health" || req.path === "/healthz" || req.path === "/readyz" || req.path === "/api/health";
+  if (!isReady && !isHealthRoute && (req.path === "/api" || req.path.startsWith("/api/"))) {
+    res.status(503).json({ detail: "Servidor inicializando", ready: false });
+    return;
+  }
+  next();
+});
+
 app.use("/api/v1", api);
 app.use("/api", api);
 
@@ -4129,19 +4140,18 @@ server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.requestTimeout = 30_000;
 
-// Start Server after the database has been initialized. This prevents requests
-// from reaching the in-memory seed while PostgreSQL is still being loaded.
+// Bind the port before initializing PostgreSQL so Render detects the service
+// promptly. API traffic remains gated until the database is ready.
 async function startServer() {
-  try {
-    await initializePersistence();
-    server.listen(PORT, HOST, () => {
+  server.listen(PORT, HOST, () => {
+    console.log(`AppBey server is running on http://${HOST}:${PORT}`);
+    void initializePersistence().then(() => {
       isReady = true;
-      console.log(`AppBey server is running on http://${HOST}:${PORT}`);
+    }).catch((error) => {
+      console.error("Unable to initialize PostgreSQL persistence:", error);
+      process.exitCode = 1;
     });
-  } catch (error) {
-    console.error("Unable to initialize PostgreSQL persistence:", error);
-    process.exitCode = 1;
-  }
+  });
 }
 
 void startServer();
