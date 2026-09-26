@@ -382,6 +382,10 @@ let postLikes: PostLike[] = [];
 let postComments: PostComment[] = [];
 let notifications: Notification[] = [];
 
+function nextId(records: readonly { id: number }[]): number {
+  return records.reduce((maximum, record) => Math.max(maximum, record.id), 0) + 1;
+}
+
 let metaSyncState: MetaSyncState = {
   source_name: "World Beyblade Organization (WBO) & Takara Tomy Competitive Meta Feed",
   official_url: "https://worldbeyblade.org",
@@ -419,6 +423,240 @@ type PersistedState = {
   metaSyncState: MetaSyncState;
 };
 
+type PersistedCollectionName = Exclude<keyof PersistedState, "metaSyncState">;
+type PersistenceColumn = { name: string; type: string; field: string };
+type PersistenceTable = {
+  key: PersistedCollectionName;
+  name: string;
+  columns: PersistenceColumn[];
+  indexes?: string[];
+};
+
+const persistenceTables: PersistenceTable[] = [
+  { key: "users", name: "appbey_users", columns: [
+    { name: "username", type: "TEXT", field: "username" },
+    { name: "email", type: "TEXT", field: "email" },
+    { name: "password_hash", type: "TEXT", field: "password_hash" },
+    { name: "role", type: "TEXT", field: "role" },
+    { name: "display_name", type: "TEXT", field: "display_name" },
+    { name: "country", type: "TEXT", field: "country" },
+    { name: "avatar_url", type: "TEXT", field: "avatar_url" },
+    { name: "bio", type: "TEXT", field: "bio" },
+    { name: "favorite_combo", type: "TEXT", field: "favorite_combo" },
+    { name: "elo_rating", type: "INTEGER", field: "elo_rating" },
+    { name: "is_active", type: "BOOLEAN", field: "is_active" },
+    { name: "is_verified", type: "BOOLEAN", field: "is_verified" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["username", "email", "role"] },
+  { key: "wallets", name: "appbey_wallets", columns: [
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "balance", type: "NUMERIC", field: "balance" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["user_id"] },
+  { key: "transactions", name: "appbey_transactions", columns: [
+    { name: "wallet_id", type: "BIGINT", field: "wallet_id" },
+    { name: "amount", type: "NUMERIC", field: "amount" },
+    { name: "tx_type", type: "TEXT", field: "tx_type" },
+    { name: "reason", type: "TEXT", field: "reason" },
+    { name: "reference_id", type: "TEXT", field: "reference_id" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["wallet_id", "created_at"] },
+  { key: "parts", name: "appbey_parts", columns: [
+    { name: "code", type: "TEXT", field: "code" },
+    { name: "name", type: "TEXT", field: "name" },
+    { name: "category", type: "TEXT", field: "category" },
+    { name: "system", type: "TEXT", field: "system" },
+    { name: "type_attr", type: "TEXT", field: "type_attr" },
+    { name: "weight_grams", type: "NUMERIC", field: "weight_grams" },
+    { name: "attack_stat", type: "INTEGER", field: "attack_stat" },
+    { name: "defense_stat", type: "INTEGER", field: "defense_stat" },
+    { name: "stamina_stat", type: "INTEGER", field: "stamina_stat" },
+    { name: "dash_stat", type: "INTEGER", field: "dash_stat" },
+    { name: "tier", type: "TEXT", field: "tier" },
+    { name: "description", type: "TEXT", field: "description" },
+    { name: "pick_rate_pct", type: "NUMERIC", field: "pick_rate_pct" },
+    { name: "win_rate_pct", type: "NUMERIC", field: "win_rate_pct" },
+    { name: "trend", type: "TEXT", field: "trend" },
+    { name: "trend_label", type: "TEXT", field: "trend_label" },
+    { name: "best_combo", type: "TEXT", field: "best_combo" },
+    { name: "official_ruling", type: "TEXT", field: "official_ruling" },
+    { name: "last_updated", type: "TEXT", field: "last_updated" },
+    { name: "source_reference", type: "TEXT", field: "source_reference" }
+  ], indexes: ["code", "category"] },
+  { key: "decks", name: "appbey_decks", columns: [
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "name", type: "TEXT", field: "name" },
+    { name: "description", type: "TEXT", field: "description" },
+    { name: "is_public", type: "BOOLEAN", field: "is_public" },
+    { name: "slot1_name", type: "TEXT", field: "slot1_name" },
+    { name: "slot1_blade_id", type: "BIGINT", field: "slot1_blade_id" },
+    { name: "slot1_ratchet_id", type: "BIGINT", field: "slot1_ratchet_id" },
+    { name: "slot1_bit_id", type: "BIGINT", field: "slot1_bit_id" },
+    { name: "slot2_name", type: "TEXT", field: "slot2_name" },
+    { name: "slot2_blade_id", type: "BIGINT", field: "slot2_blade_id" },
+    { name: "slot2_ratchet_id", type: "BIGINT", field: "slot2_ratchet_id" },
+    { name: "slot2_bit_id", type: "BIGINT", field: "slot2_bit_id" },
+    { name: "slot3_name", type: "TEXT", field: "slot3_name" },
+    { name: "slot3_blade_id", type: "BIGINT", field: "slot3_blade_id" },
+    { name: "slot3_ratchet_id", type: "BIGINT", field: "slot3_ratchet_id" },
+    { name: "slot3_bit_id", type: "BIGINT", field: "slot3_bit_id" },
+    { name: "total_weight", type: "NUMERIC", field: "total_weight" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["user_id"] },
+  { key: "tournaments", name: "appbey_tournaments", columns: [
+    { name: "slug", type: "TEXT", field: "slug" },
+    { name: "title", type: "TEXT", field: "title" },
+    { name: "description", type: "TEXT", field: "description" },
+    { name: "organizer_id", type: "BIGINT", field: "organizer_id" },
+    { name: "format", type: "TEXT", field: "format" },
+    { name: "stage_type", type: "TEXT", field: "stage_type" },
+    { name: "group_count", type: "INTEGER", field: "group_count" },
+    { name: "group_ids", type: "JSONB", field: "group_ids" },
+    { name: "advancers_per_group", type: "INTEGER", field: "advancers_per_group" },
+    { name: "tie_break_priority", type: "JSONB", field: "tie_break_priority" },
+    { name: "knockout_round_name", type: "TEXT", field: "knockout_round_name" },
+    { name: "battle_type", type: "TEXT", field: "battle_type" },
+    { name: "match_target_points", type: "INTEGER", field: "match_target_points" },
+    { name: "stadium_type", type: "TEXT", field: "stadium_type" },
+    { name: "max_participants", type: "INTEGER", field: "max_participants" },
+    { name: "prize_description", type: "TEXT", field: "prize_description" },
+    { name: "status", type: "TEXT", field: "status" },
+    { name: "venue_address", type: "TEXT", field: "venue_address" },
+    { name: "start_date", type: "TEXT", field: "start_date" },
+    { name: "venue_name", type: "TEXT", field: "venue_name" },
+    { name: "country", type: "TEXT", field: "country" },
+    { name: "current_round", type: "INTEGER", field: "current_round" },
+    { name: "total_rounds", type: "INTEGER", field: "total_rounds" },
+    { name: "is_official", type: "BOOLEAN", field: "is_official" },
+    { name: "winner_user_id", type: "BIGINT", field: "winner_user_id" },
+    { name: "runner_up_user_id", type: "BIGINT", field: "runner_up_user_id" },
+    { name: "third_place_user_id", type: "BIGINT", field: "third_place_user_id" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["slug", "organizer_id", "status", "start_date"] },
+  { key: "participants", name: "appbey_tournament_participants", columns: [
+    { name: "tournament_id", type: "BIGINT", field: "tournament_id" },
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "seed", type: "INTEGER", field: "seed" },
+    { name: "group_id", type: "TEXT", field: "group_id" },
+    { name: "group_seed", type: "INTEGER", field: "group_seed" },
+    { name: "group_points", type: "INTEGER", field: "group_points" },
+    { name: "group_matches_won", type: "INTEGER", field: "group_matches_won" },
+    { name: "group_matches_drawn", type: "INTEGER", field: "group_matches_drawn" },
+    { name: "group_matches_lost", type: "INTEGER", field: "group_matches_lost" },
+    { name: "group_points_scored", type: "INTEGER", field: "group_points_scored" },
+    { name: "group_points_conceded", type: "INTEGER", field: "group_points_conceded" },
+    { name: "group_diff", type: "INTEGER", field: "group_diff" },
+    { name: "group_rank", type: "INTEGER", field: "group_rank" },
+    { name: "is_qualified_playoffs", type: "BOOLEAN", field: "is_qualified_playoffs" },
+    { name: "checked_in", type: "BOOLEAN", field: "checked_in" },
+    { name: "checked_in_at", type: "TEXT", field: "checked_in_at" },
+    { name: "swiss_points", type: "INTEGER", field: "swiss_points" },
+    { name: "buchholz", type: "INTEGER", field: "buchholz" },
+    { name: "points_scored", type: "INTEGER", field: "points_scored" },
+    { name: "points_conceded", type: "INTEGER", field: "points_conceded" },
+    { name: "matches_played", type: "INTEGER", field: "matches_played" },
+    { name: "matches_won", type: "INTEGER", field: "matches_won" },
+    { name: "matches_drawn", type: "INTEGER", field: "matches_drawn" },
+    { name: "matches_lost", type: "INTEGER", field: "matches_lost" },
+    { name: "final_rank", type: "INTEGER", field: "final_rank" },
+    { name: "deck", type: "JSONB", field: "deck" },
+    { name: "deck_notes", type: "TEXT", field: "deck_notes" }
+  ], indexes: ["tournament_id", "user_id"] },
+  { key: "matches", name: "appbey_matches", columns: [
+    { name: "tournament_id", type: "BIGINT", field: "tournament_id" },
+    { name: "round_number", type: "INTEGER", field: "round_number" },
+    { name: "stage", type: "TEXT", field: "stage" },
+    { name: "group_id", type: "TEXT", field: "group_id" },
+    { name: "bracket_position", type: "INTEGER", field: "bracket_position" },
+    { name: "station_number", type: "INTEGER", field: "station_number" },
+    { name: "player_a_id", type: "BIGINT", field: "player_a_id" },
+    { name: "player_b_id", type: "BIGINT", field: "player_b_id" },
+    { name: "score_a", type: "INTEGER", field: "score_a" },
+    { name: "score_b", type: "INTEGER", field: "score_b" },
+    { name: "winner_id", type: "BIGINT", field: "winner_id" },
+    { name: "referee_id", type: "BIGINT", field: "referee_id" },
+    { name: "target_points", type: "INTEGER", field: "target_points" },
+    { name: "set_target_points", type: "INTEGER", field: "set_target_points" },
+    { name: "sets_won_a", type: "INTEGER", field: "sets_won_a" },
+    { name: "sets_won_b", type: "INTEGER", field: "sets_won_b" },
+    { name: "sets", type: "JSONB", field: "sets" },
+    { name: "status", type: "TEXT", field: "status" },
+    { name: "is_bye", type: "BOOLEAN", field: "is_bye" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["tournament_id", "status", "player_a_id", "player_b_id"] },
+  { key: "matchGames", name: "appbey_match_games", columns: [
+    { name: "match_id", type: "BIGINT", field: "match_id" },
+    { name: "game_order", type: "INTEGER", field: "game_order" },
+    { name: "finish_type", type: "TEXT", field: "finish_type" },
+    { name: "awarded_to", type: "TEXT", field: "awarded_to" },
+    { name: "points", type: "INTEGER", field: "points" },
+    { name: "set_number", type: "INTEGER", field: "set_number" },
+    { name: "notes", type: "TEXT", field: "notes" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["match_id"] },
+  { key: "seasons", name: "appbey_seasons", columns: [
+    { name: "name", type: "TEXT", field: "name" },
+    { name: "is_active", type: "BOOLEAN", field: "is_active" },
+    { name: "description", type: "TEXT", field: "description" },
+    { name: "start_date", type: "TEXT", field: "start_date" }
+  ] },
+  { key: "seasonRankings", name: "appbey_season_rankings", columns: [
+    { name: "season_id", type: "BIGINT", field: "season_id" },
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "points", type: "INTEGER", field: "points" },
+    { name: "elo", type: "INTEGER", field: "elo" },
+    { name: "tournaments_played", type: "INTEGER", field: "tournaments_played" },
+    { name: "tournaments_won", type: "INTEGER", field: "tournaments_won" },
+    { name: "podium_finishes", type: "INTEGER", field: "podium_finishes" },
+    { name: "matches_won", type: "INTEGER", field: "matches_won" },
+    { name: "matches_lost", type: "INTEGER", field: "matches_lost" },
+    { name: "points_for", type: "INTEGER", field: "points_for" },
+    { name: "points_against", type: "INTEGER", field: "points_against" },
+    { name: "bonus_points", type: "INTEGER", field: "bonus_points" },
+    { name: "warnings", type: "INTEGER", field: "warnings" },
+    { name: "overall_rank", type: "INTEGER", field: "overall_rank" }
+  ], indexes: ["season_id", "user_id"] },
+  { key: "hallOfFame", name: "appbey_hall_of_fame", columns: [
+    { name: "year", type: "INTEGER", field: "year" },
+    { name: "title", type: "TEXT", field: "title" },
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "tournament_name", type: "TEXT", field: "tournament_name" },
+    { name: "signature_deck", type: "TEXT", field: "signature_deck" },
+    { name: "trophy_icon", type: "TEXT", field: "trophy_icon" },
+    { name: "notes", type: "TEXT", field: "notes" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["user_id", "year"] },
+  { key: "communityPosts", name: "appbey_community_posts", columns: [
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "deck_id", type: "BIGINT", field: "deck_id" },
+    { name: "content", type: "TEXT", field: "content" },
+    { name: "image_url", type: "TEXT", field: "image_url" },
+    { name: "likes_count", type: "INTEGER", field: "likes_count" },
+    { name: "comments_count", type: "INTEGER", field: "comments_count" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["user_id", "created_at"] },
+  { key: "postLikes", name: "appbey_post_likes", columns: [
+    { name: "post_id", type: "BIGINT", field: "post_id" },
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["post_id", "user_id"] },
+  { key: "postComments", name: "appbey_post_comments", columns: [
+    { name: "post_id", type: "BIGINT", field: "post_id" },
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "content", type: "TEXT", field: "content" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["post_id", "user_id"] },
+  { key: "notifications", name: "appbey_notifications", columns: [
+    { name: "user_id", type: "BIGINT", field: "user_id" },
+    { name: "notif_type", type: "TEXT", field: "notif_type" },
+    { name: "title", type: "TEXT", field: "title" },
+    { name: "message", type: "TEXT", field: "message" },
+    { name: "link", type: "TEXT", field: "link" },
+    { name: "is_read", type: "BOOLEAN", field: "is_read" },
+    { name: "created_at", type: "TEXT", field: "created_at" }
+  ], indexes: ["user_id", "is_read", "created_at"] }
+];
+
 function getPersistedState(): PersistedState {
   return {
     users, wallets, transactions, parts, decks, tournaments, participants,
@@ -427,61 +665,273 @@ function getPersistedState(): PersistedState {
   };
 }
 
-async function initializePersistence() {
+function getCollectionRows(state: PersistedState, key: PersistedCollectionName): readonly object[] {
+  switch (key) {
+    case "users": return state.users;
+    case "wallets": return state.wallets;
+    case "transactions": return state.transactions;
+    case "parts": return state.parts;
+    case "decks": return state.decks;
+    case "tournaments": return state.tournaments;
+    case "participants": return state.participants;
+    case "matches": return state.matches;
+    case "matchGames": return state.matchGames;
+    case "seasons": return state.seasons;
+    case "seasonRankings": return state.seasonRankings;
+    case "hallOfFame": return state.hallOfFame;
+    case "communityPosts": return state.communityPosts;
+    case "postLikes": return state.postLikes;
+    case "postComments": return state.postComments;
+    case "notifications": return state.notifications;
+  }
+}
+
+function assignPersistedCollection(key: PersistedCollectionName, rows: unknown[]) {
+  switch (key) {
+    case "users": users = rows as User[]; break;
+    case "wallets": wallets = rows as Wallet[]; break;
+    case "transactions": transactions = rows as Transaction[]; break;
+    case "parts": parts = rows as BeybladePart[]; break;
+    case "decks": decks = rows as BladerDeck[]; break;
+    case "tournaments": tournaments = rows as Tournament[]; break;
+    case "participants": participants = rows as TournamentParticipant[]; break;
+    case "matches": matches = rows as TournamentMatch[]; break;
+    case "matchGames": matchGames = rows as MatchGame[]; break;
+    case "seasons": seasons = rows as Season[]; break;
+    case "seasonRankings": seasonRankings = rows as SeasonRanking[]; break;
+    case "hallOfFame": hallOfFame = rows as HallOfFame[]; break;
+    case "communityPosts": communityPosts = rows as CommunityPost[]; break;
+    case "postLikes": postLikes = rows as PostLike[]; break;
+    case "postComments": postComments = rows as PostComment[]; break;
+    case "notifications": notifications = rows as Notification[]; break;
+  }
+}
+
+function clonePersistedState(state: PersistedState): PersistedState {
+  return JSON.parse(JSON.stringify(state)) as PersistedState;
+}
+
+function createPersistenceTableSql(table: PersistenceTable) {
+  const fields = [
+    "record_id BIGSERIAL PRIMARY KEY",
+    "id BIGINT NOT NULL",
+    "record_order INTEGER NOT NULL",
+    "payload JSONB NOT NULL",
+    ...table.columns.map((column) => `${column.name} ${column.type}`)
+  ];
+  return `CREATE TABLE IF NOT EXISTS ${table.name} (${fields.join(", ")})`;
+}
+
+async function ensurePersistenceSchema() {
   if (!persistencePool) return;
-  await persistencePool.query(`
+  const statements = [`
     CREATE TABLE IF NOT EXISTS appbey_state (
       state_key TEXT PRIMARY KEY,
       state JSONB NOT NULL,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
-  `);
-  const result = await persistencePool.query<{ state: PersistedState }>(
-    "SELECT state FROM appbey_state WHERE state_key = $1",
-    ["production"]
-  );
-  if (result.rows[0]?.state) {
-    const state = result.rows[0].state;
-    users = state.users || [];
-    wallets = state.wallets || [];
-    transactions = state.transactions || [];
-    parts = state.parts || [];
-    decks = state.decks || [];
-    tournaments = state.tournaments || [];
-    participants = state.participants || [];
-    matches = state.matches || [];
-    matchGames = state.matchGames || [];
-    seasons = state.seasons || [];
-    seasonRankings = state.seasonRankings || [];
-    hallOfFame = state.hallOfFame || [];
-    communityPosts = state.communityPosts || [];
-    postLikes = state.postLikes || [];
-    postComments = state.postComments || [];
-    notifications = state.notifications || [];
-    metaSyncState = state.metaSyncState || metaSyncState;
-    console.log("Loaded AppBey state from PostgreSQL");
-  } else {
-    await persistState();
-    console.log("Migrated seeded AppBey state to PostgreSQL");
+  `, `
+    CREATE TABLE IF NOT EXISTS appbey_schema_migrations (
+      version INTEGER PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `];
+  for (const table of persistenceTables) {
+    statements.push(createPersistenceTableSql(table));
+    statements.push(`CREATE INDEX IF NOT EXISTS ${table.name}_id_idx ON ${table.name} (id)`);
+    statements.push(`CREATE INDEX IF NOT EXISTS ${table.name}_record_order_idx ON ${table.name} (record_order)`);
+    for (const column of table.indexes || []) {
+      statements.push(`CREATE INDEX IF NOT EXISTS ${table.name}_${column}_idx ON ${table.name} (${column})`);
+    }
   }
+  statements.push(`
+    CREATE TABLE IF NOT EXISTS appbey_meta_sync_state (
+      id SMALLINT PRIMARY KEY CHECK (id = 1),
+      source_name TEXT,
+      official_url TEXT,
+      secondary_url TEXT,
+      meta_version TEXT,
+      last_synced_at TEXT,
+      total_matches_analyzed INTEGER,
+      status TEXT,
+      auto_sync_interval_mins INTEGER,
+      patch_notes JSONB,
+      payload JSONB NOT NULL
+    )
+  `);
+  await persistencePool.query(statements.join(";\n"));
+}
+
+async function writeCollection(client: pg.PoolClient, table: PersistenceTable, rows: readonly object[]) {
+  await client.query(`DELETE FROM ${table.name}`);
+  if (rows.length === 0) return;
+
+  const columns = ["id", "record_order", "payload", ...table.columns.map((column) => column.name)];
+  const recordset = [
+    "id BIGINT",
+    "record_order INTEGER",
+    "payload JSONB",
+    ...table.columns.map((column) => `${column.name} ${column.type}`)
+  ];
+  const projectedRows = rows.map((row, index) => ({
+    id: Reflect.get(row, "id"),
+    record_order: index,
+    payload: row,
+    ...Object.fromEntries(table.columns.map((column) => [column.name, Reflect.get(row, column.field)]))
+  }));
+  await client.query(
+    `INSERT INTO ${table.name} (${columns.join(", ")})
+     SELECT ${columns.map((column) => `incoming.${column}`).join(", ")}
+     FROM jsonb_to_recordset($1::JSONB) AS incoming(${recordset.join(", ")})`,
+    [JSON.stringify(projectedRows)]
+  );
+}
+
+async function persistRelationalState(
+  client: pg.PoolClient,
+  state: PersistedState,
+  previousState: PersistedState | null,
+  applyInitialMigration = false
+) {
+  await client.query("BEGIN");
+  try {
+    for (const table of persistenceTables) {
+      const rows = getCollectionRows(state, table.key);
+      const previousRows = previousState ? getCollectionRows(previousState, table.key) : null;
+      if (previousRows && JSON.stringify(rows) === JSON.stringify(previousRows)) continue;
+      await writeCollection(client, table, rows);
+    }
+    if (!previousState || JSON.stringify(state.metaSyncState) !== JSON.stringify(previousState.metaSyncState)) {
+      await client.query(
+        `INSERT INTO appbey_meta_sync_state (
+           id, source_name, official_url, secondary_url, meta_version, last_synced_at,
+           total_matches_analyzed, status, auto_sync_interval_mins, patch_notes, payload
+         )
+         SELECT
+           1, state.source_name, state.official_url, state.secondary_url, state.meta_version,
+           state.last_synced_at, state.total_matches_analyzed, state.status,
+           state.auto_sync_interval_mins, state.patch_notes, $1::JSONB
+         FROM jsonb_to_record($1::JSONB) AS state(
+           source_name TEXT, official_url TEXT, secondary_url TEXT, meta_version TEXT,
+           last_synced_at TEXT, total_matches_analyzed INTEGER, status TEXT,
+           auto_sync_interval_mins INTEGER, patch_notes JSONB
+         )
+         ON CONFLICT (id) DO UPDATE SET
+           source_name = EXCLUDED.source_name,
+           official_url = EXCLUDED.official_url,
+           secondary_url = EXCLUDED.secondary_url,
+           meta_version = EXCLUDED.meta_version,
+           last_synced_at = EXCLUDED.last_synced_at,
+           total_matches_analyzed = EXCLUDED.total_matches_analyzed,
+           status = EXCLUDED.status,
+           auto_sync_interval_mins = EXCLUDED.auto_sync_interval_mins,
+           patch_notes = EXCLUDED.patch_notes,
+           payload = EXCLUDED.payload`,
+        [JSON.stringify(state.metaSyncState)]
+      );
+    }
+    if (applyInitialMigration) {
+      await client.query(
+        "INSERT INTO appbey_schema_migrations (version) VALUES (1) ON CONFLICT (version) DO NOTHING"
+      );
+    }
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  }
+}
+
+let lastPersistedState: PersistedState | null = null;
+let persistenceHasWriteError = false;
+
+async function initializePersistence() {
+  if (!persistencePool) return;
+  await ensurePersistenceSchema();
+  const client = await persistencePool.connect();
+  try {
+    await client.query("BEGIN");
+    const migration = await client.query(
+      "SELECT version FROM appbey_schema_migrations WHERE version = 1"
+    );
+    if (migration.rowCount) {
+      for (const table of persistenceTables) {
+        const result = await client.query<{ payload: unknown }>(
+          `SELECT payload FROM ${table.name} ORDER BY record_order, record_id`
+        );
+        assignPersistedCollection(table.key, result.rows.map((row) => row.payload));
+      }
+      const meta = await client.query<{ payload: MetaSyncState }>(
+        "SELECT payload FROM appbey_meta_sync_state WHERE id = 1"
+      );
+      if (meta.rows[0]?.payload) metaSyncState = meta.rows[0].payload;
+      await client.query("COMMIT");
+      console.log("Loaded AppBey relational data from PostgreSQL");
+    } else {
+      const legacy = await client.query<{ state: PersistedState }>(
+        "SELECT state FROM appbey_state WHERE state_key = $1",
+        ["production"]
+      );
+      if (legacy.rows[0]?.state) {
+        const state = legacy.rows[0].state;
+        users = state.users || [];
+        wallets = state.wallets || [];
+        transactions = state.transactions || [];
+        parts = state.parts || [];
+        decks = state.decks || [];
+        tournaments = state.tournaments || [];
+        participants = state.participants || [];
+        matches = state.matches || [];
+        matchGames = state.matchGames || [];
+        seasons = state.seasons || [];
+        seasonRankings = state.seasonRankings || [];
+        hallOfFame = state.hallOfFame || [];
+        communityPosts = state.communityPosts || [];
+        postLikes = state.postLikes || [];
+        postComments = state.postComments || [];
+        notifications = state.notifications || [];
+        metaSyncState = state.metaSyncState || metaSyncState;
+      }
+      const state = clonePersistedState(getPersistedState());
+      await client.query("ROLLBACK");
+      await persistRelationalState(client, state, null, true);
+      console.log(legacy.rows[0]?.state
+        ? "Migrated existing AppBey state into relational PostgreSQL tables"
+        : "Migrated seeded AppBey data into relational PostgreSQL tables");
+    }
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Failed to roll back PostgreSQL initialization:", rollbackError);
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+  lastPersistedState = clonePersistedState(getPersistedState());
   persistenceReady = true;
 }
 
 function persistState(): Promise<void> {
   if (!persistencePool) return Promise.resolve();
-  const state = getPersistedState();
-  persistenceWrite = persistenceWrite.then(async () => {
-    await persistencePool.query(
-      `INSERT INTO appbey_state (state_key, state, updated_at)
-       VALUES ($1, $2::jsonb, NOW())
-       ON CONFLICT (state_key) DO UPDATE
-       SET state = EXCLUDED.state, updated_at = NOW()`,
-      ["production", JSON.stringify(state)]
-    );
-  }).catch((error) => {
-    console.error("Failed to persist AppBey state:", error);
+  const state = clonePersistedState(getPersistedState());
+  const pendingWrite = persistenceWrite.catch(() => undefined).then(async () => {
+    const client = await persistencePool.connect();
+    try {
+      await persistRelationalState(client, state, lastPersistedState);
+      lastPersistedState = state;
+      persistenceHasWriteError = false;
+    } finally {
+      client.release();
+    }
   });
-  return persistenceWrite;
+  persistenceWrite = pendingWrite;
+  return pendingWrite.catch((error) => {
+    persistenceHasWriteError = true;
+    console.error("Failed to persist AppBey state:", error);
+    throw error;
+  });
 }
 
 // Official Season 1 Data from Asociacion Panamena de Beyblade
@@ -1419,7 +1869,7 @@ function advanceSingleElimination(m: TournamentMatch) {
   let nextMatch = matches.find((match) => match.tournament_id === t.id && !match.group_id && match.round_number === nextRound && match.bracket_position === nextPos);
   if (!nextMatch) {
     nextMatch = {
-      id: matches.length + 1,
+      id: nextId(matches),
       tournament_id: t.id,
       round_number: nextRound,
       stage: nextStageName,
@@ -1462,7 +1912,7 @@ function createWalkinBlader(displayName: string, country?: string, favoriteCombo
     uniqueUsername = `${baseUsername}_${counter++}`;
   }
   const newUser: User = {
-    id: users.length + 1,
+    id: nextId(users),
     username: uniqueUsername,
     email: `${uniqueUsername}@appbey.local`,
     password_hash: bcrypt.hashSync(crypto.randomBytes(32).toString("hex"), 10),
@@ -1530,7 +1980,7 @@ api.post("/auth/register", (req, res) => {
     : "";
 
   const newUser: User = {
-    id: users.length + 1,
+    id: nextId(users),
     username: cleanUsername,
     email: cleanEmail,
     password_hash: bcrypt.hashSync(cleanPassword, 10),
@@ -1638,7 +2088,7 @@ api.post("/auth/google", async (req, res) => {
         username = `${baseUsername}_${suffix++}`;
       }
       user = {
-        id: users.length + 1,
+        id: nextId(users),
         username,
         email: claims.email.toLowerCase(),
         password_hash: bcrypt.hashSync(crypto.randomBytes(32).toString("hex"), 10),
@@ -1813,7 +2263,7 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
     : "";
 
   const newUser: User = {
-    id: users.length + 1,
+    id: nextId(users),
     username: cleanUsername,
     email: cleanEmail,
     password_hash: bcrypt.hashSync(String(password), 10),
@@ -2048,7 +2498,7 @@ api.post("/beyblades/decks", requireAuth, (req: AuthRequest, res) => {
   const totalW = selectedParts.reduce((sum, p) => sum + (p.weight_grams || 0), 0);
 
   const newDeck: BladerDeck = {
-    id: decks.length + 1,
+    id: nextId(decks),
     user_id: u.id,
     name: deckName,
     description: data.description ? String(data.description).trim().slice(0, 300) : "",
@@ -2147,7 +2597,7 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
 
   const slug = cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-") + `-${Date.now()}`;
   const newT: Tournament = {
-    id: tournaments.length + 1,
+    id: nextId(tournaments),
     slug,
     title: cleanTitle,
     description: data.description ? String(data.description).trim().slice(0, 500) : "",
@@ -2223,7 +2673,7 @@ api.post("/tournaments/:id/register", requireAuth, (req: AuthRequest, res) => {
 
 
   const newPart: TournamentParticipant = {
-    id: participants.length + 1,
+    id: nextId(participants),
     tournament_id: t.id,
     user_id: req.user!.id,
     seed: count + 1,
@@ -2340,7 +2790,7 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
     }
   }
   const newPart: TournamentParticipant = {
-    id: participants.length + 1,
+    id: nextId(participants),
     tournament_id: t.id,
     user_id: targetUser.id,
     seed: count + 1,
@@ -2474,7 +2924,7 @@ api.post("/tournaments/:id/add-participants-bulk", requireAuth, (req: AuthReques
     const targetUser = item.user || createWalkinBlader(item.name!, item.entry.country as string | undefined, item.deck[0]);
     const count = current.length + index;
     const newPart: TournamentParticipant = {
-      id: participants.length + 1,
+      id: nextId(participants),
       tournament_id: id,
       user_id: targetUser.id,
       seed: count + 1,
@@ -2825,7 +3275,7 @@ function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentPart
         const p1 = gList[i];
         const p2 = gList[j];
         matches.push({
-          id: matches.length + 1,
+          id: nextId(matches),
           tournament_id: t.id,
           round_number: matchInGroup,
           stage: `Fase de Grupos - Grupo ${letter}`,
@@ -2948,7 +3398,7 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
       const isBye = !p2;
 
       matches.push({
-        id: matches.length + 1,
+        id: nextId(matches),
         tournament_id: t.id,
         round_number: 1,
         stage: "swiss",
@@ -2985,7 +3435,7 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
       const winner_id = !p2_id ? p1_id : (!p1_id ? p2_id : null);
 
       matches.push({
-        id: matches.length + 1,
+        id: nextId(matches),
         tournament_id: t.id,
         round_number: 1,
         stage: "Round 1",
@@ -3141,7 +3591,7 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
   for (let pos = 0; pos < pairings.length; pos++) {
     const pair = pairings[pos];
     matches.push({
-      id: matches.length + 1,
+      id: nextId(matches),
       tournament_id: t.id,
       round_number: 1,
       stage: stageName,
@@ -3213,7 +3663,7 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
       const isBye = !p2;
 
       matches.push({
-        id: matches.length + 1,
+        id: nextId(matches),
         tournament_id: t.id,
         round_number: nextRound,
         stage: "swiss",
@@ -3384,7 +3834,7 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
   if (!m.referee_id && req.user) m.referee_id = req.user.id;
 
   const newGame: MatchGame = {
-    id: matchGames.length + 1,
+    id: nextId(matchGames),
     match_id: m.id,
     game_order: matchGames.filter((g) => g.match_id === m.id).length + 1,
     finish_type,
@@ -3736,7 +4186,7 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
   if (!m.referee_id && req.user) m.referee_id = req.user.id;
 
   matchGames.push({
-    id: matchGames.length + 1,
+    id: nextId(matchGames),
     match_id: m.id,
     game_order: matchGames.filter((g) => g.match_id === m.id).length + 1,
     finish_type: finish_reason || "decision_official",
@@ -3934,7 +4384,7 @@ api.post("/social/posts", requireAuth, (req: AuthRequest, res) => {
   }
 
   const newPost: CommunityPost = {
-    id: communityPosts.length + 1,
+    id: nextId(communityPosts),
     user_id: req.user!.id,
     content: cleanContent,
     deck_id: deck_id ? parseInt(deck_id, 10) || null : null,
@@ -3973,7 +4423,7 @@ api.post("/social/posts/:id/like", requireAuth, (req: AuthRequest, res) => {
   } else {
     // Like
     postLikes.push({
-      id: postLikes.length + 1,
+      id: nextId(postLikes),
       post_id: id,
       user_id: userId,
       created_at: new Date().toISOString()
@@ -4004,7 +4454,7 @@ api.post("/social/posts/:id/comments", requireAuth, (req: AuthRequest, res) => {
   const cleanContent = String(content).trim().slice(0, 500);
 
   const newComment: PostComment = {
-    id: postComments.length + 1,
+    id: nextId(postComments),
     post_id: p.id,
     user_id: req.user!.id,
     content: cleanContent,
@@ -4041,8 +4491,10 @@ const healthPayload = () => ({
   version: "2.0.0",
   uptime: Math.round(process.uptime()),
   started_at: startedAt,
-  storage: persistencePool ? "postgresql" : "in-memory",
-  database: persistencePool ? (persistenceReady ? "connected" : "initializing") : "not_configured",
+  storage: persistencePool ? "postgresql-relational" : "in-memory",
+  database: persistencePool
+    ? (!persistenceReady ? "initializing" : persistenceHasWriteError ? "write_error" : "connected")
+    : "not_configured",
   demo_data: demoDataEnabled
 });
 
@@ -4062,12 +4514,31 @@ app.get("/readyz", (_req, res) => {
   res.status(200).json({ ...healthPayload(), ready: true });
 });
 
-app.use((_req, res, next) => {
-  res.on("finish", () => {
-    if (persistenceReady && res.statusCode < 500 && !["GET", "HEAD", "OPTIONS"].includes(_req.method)) {
-      void persistState();
-    }
-  });
+app.use((req, res, next) => {
+  const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
+  const isReadOnly = ["GET", "HEAD", "OPTIONS"].includes(req.method);
+  if (!persistencePool || !isApiRequest || isReadOnly) {
+    next();
+    return;
+  }
+
+  const sendJson = res.json.bind(res);
+  let responseStarted = false;
+  res.json = ((body: unknown) => {
+    if (responseStarted) return res;
+    responseStarted = true;
+    if (!persistenceReady || res.statusCode >= 400) return sendJson(body);
+
+    void persistState().then(() => {
+      sendJson(body);
+    }).catch(() => {
+      if (!res.headersSent) {
+        res.status(500);
+        sendJson({ detail: "No se pudieron guardar los cambios en la base de datos" });
+      }
+    });
+    return res;
+  }) as Response["json"];
   next();
 });
 
@@ -4150,6 +4621,15 @@ async function startServer() {
     }).catch((error) => {
       console.error("Unable to initialize PostgreSQL persistence:", error);
       process.exitCode = 1;
+      for (const client of wss.clients) {
+        client.close(1011, "Database initialization failed");
+      }
+      server.close((closeError) => {
+        if (closeError) console.error("Error closing server after initialization failure:", closeError);
+        void persistencePool?.end().catch((poolError) => {
+          console.error("Error closing PostgreSQL pool after initialization failure:", poolError);
+        });
+      });
     });
   });
 }
@@ -4167,6 +4647,13 @@ function shutdown(signal: string) {
       console.error("Error during shutdown:", error);
       process.exitCode = 1;
     }
+    void (async () => {
+      await persistenceWrite;
+      await persistencePool?.end();
+    })().catch((shutdownError) => {
+      console.error("Error closing PostgreSQL pool:", shutdownError);
+      process.exitCode = 1;
+    });
   });
 }
 

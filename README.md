@@ -130,6 +130,9 @@ Health checks disponibles:
 - `GET /readyz` confirma que el proceso está listo para recibir tráfico (ruta recomendada para Render).
 - `GET /api/health` mantiene compatibilidad con clientes existentes.
 
+Configura el Health Check Path de Render como `/readyz`: así el deploy no se
+marca listo hasta que PostgreSQL terminó de cargar y aplicar la migración.
+
 ---
 
 ## 👤 Configuración inicial de producción
@@ -153,13 +156,45 @@ variables protegidas en Render; nunca las escribas en el repositorio.
 `APPBEY_DEMO_DATA=true` solo debe usarse en desarrollo o demostraciones. No se
 deben publicar ni reutilizar credenciales de demostración.
 
-Con `DATABASE_URL` configurada, AppBey crea una tabla privada `appbey_state` y
-migra/carga el estado completo de la aplicación como JSONB. Esto conserva los
-datos actuales y permite sobrevivir reinicios mientras se completa una
-migración relacional por dominio. Los usuarios,
-torneos y resultados se pierden al reiniciar el proceso o al hacer redeploy en
-Render solamente cuando `DATABASE_URL` no está configurada. La URL debe
+Con `DATABASE_URL` configurada, AppBey migra automáticamente el estado anterior
+de `appbey_state` a tablas PostgreSQL separadas y luego lee/escribe los cambios
+en esas tablas. La migración se registra en `appbey_schema_migrations` y es
+idempotente; no vuelve a importar el snapshot anterior después de completarse.
+La tabla `appbey_state` se conserva como copia del estado previo a la migración,
+pero deja de ser la fuente activa de datos.
+
+Las tablas principales incluyen `appbey_users`, `appbey_tournaments`,
+`appbey_tournament_participants`, `appbey_matches` y `appbey_match_games`.
+También se migran wallets, transacciones, partes, decks, temporadas, rankings,
+Hall of Fame, publicaciones, likes, comentarios y notificaciones. Los torneos
+contienen los datos de evento que maneja actualmente la app (fecha, sede,
+dirección y país); hoy no existe un modelo independiente de eventos. Las tablas
+exponen columnas de búsqueda para sus campos principales y conservan el objeto
+completo de cada registro en `payload` para no perder propiedades que el API ya
+utiliza.
+
+Al actualizar una fila desde la aplicación, los cambios se escriben de forma
+transaccional en PostgreSQL; el proceso vuelve a cargar las filas relacionales
+en cada arranque. `/healthz` indica que el proceso está vivo y `/readyz` que la
+carga de la base de datos terminó. Si `DATABASE_URL` no está configurada, el
+backend usa memoria y los cambios se pierden al reiniciar. La URL debe
 mantenerse como secreto de Render y nunca entrar al repositorio.
+
+Para verificar los datos desde Neon SQL Editor:
+
+```sql
+SELECT id, username, display_name, role, elo_rating
+FROM appbey_users
+ORDER BY id;
+
+SELECT id, title, status, start_date, venue_name, country
+FROM appbey_tournaments
+ORDER BY start_date DESC;
+
+SELECT id, tournament_id, user_id, seed, group_id, checked_in
+FROM appbey_tournament_participants
+ORDER BY tournament_id, seed;
+```
 
 ---
 
