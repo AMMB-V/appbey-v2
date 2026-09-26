@@ -167,13 +167,13 @@ window.renderRefereePadView = async (container, matchId) => {
     }
 
     try {
-      match = await window.api.getMatch(matchId);
+      match = await window.api.getMatch(matchId, true);
       if (match && match.tournament_id) {
         if (match.tournament_matches && match.tournament_matches.length) {
           tournamentMatches = match.tournament_matches;
         } else {
           try {
-            tournamentMatches = await window.api.getMatches(match.tournament_id);
+            tournamentMatches = await window.api.getMatches(match.tournament_id, null, true);
           } catch (_err) {
             tournamentMatches = [];
           }

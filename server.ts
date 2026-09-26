@@ -1774,23 +1774,38 @@ function recalcTournamentStats(tournamentId: number) {
     const groupLetters = Array.from(new Set(allT.map((p) => p.group_id).filter(Boolean))) as string[];
     for (const gId of groupLetters) {
       const gParts = allT.filter((p) => p.group_id === gId);
+      const priority = tour.tie_break_priority || ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
+      const compareCriterion = (a: TournamentParticipant, b: TournamentParticipant, criterion: string) => {
+        if (criterion === "victories_losses") {
+          return (b.group_matches_won || 0) - (a.group_matches_won || 0) ||
+            (a.group_matches_lost || 0) - (b.group_matches_lost || 0);
+        }
+        if (criterion === "point_difference") return (b.group_diff || 0) - (a.group_diff || 0);
+        if (criterion === "points_for_seed") return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+        return 0;
+      };
       gParts.sort((a, b) => {
-        for (const criterion of tour.tie_break_priority || ["victories_losses", "point_difference", "head_to_head", "points_for_seed"]) {
-          if (criterion === "victories_losses") {
-            if ((b.group_matches_won || 0) !== (a.group_matches_won || 0)) return (b.group_matches_won || 0) - (a.group_matches_won || 0);
-            if ((a.group_matches_lost || 0) !== (b.group_matches_lost || 0)) return (a.group_matches_lost || 0) - (b.group_matches_lost || 0);
-          } else if (criterion === "point_difference" && (b.group_diff || 0) !== (a.group_diff || 0)) {
-            return (b.group_diff || 0) - (a.group_diff || 0);
-          } else if (criterion === "head_to_head") {
-            const direct = tMatches.find((m) =>
-              m.group_id === gId &&
-              ((m.player_a_id === a.user_id && m.player_b_id === b.user_id) || (m.player_a_id === b.user_id && m.player_b_id === a.user_id))
+        for (let index = 0; index < priority.length; index++) {
+          const criterion = priority[index];
+          if (criterion === "head_to_head") {
+            const priorCriteria = priority.slice(0, index).filter((item) => item !== "head_to_head");
+            const tiedIds = new Set(
+              gParts
+                .filter((candidate) => priorCriteria.every((prior) => compareCriterion(candidate, a, prior) === 0))
+                .map((candidate) => candidate.user_id)
             );
-            if (direct && direct.winner_id !== null && direct.winner_id !== a.user_id && direct.winner_id !== b.user_id) continue;
-            if (direct?.winner_id === a.user_id) return -1;
-            if (direct?.winner_id === b.user_id) return 1;
-          } else if (criterion === "points_for_seed" && (b.group_points_scored || 0) !== (a.group_points_scored || 0)) {
-            return (b.group_points_scored || 0) - (a.group_points_scored || 0);
+            const miniLeaguePoints = (participant: TournamentParticipant) => tMatches
+              .filter((match) => match.group_id === gId &&
+                ((match.player_a_id === participant.user_id && match.player_b_id !== null && tiedIds.has(match.player_b_id)) ||
+                 (match.player_b_id === participant.user_id && match.player_a_id !== null && tiedIds.has(match.player_a_id))))
+              .reduce((points, match) => points + (
+                match.winner_id === participant.user_id ? 3 : match.winner_id === null ? 1 : 0
+              ), 0);
+            const directResult = miniLeaguePoints(b) - miniLeaguePoints(a);
+            if (directResult) return directResult;
+          } else {
+            const result = compareCriterion(a, b, criterion);
+            if (result) return result;
           }
         }
         return a.seed - b.seed;
@@ -1824,8 +1839,28 @@ function normalizeGroupId(value: unknown): string | null {
   return /^[A-Z]+$/.test(groupId) ? groupId : null;
 }
 
-function groupCapacity(t: Tournament, groupCount: number): number {
-  return Math.max(1, Math.ceil(t.max_participants / Math.max(1, groupCount)));
+function automaticGroupCount(participantCount: number): number {
+  let count = participantCount >= 48 ? 16 : participantCount >= 24 ? 8 : participantCount >= 12 ? 4 : 2;
+  count = Math.min(count, Math.max(1, Math.floor(participantCount / 2)));
+  return Math.max(1, count);
+}
+
+function alphabeticalGroupIds(count: number): string[] {
+  return Array.from({ length: count }, (_, index) => String.fromCharCode(65 + index));
+}
+
+function serpentineGroupOrder(groupCount: number): number[] {
+  if (groupCount <= 1) return [0];
+  const order: number[] = [];
+  let index = 0;
+  let direction = 1;
+  while (order.length < groupCount * 2) {
+    order.push(index);
+    if (direction === 1 && index === groupCount - 1) direction = -1;
+    else if (direction === -1 && index === 0) direction = 1;
+    else index += direction;
+  }
+  return order;
 }
 
 function updateStatsAfterMatch(m: TournamentMatch) {
@@ -2778,15 +2813,15 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
   const count = participants.filter((p) => p.tournament_id === id).length;
   if (requestedGroup) {
     const groupIds = tournamentGroupIds(t, id);
-    const effectiveGroupCount = groupIds.includes(requestedGroup) ? groupIds.length : groupIds.length + 1;
-    const groupSize = participants.filter((p) => p.tournament_id === id && p.group_id === requestedGroup).length;
-    if (groupSize >= groupCapacity(t, effectiveGroupCount)) {
-      res.status(400).json({ detail: `El Grupo ${requestedGroup} alcanzó su capacidad máxima (${groupCapacity(t, effectiveGroupCount)} participantes)` });
-      return;
-    }
     if (!groupIds.includes(requestedGroup)) {
+      if (groupIds.length >= 16) {
+        res.status(400).json({ detail: "El torneo admite un máximo de 16 grupos" });
+        return;
+      }
       t.group_ids = [...groupIds, requestedGroup].sort();
-      t.group_count = Math.max(t.group_count || 0, t.group_ids.length);
+      t.group_count = t.group_ids.length;
+    } else {
+      t.group_ids = groupIds;
     }
   }
   const newPart: TournamentParticipant = {
@@ -2841,6 +2876,10 @@ api.post("/tournaments/:id/groups", requireAuth, (req: AuthRequest, res) => {
     res.status(400).json({ detail: "No se pueden crear grupos en un torneo completado" });
     return;
   }
+  if (t.status === "in_progress" || matches.some((match) => match.tournament_id === id)) {
+    res.status(400).json({ detail: "Los grupos solo se pueden configurar antes de iniciar la fase de grupos" });
+    return;
+  }
   const groupId = normalizeGroupId(req.body?.group_id);
   if (!groupId) {
     res.status(400).json({ detail: "Debes indicar un identificador de grupo válido" });
@@ -2851,10 +2890,70 @@ api.post("/tournaments/:id/groups", requireAuth, (req: AuthRequest, res) => {
     res.status(400).json({ detail: `El Grupo ${groupId} ya existe` });
     return;
   }
+  if (groupIds.length >= 16) {
+    res.status(400).json({ detail: "El torneo admite un máximo de 16 grupos" });
+    return;
+  }
   t.group_ids = [...groupIds, groupId].sort();
   t.group_count = t.group_ids.length;
   broadcastTournament(id, "tournament_updated", { tournament_id: id, message: `Grupo ${groupId} creado` });
   res.json({ message: `Grupo ${groupId} creado correctamente`, group_id: groupId, group_count: t.group_count });
+});
+
+api.put("/tournaments/:id/groups/config", requireAuth, (req: AuthRequest, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const isAuthorized = req.user && (["admin", "organizer"].includes(req.user.role) || t.organizer_id === req.user.id);
+  if (!isAuthorized) {
+    res.status(403).json({ detail: "Solo los organizadores o administradores pueden configurar los grupos" });
+    return;
+  }
+  if (t.format !== "groups_elim" || !["registration_open", "check_in"].includes(t.status) || matches.some((match) => match.tournament_id === id)) {
+    res.status(400).json({ detail: "La cantidad de grupos solo se puede cambiar antes de iniciar la fase de grupos" });
+    return;
+  }
+
+  const requestedCount = Number.parseInt(String(req.body?.group_count), 10);
+  if (!Number.isInteger(requestedCount) || requestedCount < 2 || requestedCount > 16) {
+    res.status(400).json({ detail: "La cantidad de grupos debe estar entre 2 y 16" });
+    return;
+  }
+
+  const currentIds = tournamentGroupIds(t, id);
+  let nextIds = currentIds.slice();
+  if (requestedCount < nextIds.length) {
+    const occupiedIds = new Set(
+      participants.filter((part) => part.tournament_id === id && part.group_id).map((part) => part.group_id!)
+    );
+    const removable = nextIds.filter((groupId) => !occupiedIds.has(groupId)).reverse();
+    while (nextIds.length > requestedCount && removable.length) {
+      const groupId = removable.shift()!;
+      nextIds = nextIds.filter((existing) => existing !== groupId);
+    }
+    if (nextIds.length > requestedCount) {
+      res.status(400).json({ detail: "Reasigna primero los participantes de los grupos que deseas quitar" });
+      return;
+    }
+  } else {
+    for (const groupId of alphabeticalGroupIds(16)) {
+      if (nextIds.length >= requestedCount) break;
+      if (!nextIds.includes(groupId)) nextIds.push(groupId);
+    }
+  }
+  nextIds.sort();
+  t.group_ids = nextIds;
+  t.group_count = nextIds.length;
+  broadcastTournament(id, "tournament_updated", {
+    tournament_id: id,
+    group_count: t.group_count,
+    group_ids: t.group_ids,
+    message: "Cantidad de grupos actualizada"
+  });
+  res.json({ message: `El torneo ahora tiene ${t.group_count} grupos`, group_count: t.group_count, group_ids: t.group_ids });
 });
 
 // Admin / Organizer bulk participant addition. Entries may identify an existing user
@@ -3082,6 +3181,10 @@ api.put("/tournaments/:id/participants/:userId/group", requireAuth, (req: AuthRe
     res.status(403).json({ detail: "Solo los organizadores o administradores pueden reasignar grupos" });
     return;
   }
+  if (!["registration_open", "check_in"].includes(t.status) || matches.some((match) => match.tournament_id === id)) {
+    res.status(400).json({ detail: "Los participantes solo se pueden mover antes de iniciar la fase de grupos" });
+    return;
+  }
 
   const part = participants.find((p) => p.tournament_id === id && p.user_id === userId);
   if (!part) {
@@ -3101,13 +3204,15 @@ api.put("/tournaments/:id/participants/:userId/group", requireAuth, (req: AuthRe
       res.status(400).json({ detail: `El Grupo ${nextGroup} no existe; créalo antes de mover participantes` });
       return;
     }
-    const targetSize = participants.filter((p) => p.tournament_id === id && p.group_id === nextGroup && p.user_id !== userId).length;
-    if (targetSize >= groupCapacity(t, groupIds.length)) {
-      res.status(400).json({ detail: `El Grupo ${nextGroup} alcanzó su capacidad máxima (${groupCapacity(t, groupIds.length)} participantes)` });
-      return;
-    }
     part.group_id = nextGroup;
-    part.group_seed = targetSize + 1;
+    for (const groupId of groupIds) {
+      const tournamentParts = participants
+        .filter((participant) => participant.tournament_id === id && participant.group_id === groupId)
+        .sort((a, b) => a.seed - b.seed);
+      tournamentParts.forEach((participant, index) => {
+        participant.group_seed = index + 1;
+      });
+    }
   }
   if (seed !== undefined && !isNaN(parseInt(seed, 10))) {
     part.seed = parseInt(seed, 10);
@@ -3211,62 +3316,67 @@ api.delete("/tournaments/:id", requireAuth, (req: AuthRequest, res) => {
   res.json({ message: "Torneo eliminado correctamente" });
 });
 
-function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentParticipant[]) {
+function planTournamentGroups(t: Tournament, checkedInParts: TournamentParticipant[]) {
   const N = checkedInParts.length;
-  const configuredGroupIds = tournamentGroupIds(t, t.id);
-  let groupCount = t.group_count;
-  if (configuredGroupIds.length > 0) {
-    groupCount = configuredGroupIds.length;
+  const assignedIds = Array.from(new Set(
+    checkedInParts.map((participant) => participant.group_id).filter((groupId): groupId is string => Boolean(groupId))
+  )).sort();
+  let groupIds = t.group_ids?.length
+    ? [...t.group_ids]
+    : t.group_count
+      ? alphabeticalGroupIds(t.group_count)
+      : alphabeticalGroupIds(automaticGroupCount(N));
+  for (const assignedId of assignedIds) {
+    if (!groupIds.includes(assignedId)) groupIds.push(assignedId);
   }
-  if (!groupCount || groupCount <= 0) {
-    if (N >= 48) groupCount = 16;
-    else if (N >= 24) groupCount = 8;
-    else if (N >= 12) groupCount = 4;
-    else groupCount = 2;
-  }
-  // Safety cap to avoid empty groups
-  if (groupCount > Math.floor(N / 2)) {
-    groupCount = Math.max(1, Math.floor(N / 2));
-  }
-  t.group_count = groupCount;
-  const groupIds = configuredGroupIds.length === groupCount
-    ? configuredGroupIds
-    : Array.from({ length: groupCount }, (_, index) => String.fromCharCode(65 + index));
-  t.group_ids = groupIds;
-  t.advancers_per_group = t.advancers_per_group || 2;
-  t.stage_type = "group_stage";
-
-  // Challonge Serpentine Seeding distribution (1->A, 2->B, 3->B, 4->A...)
+  groupIds.sort();
+  const groupCount = groupIds.length;
   const sorted = [...checkedInParts].sort((a, b) => (a.seed || 999) - (b.seed || 999));
   const groups: TournamentParticipant[][] = Array.from({ length: groupCount }, () => []);
-  let groupIdx = 0;
-  let dir = 1;
-
-  for (let i = 0; i < sorted.length; i++) {
-    const p = sorted[i];
-    const letter = groupIds[groupIdx];
-    p.group_id = letter;
-    p.group_seed = groups[groupIdx].length + 1;
-    groups[groupIdx].push(p);
-
-    if (dir === 1) {
-      if (groupIdx === groupCount - 1) {
-        dir = -1;
-      } else {
-        groupIdx++;
-      }
-    } else {
-      if (groupIdx === 0) {
-        dir = 1;
-      } else {
-        groupIdx--;
-      }
+  const assignment = new Map<number, { group_id: string; group_seed: number }>();
+  const serpentineOrder = serpentineGroupOrder(groupCount);
+  for (let index = 0; index < sorted.length; index++) {
+    const participant = sorted[index];
+    let groupIndex = participant.group_id ? groupIds.indexOf(participant.group_id) : -1;
+    if (groupIndex < 0) {
+      const preferredIndex = serpentineOrder[index % serpentineOrder.length];
+      const smallestSize = Math.min(...groups.map((group) => group.length));
+      const candidates = groups
+        .map((group, candidateIndex) => ({ candidateIndex, size: group.length }))
+        .filter((candidate) => candidate.size === smallestSize)
+        .map((candidate) => candidate.candidateIndex);
+      groupIndex = candidates.reduce((best, candidate) => {
+        const candidateDistance = (candidate - preferredIndex + groupCount) % groupCount;
+        const bestDistance = (best - preferredIndex + groupCount) % groupCount;
+        return candidateDistance < bestDistance ? candidate : best;
+      }, candidates[0]);
     }
+    groups[groupIndex].push(participant);
+    assignment.set(participant.user_id, {
+      group_id: groupIds[groupIndex],
+      group_seed: groups[groupIndex].length
+    });
   }
+  return { groupIds, groups, assignment };
+}
+
+function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentParticipant[]) {
+  const { groupIds, groups, assignment } = planTournamentGroups(t, checkedInParts);
+  t.group_ids = groupIds;
+  t.group_count = groupIds.length;
+  t.advancers_per_group = t.advancers_per_group || 2;
+  t.stage_type = "group_stage";
+  checkedInParts.forEach((participant) => {
+    const plannedGroup = assignment.get(participant.user_id);
+    if (plannedGroup) {
+      participant.group_id = plannedGroup.group_id;
+      participant.group_seed = plannedGroup.group_seed;
+    }
+  });
 
   // Generate round robin matches for each group
   let stationCounter = 1;
-  for (let g = 0; g < groupCount; g++) {
+  for (let g = 0; g < groupIds.length; g++) {
     const gList = groups[g];
     const letter = groupIds[g];
     let matchInGroup = 1;
@@ -3377,6 +3487,25 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
     res.status(400).json({ detail: "Se requieren al menos 2 participantes con Check-in confirmado para iniciar el torneo" });
     return;
   }
+  if (t.format === "groups_elim") {
+    const configuredGroupCount = t.group_ids?.length || t.group_count || automaticGroupCount(parts.length);
+    if (parts.length < configuredGroupCount * 2) {
+      res.status(400).json({
+        detail: `Hay ${parts.length} participantes con check-in para ${configuredGroupCount} grupos. Reduce los grupos o confirma al menos ${configuredGroupCount * 2} participantes.`
+      });
+      return;
+    }
+    const groupPlan = planTournamentGroups(t, parts);
+    const underfilledGroups = groupPlan.groups
+      .map((group, index) => ({ groupId: groupPlan.groupIds[index], count: group.length }))
+      .filter((group) => group.count < 2);
+    if (underfilledGroups.length) {
+      res.status(400).json({
+        detail: `Cada grupo necesita al menos 2 participantes con check-in. Revisa: ${underfilledGroups.map((group) => `${group.groupId} (${group.count})`).join(", ")}.`
+      });
+      return;
+    }
+  }
 
   t.status = "in_progress";
   t.current_round = 1;
@@ -3385,6 +3514,7 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
     startGroupsElimTournament(t, parts);
   } else if (t.format === "round_robin") {
     t.group_count = 1;
+    t.group_ids = ["A"];
     parts.forEach((p, idx) => {
       p.group_id = "A";
       p.seed = idx + 1;
@@ -3479,117 +3609,70 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
     return;
   }
 
-  recalcTournamentStats(t.id);
-  const tParts = participants.filter((p) => p.tournament_id === id);
-  const groupLetters = Array.from(new Set(tParts.map((p) => p.group_id).filter(Boolean))).sort() as string[];
-  const advancersCount = t.advancers_per_group || 2;
-
-  const qualifiedByGroup: Record<string, TournamentParticipant[]> = {};
-  for (const g of groupLetters) {
-    const gParts = tParts.filter((p) => p.group_id === g).sort((a, b) => (a.group_rank || 99) - (b.group_rank || 99));
-    qualifiedByGroup[g] = gParts.slice(0, advancersCount);
+  const groupStageMatches = matches.filter((match) =>
+    match.tournament_id === id && (Boolean(match.group_id) || match.stage === "group_stage")
+  );
+  if (!groupStageMatches.length) {
+    res.status(400).json({ detail: "El torneo todavía no tiene partidas de grupos para clasificar" });
+    return;
   }
+  recalcTournamentStats(t.id);
+  const tParts = participants.filter((participant) => participant.tournament_id === id && participant.group_id);
+  const groupLetters = Array.from(new Set(tParts.map((participant) => participant.group_id!))).sort();
+  const advancersCount = Math.max(1, t.advancers_per_group || 2);
 
   interface PlayoffPairing {
-    playerA: TournamentParticipant;
-    playerB: TournamentParticipant;
-    labelA: string;
-    labelB: string;
+    playerA: TournamentParticipant | null;
+    playerB: TournamentParticipant | null;
   }
-  const pairings: PlayoffPairing[] = [];
-
-  if (advancersCount === 1) {
-    for (let i = 0; i + 1 < groupLetters.length; i += 2) {
-      const g1 = groupLetters[i];
-      const g2 = groupLetters[i + 1];
-      const p1 = (qualifiedByGroup[g1] || [])[0];
-      const p2 = (qualifiedByGroup[g2] || [])[0];
-      if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `1º Grupo ${g2}` });
-      }
-    }
-  } else if (groupLetters.length === 2) {
-    // 2 groups (A, B) -> Semifinales (4 qualifiers)
-    // Semi 1: 1º A vs 2º B
-    // Semi 2: 1º B vs 2º A
-    const gA = qualifiedByGroup["A"] || [];
-    const gB = qualifiedByGroup["B"] || [];
-    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1º Grupo A", labelB: "2º Grupo B" });
-    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1º Grupo B", labelB: "2º Grupo A" });
-  } else if (groupLetters.length === 4) {
-    // 4 groups (A, B, C, D) -> Cuartos de Final (8 qualifiers)
-    // Cuartos 1: 1º A vs 2º B
-    // Cuartos 2: 1º C vs 2º D
-    // Cuartos 3: 1º B vs 2º A
-    // Cuartos 4: 1º D vs 2º C
-    const gA = qualifiedByGroup["A"] || [];
-    const gB = qualifiedByGroup["B"] || [];
-    const gC = qualifiedByGroup["C"] || [];
-    const gD = qualifiedByGroup["D"] || [];
-    if (gA[0] && gB[1]) pairings.push({ playerA: gA[0], playerB: gB[1], labelA: "1º Grupo A", labelB: "2º Grupo B" });
-    if (gC[0] && gD[1]) pairings.push({ playerA: gC[0], playerB: gD[1], labelA: "1º Grupo C", labelB: "2º Grupo D" });
-    if (gB[0] && gA[1]) pairings.push({ playerA: gB[0], playerB: gA[1], labelA: "1º Grupo B", labelB: "2º Grupo A" });
-    if (gD[0] && gC[1]) pairings.push({ playerA: gD[0], playerB: gC[1], labelA: "1º Grupo D", labelB: "2º Grupo C" });
-  } else if (groupLetters.length === 8) {
-    // 8 groups (A to H) -> 8vos de Final (16 qualifiers)
-    const pairs = [
-      ["A", "B"], ["C", "D"], ["E", "F"], ["G", "H"],
-      ["B", "A"], ["D", "C"], ["F", "E"], ["H", "G"]
-    ];
-    for (const [g1, g2] of pairs) {
-      const p1 = (qualifiedByGroup[g1] || [])[0];
-      const p2 = (qualifiedByGroup[g2] || [])[1];
-      if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
-      }
-    }
-  } else if (groupLetters.length === 16) {
-    // 16 groups -> 16vos de Final (32 qualifiers)
-    const pairs = [
-      ["A", "B"], ["C", "D"], ["E", "F"], ["G", "H"],
-      ["I", "J"], ["K", "L"], ["M", "N"], ["O", "P"],
-      ["B", "A"], ["D", "C"], ["F", "E"], ["H", "G"],
-      ["J", "I"], ["L", "K"], ["N", "M"], ["P", "O"]
-    ];
-    for (const [g1, g2] of pairs) {
-      const p1 = (qualifiedByGroup[g1] || [])[0];
-      const p2 = (qualifiedByGroup[g2] || [])[1];
-      if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
-      }
-    }
-  } else {
-    for (let i = 0; i < groupLetters.length; i++) {
-      const g1 = groupLetters[i];
-      const g2 = groupLetters[(i + 1) % groupLetters.length];
-      const p1 = (qualifiedByGroup[g1] || [])[0];
-      const p2 = (qualifiedByGroup[g2] || [])[1];
-      if (p1 && p2) {
-        pairings.push({ playerA: p1, playerB: p2, labelA: `1º Grupo ${g1}`, labelB: `2º Grupo ${g2}` });
-      }
-    }
+  const qualifiers = groupLetters.flatMap((groupId) =>
+    tParts
+      .filter((participant) => participant.group_id === groupId)
+      .sort((a, b) => (a.group_rank || Number.MAX_SAFE_INTEGER) - (b.group_rank || Number.MAX_SAFE_INTEGER))
+      .slice(0, advancersCount)
+  );
+  if (qualifiers.length < 2) {
+    res.status(400).json({ detail: "Se necesitan al menos 2 participantes clasificados para generar playoffs" });
+    return;
   }
 
-  if (pairings.length === 0) {
-    res.status(400).json({ detail: "No se pudieron clasificar participantes para la fase de eliminación. Verifique que los grupos tengan bladers clasificados." });
+  const bracketSize = 2 ** Math.ceil(Math.log2(qualifiers.length));
+  const byeCount = bracketSize - qualifiers.length;
+  const byeQualifiers = qualifiers.slice(0, byeCount);
+  const remainingQualifiers = qualifiers.slice(byeCount);
+  const pairings: PlayoffPairing[] = byeQualifiers.map((player) => ({ playerA: player, playerB: null }));
+  while (remainingQualifiers.length >= 2) {
+    const playerA = remainingQualifiers.shift()!;
+    let opponentIndex = remainingQualifiers.findIndex((candidate) => candidate.group_id !== playerA.group_id);
+    if (opponentIndex < 0) opponentIndex = 0;
+    const [playerB] = remainingQualifiers.splice(opponentIndex, 1);
+    pairings.push({ playerA, playerB });
+  }
+  if (remainingQualifiers.length) {
+    pairings.push({ playerA: remainingQualifiers[0], playerB: null });
+  }
+
+  if (!pairings.length) {
+    res.status(400).json({ detail: "No se pudieron clasificar participantes para la fase de eliminación" });
     return;
   }
 
   let stageName = "Eliminatoria";
-  if (pairings.length === 16) stageName = "16vos de Final";
-  else if (pairings.length === 8) stageName = "8vos de Final";
-  else if (pairings.length === 4) stageName = "Cuartos de Final";
-  else if (pairings.length === 2) stageName = "Semifinales";
-  else if (pairings.length === 1) stageName = "Gran Final";
+  if (bracketSize >= 32) stageName = "16vos de Final";
+  else if (bracketSize === 16) stageName = "8vos de Final";
+  else if (bracketSize === 8) stageName = "Cuartos de Final";
+  else if (bracketSize === 4) stageName = "Semifinales";
+  else if (bracketSize === 2) stageName = "Gran Final";
 
   t.stage_type = "knockout";
   t.knockout_round_name = stageName;
-  const playoffRounds = Math.log2(pairings.length * 2);
+  const playoffRounds = Math.log2(bracketSize);
   t.total_rounds = playoffRounds;
   t.current_round = 1;
 
   for (let pos = 0; pos < pairings.length; pos++) {
     const pair = pairings[pos];
+    const isBye = !pair.playerB;
     matches.push({
       id: nextId(matches),
       tournament_id: t.id,
@@ -3597,16 +3680,21 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
       stage: stageName,
       bracket_position: pos + 1,
       station_number: (pos % 4) + 1,
-      player_a_id: pair.playerA.user_id,
-      player_b_id: pair.playerB.user_id,
+      player_a_id: pair.playerA?.user_id || null,
+      player_b_id: pair.playerB?.user_id || null,
       score_a: 0,
       score_b: 0,
-      winner_id: null,
-      status: "pending",
-      is_bye: false,
+      winner_id: isBye ? pair.playerA?.user_id || null : null,
+      status: isBye ? "finished" : "pending",
+      is_bye: isBye,
       target_points: t.match_target_points,
       created_at: new Date().toISOString()
     });
+  }
+  for (const playoffMatch of matches.filter((match) =>
+    match.tournament_id === id && !match.group_id && match.round_number === 1 && match.is_bye
+  )) {
+    advanceSingleElimination(playoffMatch);
   }
 
   broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, stage_type: "knockout", current_round: 1, knockout_round_name: stageName });

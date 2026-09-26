@@ -114,7 +114,7 @@ class ApiClient {
   createDeck(data) { return this.request("/beyblades/decks", { method: "POST", body: data }); }
   deleteDeck(id) { return this.request(`/beyblades/decks/${id}`, { method: "DELETE" }); }
   getTournaments(params = {}) { const query = new URLSearchParams(params).toString(); return this.request(`/tournaments${query ? `?${query}` : ""}`); }
-  getTournament(id) { return this.request(`/tournaments/${id}`); }
+  getTournament(id, noCache = false) { return this.request(`/tournaments/${id}`, { noCache }); }
   createTournament(data) { return this.request("/tournaments", { method: "POST", body: data }); }
   registerTournament(id) { return this.request(`/tournaments/${id}/register`, { method: "POST" }); }
   checkinParticipant(tId, userId) { return this.request(`/tournaments/${tId}/checkin?user_id=${encodeURIComponent(userId)}`, { method: "POST" }); }
@@ -123,6 +123,7 @@ class ApiClient {
   deleteTournament(id) { return this.request(`/tournaments/${id}`, { method: "DELETE" }); }
   updateTournamentParticipantGroup(tId, userId, groupId, seed) { return this.request(`/tournaments/${tId}/participants/${userId}/group`, { method: "PUT", body: { group_id: groupId, seed } }); }
   createTournamentGroup(tId, groupId) { return this.request(`/tournaments/${tId}/groups`, { method: "POST", body: { group_id: groupId } }); }
+  configureTournamentGroups(tId, groupCount) { return this.request(`/tournaments/${tId}/groups/config`, { method: "PUT", body: { group_count: groupCount } }); }
   updateTournament(tId, data) { return this.request(`/tournaments/${tId}`, { method: "PUT", body: data }); }
   addTournamentParticipant(tId, data, checkedIn = true) { return this.request(`/tournaments/${tId}/add-participant`, { method: "POST", body: typeof data === "object" ? data : { user_id: data, checked_in: checkedIn } }); }
   addTournamentParticipantsBulk(tId, participants) { return this.request(`/tournaments/${tId}/add-participants-bulk`, { method: "POST", body: { participants } }); }
@@ -131,9 +132,9 @@ class ApiClient {
   startTournament(id) { return this.request(`/tournaments/${id}/start`, { method: "POST" }); }
   nextRoundTournament(id) { return this.request(`/tournaments/${id}/next-round`, { method: "POST" }); }
   generatePlayoffs(id) { return this.request(`/tournaments/${id}/generate-playoffs`, { method: "POST" }); }
-  getParticipants(id) { return this.request(`/tournaments/${id}/participants`); }
-  getMatches(id, round = null) { return this.request(`/tournaments/${id}/matches${round ? `?round_number=${encodeURIComponent(round)}` : ""}`); }
-  getMatch(id) { return this.request(`/matches/${id}`); }
+  getParticipants(id, noCache = false) { return this.request(`/tournaments/${id}/participants`, { noCache }); }
+  getMatches(id, round = null, noCache = false) { return this.request(`/tournaments/${id}/matches${round ? `?round_number=${encodeURIComponent(round)}` : ""}`, { noCache }); }
+  getMatch(id, noCache = false) { return this.request(`/matches/${id}`, { noCache }); }
   getNextCombat(id) { return this.request(`/matches/${id}/next-combat`, { noCache: true }); }
   callMatch(id, stationNumber, status = "calling") { return this.request(`/matches/${id}/call`, { method: "POST", body: { station_number: stationNumber, status } }); }
   recordFinish(id, data) { return this.request(`/matches/${id}/record-finish`, { method: "POST", body: data }); }

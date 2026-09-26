@@ -6,40 +6,66 @@ if (typeof window.renderAvatar !== "function") {
   };
 }
 
+const automaticTournamentGroupCount = (participantCount) => {
+  const suggested = participantCount >= 48 ? 16 : participantCount >= 24 ? 8 : participantCount >= 12 ? 4 : 2;
+  return Math.max(1, Math.min(suggested, Math.floor(participantCount / 2)));
+};
+
 window.renderTournamentDetailView = async (container, tournamentId) => {
   const user = window.api.user;
   let tournament = null;
   let matches = [];
   let participants = [];
+  let refreshInFlight = null;
+  let refreshRequested = false;
+  let refreshTimer = null;
   const metaCombos = window.APPBEY_META_COMBOS || [];
 
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando datos del torneo #${tournamentId}...</div>`;
 
   const isCurrentView = () => window.location.hash.startsWith(`#/tournaments/${tournamentId}`);
 
-  const refreshData = async () => {
-    if (!isCurrentView()) return;
-    try {
-      tournament = await window.api.getTournament(tournamentId);
-      if (!isCurrentView()) return;
-      matches = await window.api.getMatches(tournamentId);
-      if (!isCurrentView()) return;
-      participants = await window.api.getParticipants(tournamentId);
-      if (!isCurrentView()) return;
-      renderUI();
-    } catch(err) {
-      if (!isCurrentView()) return;
-      container.innerHTML = `<div class="text-center py-16 text-rose-400">Error al cargar torneo: ${err.message}</div>`;
+  const refreshData = () => {
+    if (!isCurrentView()) return Promise.resolve();
+    if (refreshInFlight) {
+      refreshRequested = true;
+      return refreshInFlight;
     }
+    refreshInFlight = (async () => {
+      do {
+        refreshRequested = false;
+        try {
+          tournament = await window.api.getTournament(tournamentId, true);
+          if (!isCurrentView()) return;
+          matches = await window.api.getMatches(tournamentId, null, true);
+          if (!isCurrentView()) return;
+          participants = await window.api.getParticipants(tournamentId, true);
+          if (!isCurrentView()) return;
+          renderUI();
+        } catch(err) {
+          if (!isCurrentView()) return;
+          container.innerHTML = `<div class="text-center py-16 text-rose-400">Error al cargar torneo: ${err.message}</div>`;
+          return;
+        }
+      } while (refreshRequested && isCurrentView());
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+    return refreshInFlight;
+  };
+
+  const scheduleRefresh = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => { void refreshData(); }, 120);
   };
 
   // Connect WebSocket for live tournament sync
   window.wsHub.clear();
   window.wsHub.connect(tournamentId);
-  window.wsHub.on("score_update", () => { if (isCurrentView()) refreshData(); });
-  window.wsHub.on("match_call", () => { if (isCurrentView()) refreshData(); });
-  window.wsHub.on("tournament_updated", () => { if (isCurrentView()) refreshData(); });
-  window.wsHub.on("match_referee_assigned", () => { if (isCurrentView()) refreshData(); });
+  window.wsHub.on("score_update", () => { if (isCurrentView()) scheduleRefresh(); });
+  window.wsHub.on("match_call", () => { if (isCurrentView()) scheduleRefresh(); });
+  window.wsHub.on("tournament_updated", () => { if (isCurrentView()) scheduleRefresh(); });
+  window.wsHub.on("match_referee_assigned", () => { if (isCurrentView()) scheduleRefresh(); });
 
   const getMatchStatusBadge = (status) => {
     switch (status) {
@@ -170,6 +196,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const groupStageComplete = groupStageMatches.length > 0 && groupStageMatches.every(m => m.status === "finished");
     const getHeadToHead = (participant, groupId) => {
       const directMatches = groupStageMatches.filter(m =>
+        m.status === "finished" &&
         m.group_id === groupId &&
         ((m.player_a_id === participant.user_id && m.player_b_id) || (m.player_b_id === participant.user_id && m.player_a_id))
       );
@@ -184,45 +211,69 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       });
       return `${wins}-${draws}-${losses}`;
     };
-    const compareHeadToHead = (a, b, groupId) => {
-      const direct = groupStageMatches.find(m =>
-        m.status === "finished" &&
-        m.group_id === groupId &&
-        ((m.player_a_id === a.user_id && m.player_b_id === b.user_id) ||
-          (m.player_a_id === b.user_id && m.player_b_id === a.user_id))
-      );
-      if (!direct || direct.winner_id === null) return 0;
-      return direct.winner_id === a.user_id ? -1 : 1;
-    };
     // Collect group IDs
     let groupMap = {};
     const hasAssignedGroups = parts.some(p => p.group_id);
 
-    (tour.group_ids || []).forEach(gid => { groupMap[gid] = []; });
-    if (!(tour.group_ids || []).length) {
-      const configuredCount = tour.group_count || 0;
-      for (let i = 0; i < configuredCount; i++) {
-        groupMap[String.fromCharCode(65 + i)] = groupMap[String.fromCharCode(65 + i)] || [];
-      }
+    let configuredGroupIds = [...(tour.group_ids || [])];
+    if (!configuredGroupIds.length) {
+      const configuredCount = tour.group_count || automaticTournamentGroupCount(parts.length);
+      configuredGroupIds = Array.from({ length: configuredCount }, (_, i) => String.fromCharCode(65 + i));
     }
+    parts.forEach(p => { if (p.group_id && !configuredGroupIds.includes(p.group_id)) configuredGroupIds.push(p.group_id); });
+    configuredGroupIds.sort();
+    configuredGroupIds.forEach(gid => { groupMap[gid] = []; });
 
     if (hasAssignedGroups) {
       parts.forEach(p => {
-        const gid = p.group_id || "A";
-        if (!groupMap[gid]) groupMap[gid] = [];
-        groupMap[gid].push(p);
+        if (!p.group_id) return;
+        groupMap[p.group_id].push(p);
+      });
+      const groupKeys = Object.keys(groupMap).sort();
+      const serpentineOrder = [];
+      if (groupKeys.length === 1) serpentineOrder.push(0);
+      else {
+        let index = 0;
+        let direction = 1;
+        while (serpentineOrder.length < groupKeys.length * 2) {
+          serpentineOrder.push(index);
+          if (direction === 1 && index === groupKeys.length - 1) direction = -1;
+          else if (direction === -1 && index === 0) direction = 1;
+          else index += direction;
+        }
+      }
+      const unassigned = parts.filter(p => !p.group_id).slice().sort((a, b) => (a.seed || 999) - (b.seed || 999));
+      unassigned.forEach((participant, index) => {
+        const preferredIndex = serpentineOrder[index % serpentineOrder.length];
+        const smallestSize = Math.min(...groupKeys.map(key => groupMap[key].length));
+        const candidates = groupKeys
+          .map((key, candidateIndex) => ({ key, candidateIndex, size: groupMap[key].length }))
+          .filter(candidate => candidate.size === smallestSize);
+        candidates.sort((a, b) =>
+          ((a.candidateIndex - preferredIndex + groupKeys.length) % groupKeys.length) -
+          ((b.candidateIndex - preferredIndex + groupKeys.length) % groupKeys.length)
+        );
+        const groupId = candidates[0].key;
+        groupMap[groupId].push({ ...participant, group_id: groupId });
       });
     } else {
       // Preview serpentine groups before tournament starts
-      const count = tour.group_count || (parts.length >= 64 ? 16 : parts.length >= 32 ? 8 : parts.length >= 16 ? 4 : 2);
-      for (let i = 0; i < count; i++) {
-        groupMap[String.fromCharCode(65 + i)] = groupMap[String.fromCharCode(65 + i)] || [];
+      const count = configuredGroupIds.length;
+      const serpentineOrder = [];
+      if (count === 1) serpentineOrder.push(0);
+      else {
+        let index = 0;
+        let direction = 1;
+        while (serpentineOrder.length < count * 2) {
+          serpentineOrder.push(index);
+          if (direction === 1 && index === count - 1) direction = -1;
+          else if (direction === -1 && index === 0) direction = 1;
+          else index += direction;
+        }
       }
       parts.forEach((p, idx) => {
-        const cycle = Math.floor(idx / count);
-        const rem = idx % count;
-        const gIndex = cycle % 2 === 0 ? rem : count - 1 - rem;
-        const gName = String.fromCharCode(65 + gIndex);
+        const gIndex = serpentineOrder[idx % serpentineOrder.length];
+        const gName = configuredGroupIds[gIndex];
         if (groupMap[gName]) {
           groupMap[gName].push({ ...p, group_id: gName, seed: p.seed || idx + 1 });
         }
@@ -274,13 +325,22 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Siembra en Serpentina</span>
             </div>
             <p class="text-xs text-slate-400">
-              Sistema Round Robin por grupo (3 pts victoria, 1 pto empate). Desempates: Puntos &rarr; Diferencia de Puntos &rarr; Puntos a favor &rarr; Seed inicial.
+              Sistema Round Robin por grupo (3 pts victoria, 1 pto empate). Desempates: victorias/derrotas &rarr; diferencia de puntos &rarr; enfrentamiento entre jugadores empatados &rarr; puntos a favor y seed.
             </p>
           </div>
           <div class="flex items-center gap-2">
             <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold whitespace-nowrap">
               Top ${advancers} por grupo clasifican a Eliminatorias
             </span>
+            ${isOrganizer && ["registration_open", "check_in"].includes(tour.status) && matches.length === 0 ? `
+              <label class="flex items-center gap-1.5 text-[11px] text-slate-300 whitespace-nowrap">
+                Grupos
+                <select id="group-count-${tour.id}" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-cyan-300 font-bold">
+                  ${[2, 4, 8, 16].map(count => `<option value="${count}" ${groupKeys.length === count ? "selected" : ""}>${count}</option>`).join("")}
+                </select>
+                <button onclick="handleConfigureGroupCount(${tour.id})" class="px-2.5 py-1.5 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white font-bold">Aplicar</button>
+              </label>
+            ` : ""}
             <button onclick="openSerpentineModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 transition">
               ℹ️ Ver Siembra
             </button>
@@ -292,19 +352,8 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             const list = groupMap[gid];
             // Sort group members by group_rank if available, or tiebreakers
             list.sort((a, b) => {
-              const priority = tour.tie_break_priority || ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
-              for (const criterion of priority) {
-                if (criterion === "victories_losses") {
-                  if ((b.group_matches_won || 0) !== (a.group_matches_won || 0)) return (b.group_matches_won || 0) - (a.group_matches_won || 0);
-                  if ((a.group_matches_lost || 0) !== (b.group_matches_lost || 0)) return (a.group_matches_lost || 0) - (b.group_matches_lost || 0);
-                } else if (criterion === "point_difference" && (b.group_diff || 0) !== (a.group_diff || 0)) return (b.group_diff || 0) - (a.group_diff || 0);
-                else if (criterion === "head_to_head") {
-                  const directResult = compareHeadToHead(a, b, gid);
-                  if (directResult) return directResult;
-                }
-                else if (criterion === "points_for_seed" && (b.group_points_scored || 0) !== (a.group_points_scored || 0)) return (b.group_points_scored || 0) - (a.group_points_scored || 0);
-              }
-              return (a.group_rank || 99) - (b.group_rank || 99) || (a.seed || 99) - (b.seed || 99);
+              if (a.group_rank && b.group_rank && a.group_rank !== b.group_rank) return a.group_rank - b.group_rank;
+              return (a.group_seed || a.seed || 99) - (b.group_seed || b.seed || 99);
             });
 
             return `
@@ -336,7 +385,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                         <th class="py-2.5 px-2 text-center">Empates</th>
                         <th class="py-2.5 px-2 text-center">Derrotas</th>
                         <th title="Diferencia de puntos (a favor menos en contra)" class="py-2.5 px-2 text-center">DIF</th>
-                        <th title="Resultado contra rivales empatados" class="py-2.5 px-2 text-center">Enfrentamiento directo</th>
+                        <th title="Victorias, empates y derrotas en partidas finalizadas de este grupo" class="py-2.5 px-2 text-center">Directo (V-E-D)</th>
                         <th class="py-2.5 px-3 text-center">Estado</th>
                         ${isOrganizer ? '<th class="py-2.5 px-2 text-center">Reasignar Grupo</th>' : ''}
                       </tr>
@@ -432,7 +481,8 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
     if (!isKnockoutActive) {
       // Group stage in progress or not started yet: Show Bracket Preview & Ready trigger
-      const advancersCount = (tour.group_count || 4) * (tour.advancers_per_group || 2);
+      const configuredGroupCount = tour.group_ids?.length || tour.group_count || automaticTournamentGroupCount(participants.length);
+      const advancersCount = configuredGroupCount * (tour.advancers_per_group || 2);
       const startingStageName = advancersCount >= 32 ? "16vos de Final (32 Bladers)" :
                                 advancersCount >= 16 ? "8vos de Final (16 Bladers)" :
                                 advancersCount >= 8 ? "Cuartos de Final (8 Bladers)" : "Semifinales (4 Bladers)";
@@ -777,7 +827,14 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     }
 
     // Extract unique groups from participants or matches
-    const allGroupIds = Array.from(new Set(participants.map(p => p.group_id).filter(Boolean))).sort();
+    const allGroupIds = Array.from(new Set([
+      ...(tournament.group_ids || []),
+      ...participants.map(p => p.group_id).filter(Boolean)
+    ])).sort();
+    if (!allGroupIds.length && isGroupsFormat) {
+      const initialGroupCount = tournament.group_count || automaticTournamentGroupCount(participants.length);
+      allGroupIds.push(...Array.from({ length: initialGroupCount }, (_, index) => String.fromCharCode(65 + index)));
+    }
 
     // Filter matches for the matches tab
     const groupStageMatches = matches.filter(m => m.group_id || m.stage === "group_stage");
@@ -1026,7 +1083,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const isGroups = tournament && tournament.format === "groups_elim";
     const title = isGroups ? "Iniciar Fase de Grupos" : "Iniciar Torneo";
     const msg = isGroups
-      ? "¿Deseas iniciar el torneo y segmentar a los participantes en grupos mediante Siembra en Serpentina (Challonge)?"
+      ? "¿Deseas iniciar? Se conservarán las asignaciones manuales y los participantes sin grupo se distribuirán en serpentina."
       : "¿Deseas iniciar el torneo y generar los emparejamientos de la Ronda 1?";
     const ok = await window.showAppConfirm(title, msg);
     if (!ok) return;
@@ -1074,6 +1131,19 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       refreshData();
     } catch (err) {
       window.showToast(err.message || "Error al crear grupo", "error");
+    }
+  };
+
+  window.handleConfigureGroupCount = async (tId) => {
+    const input = document.getElementById(`group-count-${tId}`);
+    const groupCount = Number.parseInt(input?.value || "", 10);
+    if (!groupCount) return;
+    try {
+      const result = await window.api.configureTournamentGroups(tId, groupCount);
+      window.showToast(result.message || `Grupos actualizados: ${groupCount}`, "success");
+      refreshData();
+    } catch (err) {
+      window.showToast(err.message || "Error al actualizar la cantidad de grupos", "error");
     }
   };
 
