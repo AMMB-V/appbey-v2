@@ -4310,13 +4310,16 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
 // --- Rankings & Hall of Fame ---
 api.get("/rankings/leaderboard", (req, res) => {
   const country = req.query.country as string;
-  const rankedUserIds = new Set(seasonRankings.map((ranking) => ranking.user_id));
+  const historicalRankedUserIds = new Set(seasonRankings.map((ranking) => ranking.user_id));
+  const activePlayerIds = new Set<number>();
   for (const match of matches) {
     if (match.status !== "finished") continue;
-    if (match.player_a_id) rankedUserIds.add(match.player_a_id);
-    if (match.player_b_id) rankedUserIds.add(match.player_b_id);
+    if (match.player_a_id) activePlayerIds.add(match.player_a_id);
+    if (match.player_b_id) activePlayerIds.add(match.player_b_id);
   }
-  let list = users.filter((u) => u.is_active && rankedUserIds.has(u.id));
+  let list = users.filter((u) =>
+    u.is_active && (historicalRankedUserIds.has(u.id) || (u.role === "blader" && activePlayerIds.has(u.id)))
+  );
   if (country) list = list.filter((u) => u.country === country);
   list.sort((a, b) => b.elo_rating - a.elo_rating);
 
