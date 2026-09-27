@@ -29,10 +29,9 @@ window.renderProfileView = async (container, userId = null) => {
     const [userProfile, userDecks, leaderboard] = await Promise.all([
       window.api.getUser(targetId),
       window.api.getDecks(targetId),
-      window.api.getLeaderboard()
+      window.api.getLeaderboard("", true)
     ]);
-    const rankingEntry = leaderboard.find((entry) => Number(entry.user_id) === Number(userProfile.id));
-    const rankingPoints = rankingEntry?.elo_rating ?? 0;
+    const rankingPoints = window.api.getLeaderboardScore(leaderboard, userProfile.id);
     const isOwner = currentLoggedIn && currentLoggedIn.id === userProfile.id;
 
     container.innerHTML = `

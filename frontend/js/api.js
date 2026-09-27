@@ -56,7 +56,13 @@ class ApiClient {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     const { noCache: _noCache, ...fetchOptions } = options;
-    const config = { ...fetchOptions, method, headers: { ...this.getHeaders(), ...(options.headers || {}) }, signal: controller.signal };
+    const config = {
+      ...fetchOptions,
+      ...(options.noCache ? { cache: "no-store" } : {}),
+      method,
+      headers: { ...this.getHeaders(), ...(options.headers || {}) },
+      signal: controller.signal
+    };
     if (config.body && typeof config.body === "object") config.body = JSON.stringify(config.body);
 
     try {
@@ -144,7 +150,12 @@ class ApiClient {
   updateManualScore(id, data) { return this.request(`/matches/${id}/manual-score`, { method: "PUT", body: data }); }
   updateMatchTarget(id, points) { return this.request(`/matches/${id}/target-points`, { method: "POST", body: { target_points: points } }); }
   declareWinner(id, data) { return this.request(`/matches/${id}/declare-winner`, { method: "POST", body: data }); }
-  getLeaderboard(country = "") { return this.request(`/rankings/leaderboard${country ? `?country=${encodeURIComponent(country)}` : ""}`); }
+  getLeaderboard(country = "", noCache = false) { return this.request(`/rankings/leaderboard${country ? `?country=${encodeURIComponent(country)}` : ""}`, { noCache }); }
+  getLeaderboardScore(leaderboard, userId) {
+    const entry = leaderboard.find((item) => Number(item.user_id) === Number(userId));
+    const score = Number(entry?.elo_rating);
+    return Number.isFinite(score) ? score : 0;
+  }
   getSeasons() { return this.request("/rankings/seasons"); }
   getSeasonPoints(id) { return this.request(`/rankings/season/${id}/points`); }
   getSeasonElo(id) { return this.request(`/rankings/season/${id}/elo`); }

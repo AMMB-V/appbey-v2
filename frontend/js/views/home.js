@@ -119,7 +119,7 @@ window.renderHomeView = async (container) => {
       </div>
       <div class="glass-card p-4 rounded-xl border-l-4 border-amber-500">
         <div class="text-xs text-slate-400 font-medium">Elo Competitivo</div>
-        <div class="text-lg font-bold text-amber-400">${user.elo_rating || 1200} pts</div>
+        <div id="home-user-ranking-score" class="text-lg font-bold text-amber-400">Cargando...</div>
         <div class="text-xs text-slate-500">Temporada 2026</div>
       </div>
       <div class="glass-card p-4 rounded-xl border-l-4 border-emerald-500">
@@ -212,7 +212,11 @@ window.renderHomeView = async (container) => {
 
   // Load Leaderboard preview
   try {
-    const leaderboard = await window.api.getLeaderboard();
+    const leaderboard = await window.api.getLeaderboard("", true);
+    if (user) {
+      const scoreEl = document.getElementById("home-user-ranking-score");
+      if (scoreEl) scoreEl.textContent = `${window.api.getLeaderboardScore(leaderboard, user.id)} pts`;
+    }
     const bladersEl = document.getElementById("home-top-bladers");
     bladersEl.innerHTML = leaderboard.slice(0, 5).map((b, idx) => `
       <div class="py-2.5 flex items-center justify-between first:pt-0 last:pb-0">
@@ -232,5 +236,7 @@ window.renderHomeView = async (container) => {
     `).join("");
   } catch(e) {
     console.error("Error loading home leaderboard:", e);
+    const scoreEl = document.getElementById("home-user-ranking-score");
+    if (scoreEl) scoreEl.textContent = "No disponible";
   }
 };
