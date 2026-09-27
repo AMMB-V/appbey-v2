@@ -707,6 +707,18 @@ function assignPersistedCollection(key: PersistedCollectionName, rows: unknown[]
   }
 }
 
+function deduplicateUsersById() {
+  const uniqueUsers = new Map<number, User>();
+  for (const user of users) {
+    if (!uniqueUsers.has(user.id)) uniqueUsers.set(user.id, user);
+  }
+  const duplicateCount = users.length - uniqueUsers.size;
+  if (duplicateCount > 0) {
+    console.warn(`Ignored ${duplicateCount} duplicate persisted user record(s)`);
+    users = Array.from(uniqueUsers.values());
+  }
+}
+
 function clonePersistedState(state: PersistedState): PersistedState {
   return JSON.parse(JSON.stringify(state)) as PersistedState;
 }
@@ -892,6 +904,7 @@ async function initializePersistence() {
         notifications = state.notifications || [];
         metaSyncState = state.metaSyncState || metaSyncState;
       }
+      deduplicateUsersById();
       const state = clonePersistedState(getPersistedState());
       await client.query("ROLLBACK");
       await persistRelationalState(client, state, null, true);
@@ -909,6 +922,7 @@ async function initializePersistence() {
   } finally {
     client.release();
   }
+  deduplicateUsersById();
   lastPersistedState = clonePersistedState(getPersistedState());
   persistenceReady = true;
 }

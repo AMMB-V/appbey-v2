@@ -93,7 +93,7 @@
   // Service Worker Registration for PWA Mobile
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js?v=3.3.0", { updateViaCache: "none" }).then(reg => {
+      navigator.serviceWorker.register("/sw.js?v=3.6.0", { updateViaCache: "none" }).then(reg => {
         console.log("AppBey PWA Service Worker Registered:", reg.scope);
         if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
         return reg.update();
