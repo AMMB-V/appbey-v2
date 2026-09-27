@@ -26,8 +26,13 @@ window.renderProfileView = async (container, userId = null) => {
   container.innerHTML = `<div class="text-center py-16 text-slate-500">Cargando perfil de Blader...</div>`;
 
   try {
-    const userProfile = await window.api.getUser(targetId);
-    const userDecks = await window.api.getDecks(targetId);
+    const [userProfile, userDecks, leaderboard] = await Promise.all([
+      window.api.getUser(targetId),
+      window.api.getDecks(targetId),
+      window.api.getLeaderboard()
+    ]);
+    const rankingEntry = leaderboard.find((entry) => Number(entry.user_id) === Number(userProfile.id));
+    const rankingPoints = rankingEntry?.elo_rating ?? 0;
     const isOwner = currentLoggedIn && currentLoggedIn.id === userProfile.id;
 
     container.innerHTML = `
@@ -55,7 +60,7 @@ window.renderProfileView = async (container, userId = null) => {
             <!-- Stats Badge -->
             <div class="glass-card p-5 rounded-2xl border border-amber-500/40 text-center shrink-0 space-y-1">
               <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Elo Competitivo</div>
-              <div class="text-3xl font-black text-amber-400 font-mono">${userProfile.elo_rating} pts</div>
+              <div class="text-3xl font-black text-amber-400 font-mono">${rankingPoints} pts</div>
               <div class="text-[10px] text-slate-500">Temporada 2026</div>
             </div>
           </div>
