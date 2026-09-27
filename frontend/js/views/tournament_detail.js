@@ -66,6 +66,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
   window.wsHub.on("match_call", () => { if (isCurrentView()) scheduleRefresh(); });
   window.wsHub.on("tournament_updated", () => { if (isCurrentView()) scheduleRefresh(); });
   window.wsHub.on("match_referee_assigned", () => { if (isCurrentView()) scheduleRefresh(); });
+  window.wsHub.on("reconnected", () => { if (isCurrentView()) scheduleRefresh(); });
 
   const getMatchStatusBadge = (status) => {
     switch (status) {

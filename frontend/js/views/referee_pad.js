@@ -1527,6 +1527,9 @@ window.renderRefereePadView = async (container, matchId) => {
     };
     window.wsHub.on("score_update", wsHandler);
     window.wsHub.on("tournament_updated", wsHandler);
+    window.wsHub.on("reconnected", () => {
+      if (window.location.hash.startsWith("#/referee")) loadMatch();
+    });
   }
 
   loadMatch();

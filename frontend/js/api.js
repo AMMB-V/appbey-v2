@@ -1,6 +1,8 @@
 // AppBey API Client
 const API_BASE = String(window.APPBEY_CONFIG?.apiBaseUrl || "/api/v1").replace(/\/+$/, "");
 const REQUEST_TIMEOUT_MS = 15000;
+const GET_RETRY_LIMIT = 2;
+const GET_RETRY_BASE_MS = 500;
 window.APPBEY_META_COMBOS = [
   "Phoenix Wing 9-60 GF",
   "Wizard Rod 5-70 B",
@@ -20,9 +22,15 @@ class ApiClient {
       localStorage.removeItem("appbey_user");
     }
     this.cache = new Map();
+    this.inFlightGets = new Map();
+    this.cacheRevision = 0;
   }
 
-  clearCache() { this.cache.clear(); }
+  clearCache() {
+    this.cache.clear();
+    this.inFlightGets.clear();
+    this.cacheRevision += 1;
+  }
 
   setAuth(token, user) {
     this.token = token || null;
@@ -53,52 +61,102 @@ class ApiClient {
       if (cached && Date.now() - cached.time < 5000) return structuredClone(cached.data);
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const inFlightKey = `${endpoint}:${options.noCache === true ? "fresh" : "default"}`;
+    if (isGet && this.inFlightGets.has(inFlightKey)) {
+      return structuredClone(await this.inFlightGets.get(inFlightKey));
+    }
+
     const { noCache: _noCache, ...fetchOptions } = options;
     const config = {
       ...fetchOptions,
       ...(options.noCache ? { cache: "no-store" } : {}),
       method,
-      headers: { ...this.getHeaders(), ...(options.headers || {}) },
-      signal: controller.signal
+      headers: { ...this.getHeaders(), ...(options.headers || {}) }
     };
     if (config.body && typeof config.body === "object") config.body = JSON.stringify(config.body);
 
+    const requestPromise = this.requestWithRetry(
+      endpoint,
+      config,
+      isGet,
+      options.noCache === true,
+      this.cacheRevision
+    );
+    if (isGet) this.inFlightGets.set(inFlightKey, requestPromise);
     try {
-      const response = await fetch(`${API_BASE}${endpoint}`, config);
-      const contentType = response.headers.get("content-type") || "";
-      const body = await response.text();
-      let data = null;
-      if (body) {
-        if (contentType.includes("application/json")) {
-          try {
-            data = JSON.parse(body);
-          } catch (_error) {
-            throw new Error("El servidor devolvio una respuesta JSON invalida.");
-          }
-        } else {
-          data = { message: body };
-        }
-      }
-      if (response.status === 401) this.setAuth(null, null);
-      if (!response.ok) {
-        const error = new Error(data?.detail || data?.message || `Error en el servidor (${response.status})`);
-        error.status = response.status;
-        throw error;
-      }
-      if (isGet && data !== null) this.cache.set(endpoint, { time: Date.now(), data: structuredClone(data) });
-      return data;
+      return structuredClone(await requestPromise);
     } catch (error) {
-      if (error.name === "AbortError") {
-        const timeoutError = new Error("La solicitud tardo demasiado. Verifica la conexion e intentalo de nuevo.");
-        timeoutError.status = 408;
-        throw timeoutError;
-      }
       if (error.status !== 401) console.warn(`API Error on ${endpoint}:`, error.message || error);
       throw error;
     } finally {
-      clearTimeout(timeout);
+      if (isGet && this.inFlightGets.get(inFlightKey) === requestPromise) {
+        this.inFlightGets.delete(inFlightKey);
+      }
+    }
+  }
+
+  shouldRetryGet(error) {
+    return error instanceof TypeError ||
+      [408, 425, 429].includes(error.status) ||
+      error.status >= 500;
+  }
+
+  async requestWithRetry(endpoint, config, isGet, noCache, cacheRevision) {
+    for (let attempt = 0; ; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+          ...config,
+          signal: controller.signal
+        });
+        const contentType = response.headers.get("content-type") || "";
+        const body = await response.text();
+        let data = null;
+        if (body) {
+          if (contentType.includes("application/json")) {
+            try {
+              data = JSON.parse(body);
+            } catch (_error) {
+              throw new Error("El servidor devolvio una respuesta JSON invalida.");
+            }
+          } else {
+            data = { message: body };
+          }
+        }
+        if (response.status === 401) this.setAuth(null, null);
+        if (!response.ok) {
+          const error = new Error(data?.detail || data?.message || `Error en el servidor (${response.status})`);
+          error.status = response.status;
+          const retryAfterHeader = response.headers.get("retry-after");
+          const retryAfterSeconds = Number(retryAfterHeader);
+          const retryAfterDate = Date.parse(retryAfterHeader || "");
+          const retryAfterMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+            ? retryAfterSeconds * 1000
+            : retryAfterDate - Date.now();
+          if (retryAfterMs > 0) error.retryAfterMs = Math.min(retryAfterMs, 30000);
+          throw error;
+        }
+        if (isGet && !noCache && data !== null && cacheRevision === this.cacheRevision) {
+          this.cache.set(endpoint, { time: Date.now(), data: structuredClone(data) });
+        }
+        window.dispatchEvent(new CustomEvent("appbey-network-status", { detail: { status: "online" } }));
+        return data;
+      } catch (caughtError) {
+        let error = caughtError;
+        if (error.name === "AbortError") {
+          error = new Error("La solicitud tardo demasiado. Verifica la conexion e intentalo de nuevo.");
+          error.status = 408;
+        }
+        if (!isGet || attempt >= GET_RETRY_LIMIT || !this.shouldRetryGet(error)) throw error;
+
+        window.dispatchEvent(new CustomEvent("appbey-network-status", { detail: { status: "reconnecting" } }));
+        const backoff = Math.min(GET_RETRY_BASE_MS * (2 ** attempt), 4000);
+        const jitter = Math.random() * backoff * 0.25;
+        await new Promise((resolve) => setTimeout(resolve, Math.max(error.retryAfterMs || 0, backoff + jitter)));
+      } finally {
+        clearTimeout(timeout);
+      }
     }
   }
 

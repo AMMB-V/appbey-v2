@@ -1,13 +1,27 @@
-const CACHE_VERSION = "3.6.0";
+const CACHE_VERSION = "3.7.0";
 const CACHE_NAME = `appbey-shell-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   `/?v=${CACHE_VERSION}`,
   `/manifest.json?v=${CACHE_VERSION}`,
   `/css/styles.css?v=${CACHE_VERSION}`,
+  `/config.js?v=${CACHE_VERSION}`,
   `/js/components.js?v=${CACHE_VERSION}`,
   `/js/app.js?v=${CACHE_VERSION}`,
   `/js/api.js?v=${CACHE_VERSION}`,
-  `/js/ws.js?v=${CACHE_VERSION}`
+  `/js/ws.js?v=${CACHE_VERSION}`,
+  `/js/views/home.js?v=${CACHE_VERSION}`,
+  `/js/views/tournaments.js?v=${CACHE_VERSION}`,
+  `/js/views/tournament_detail.js?v=${CACHE_VERSION}`,
+  `/js/views/referee_pad.js?v=${CACHE_VERSION}`,
+  `/js/views/stadium_display.js?v=${CACHE_VERSION}`,
+  `/js/views/deck_builder.js?v=${CACHE_VERSION}`,
+  `/js/views/tier_list.js?v=${CACHE_VERSION}`,
+  `/js/views/rankings.js?v=${CACHE_VERSION}`,
+  `/js/views/hall_of_fame.js?v=${CACHE_VERSION}`,
+  `/js/views/social.js?v=${CACHE_VERSION}`,
+  `/js/views/profile.js?v=${CACHE_VERSION}`,
+  `/js/views/admin_users.js?v=${CACHE_VERSION}`,
+  `/js/views/auth.js?v=${CACHE_VERSION}`
 ];
 
 self.addEventListener("install", (event) => {
@@ -54,8 +68,10 @@ self.addEventListener("fetch", (event) => {
     fetch(event.request, { cache: isShell ? "no-store" : "default" })
       .then((response) => {
         if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return caches.open(CACHE_NAME).then((cache) =>
+            cache.put(event.request, response.clone())
+              .catch((error) => console.warn("AppBey asset could not be cached:", url.pathname, error))
+          ).then(() => response);
         }
         return response;
       })

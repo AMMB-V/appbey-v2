@@ -27,6 +27,30 @@ button, a, input, select, textarea {
   outline-offset: 2px;
 }
 
+.network-status-banner {
+  position: sticky;
+  top: 4rem;
+  z-index: 39;
+  padding: 0.65rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: #9f1239;
+}
+
+.network-status-banner[data-state="reconnecting"] {
+  background: #92400e;
+}
+
+.network-status-banner[data-state="online"] {
+  background: #047857;
+}
+
+.network-status-banner[hidden] {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

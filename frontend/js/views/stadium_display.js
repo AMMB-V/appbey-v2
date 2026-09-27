@@ -63,12 +63,12 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
 
   const isCurrentView = () => window.location.hash.startsWith(`#/stadium-display/${tournamentId}`);
 
-  const refresh = async () => {
+  const refresh = async (forceFresh = false) => {
     if (!isCurrentView()) return;
     try {
-      tournament = await window.api.getTournament(tournamentId);
+      tournament = await window.api.getTournament(tournamentId, forceFresh);
       if (!isCurrentView()) return;
-      matches = await window.api.getMatches(tournamentId);
+      matches = await window.api.getMatches(tournamentId, null, forceFresh);
       if (!isCurrentView()) return;
       renderDisplay();
     } catch(e) {
@@ -79,6 +79,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
   window.wsHub.connect(tournamentId);
   window.wsHub.on("score_update", () => { if (isCurrentView()) refresh(); });
   window.wsHub.on("match_call", () => { if (isCurrentView()) refresh(); });
+  window.wsHub.on("reconnected", () => { if (isCurrentView()) refresh(true); });
 
   const renderDisplay = () => {
     const activeMatches = matches.filter(m => m.status === 'in_progress' || m.status === 'calling');

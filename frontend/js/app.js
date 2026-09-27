@@ -90,10 +90,47 @@
     window.scrollTo(0, 0);
   };
 
+  const networkBanner = document.getElementById("network-status-banner");
+  let networkWasDegraded = !navigator.onLine;
+  let networkBannerTimer = null;
+  const updateNetworkBanner = (status) => {
+    if (!networkBanner) return;
+    clearTimeout(networkBannerTimer);
+    if (status === "offline") {
+      networkWasDegraded = true;
+      networkBanner.textContent = "Sin conexión. Algunas funciones pueden no estar disponibles.";
+      networkBanner.dataset.state = "offline";
+      networkBanner.hidden = false;
+    } else if (status === "reconnecting") {
+      networkWasDegraded = true;
+      networkBanner.textContent = "Reconectando con AppBey…";
+      networkBanner.dataset.state = "reconnecting";
+      networkBanner.hidden = false;
+    } else if (networkWasDegraded) {
+      networkWasDegraded = false;
+      networkBanner.textContent = "Conexión restablecida.";
+      networkBanner.dataset.state = "online";
+      networkBanner.hidden = false;
+      networkBannerTimer = setTimeout(() => { networkBanner.hidden = true; }, 2500);
+    } else {
+      networkBanner.hidden = true;
+    }
+  };
+
+  window.addEventListener("appbey-network-status", (event) => {
+    updateNetworkBanner(event.detail?.status);
+  });
+  window.addEventListener("offline", () => updateNetworkBanner("offline"));
+  window.addEventListener("online", () => {
+    updateNetworkBanner("reconnecting");
+    setTimeout(router, 300);
+  });
+  if (!navigator.onLine) updateNetworkBanner("offline");
+
   // Service Worker Registration for PWA Mobile
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js?v=3.6.0", { updateViaCache: "none" }).then(reg => {
+      navigator.serviceWorker.register("/sw.js?v=3.7.0", { updateViaCache: "none" }).then(reg => {
         console.log("AppBey PWA Service Worker Registered:", reg.scope);
         if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
         return reg.update();

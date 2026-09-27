@@ -1518,6 +1518,7 @@ seedDatabase();
 const wss = new WebSocketServer({ noServer: true });
 const globalSockets = new Set<WebSocket>();
 const tournamentSockets = new Map<number, Set<WebSocket>>();
+const liveWebSocketClients = new WeakSet<WebSocket>();
 
 server.on("upgrade", (request, socket, head) => {
   const url = request.url || "/";
@@ -1539,6 +1540,7 @@ server.on("upgrade", (request, socket, head) => {
 });
 
 wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
+  liveWebSocketClients.add(ws);
   const url = req.url || "/";
   let currentTournamentId: number | null = null;
 
@@ -1567,10 +1569,27 @@ wss.on("connection", (ws: WebSocket, req: http.IncomingMessage) => {
     // Keep alive or echo
   });
 
+  ws.on("pong", () => {
+    liveWebSocketClients.add(ws);
+  });
+
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
 });
+
+const websocketHeartbeat = setInterval(() => {
+  for (const client of wss.clients) {
+    if (client.readyState !== WebSocket.OPEN) continue;
+    if (!liveWebSocketClients.has(client)) {
+      client.terminate();
+      continue;
+    }
+    liveWebSocketClients.delete(client);
+    client.ping();
+  }
+}, 30000);
+websocketHeartbeat.unref();
 
 function broadcastTournament(tournamentId: number, event: string, data: unknown) {
   const payload = JSON.stringify({ event, data });
@@ -4750,6 +4769,7 @@ void startServer();
 function shutdown(signal: string) {
   console.log(`Received ${signal}; shutting down gracefully`);
   isReady = false;
+  clearInterval(websocketHeartbeat);
   for (const client of wss.clients) {
     client.close(1001, "Server shutting down");
   }
