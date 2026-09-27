@@ -1,8 +1,9 @@
 ﻿# AppBey — Plataforma Competitiva Oficial Beyblade X (Web & Mobile PWA)
 
-AppBey es la plataforma integral de software de alto rendimiento diseñada para la organización, arbitraje y gestión de torneos competitivos de **Beyblade X**. Desarrollada con un backend ágil en **Node.js / Express / TypeScript**, frontend **PWA offline-first** responsivo, sincronización instantánea vía **WebSockets**, y desplegada 24/7 en la nube en **Render.com**.
+AppBey es la plataforma integral diseñada para la organización, arbitraje y gestión de torneos competitivos de **Beyblade X**. Utiliza un backend **Node.js / Express / TypeScript** con **WebSockets**, frontend SPA/PWA estático en **Vercel** y PostgreSQL en **Neon**.
 
-- 🌐 **Sitio Web Oficial en Producción:** [https://appbey-v2.onrender.com/](https://appbey-v2.onrender.com/)
+- 🌐 **Sitio Web Oficial:** [https://appbey-v2.vercel.app/](https://appbey-v2.vercel.app/)
+- ⚙️ **API en Render:** [https://appbey-v2.onrender.com/](https://appbey-v2.onrender.com/)
 - 📦 **Repositorio GitHub:** [https://github.com/AMMB-V/appbey-v2](https://github.com/AMMB-V/appbey-v2)
 
 ---
@@ -73,7 +74,7 @@ appbey_v2/
 ├── frontend/                      # Frontend PWA SPA (Carga rápida <150ms)
 │   ├── index.html                 # Shell principal con tema Cyber Beyblade
 │   ├── manifest.json              # Manifiesto PWA para instalación en Android e iOS
-│   ├── sw.js                      # Service Worker con soporte offline y caché v2.1
+│   ├── sw.js                      # Service Worker con caché versionada
 │   ├── assets/
 │   │   ├── icons/                 # Favicon e iconos PWA oficiales
 │   │   └── images/                # Logo oficial AppBey y recursos gráficos
@@ -94,7 +95,6 @@ appbey_v2/
 │           ├── tier_list.js       # Meta Tier List de piezas
 │           ├── rankings.js        # Tablas de clasificación T1 y T2
 │           ├── hall_of_fame.js    # Salón de la Fama
-│           ├── wallet.js          # Billetera virtual AP Coins
 │           ├── social.js          # Muro de la comunidad
 │           ├── profile.js         # Perfil y combo insignia
 │           ├── admin_users.js     # Panel de gestión de usuarios y roles
@@ -107,12 +107,11 @@ appbey_v2/
 ## ⚡ Ejecución Local
 
 ### Requisitos
-- Node.js 18+ o 20+
-- npm o bun
+- Node.js 20+ y npm
 
 ```bash
-# 1. Instalar dependencias
-npm install
+# 1. Instalar las dependencias fijadas en el lockfile
+npm ci
 
 # 2. Ejecutar en modo desarrollo
 npm run dev
@@ -200,13 +199,14 @@ ORDER BY tournament_id, seed;
 
 ## 🚀 Despliegue Continuo en Render.com
 
-El proyecto está configurado con **Continuous Deployment** conectado a la rama `main` del repositorio de GitHub:
-- Cada `push` a `main` desencadena la construcción automática del contenedor Docker en Render.
+El despliegue de producción usa Vercel para el frontend estático, Render para el backend Docker y Neon para PostgreSQL. Los proveedores están conectados a la rama `main`:
+- Cada `push` a `main` desencadena el despliegue de frontend en Vercel y la construcción del contenedor backend en Render.
 - Las variables de entorno recomendadas en Render son:
   - `PORT=3000`
   - `NODE_ENV=production`
-  - `JWT_SECRET=(tu_clave_secreta)`
-  - `ALLOWED_ORIGINS=https://appbey-v2.onrender.com`
+  - `SECRET_KEY=(tu_clave_secreta)`
+  - `DATABASE_URL=(URL privada de Neon)`
+  - `ALLOWED_ORIGINS=https://appbey-v2.vercel.app`
   - `GOOGLE_CLIENT_ID=(Web client ID de Google; opcional)`
   - `APPBEY_DEMO_DATA=false`
   - `APPBEY_ADMIN_EMAIL=(correo inicial de la organización)`

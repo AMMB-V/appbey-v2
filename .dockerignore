@@ -5,6 +5,5 @@ dist
 .env
 .env.*
 *.lock
-bun.lock
 *.log
 .DS_Store
