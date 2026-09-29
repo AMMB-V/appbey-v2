@@ -4,35 +4,35 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
     try {
       const tournaments = await window.api.getTournaments();
       container.innerHTML = `
-        <div class="fixed inset-0 z-50 bg-[#040817] text-white p-8 overflow-y-auto flex flex-col justify-between select-none">
-          <div class="flex items-center justify-between border-b border-cyan-500/30 pb-4">
-            <div class="flex items-center gap-4">
-              <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-12 h-12 object-contain" alt="AppBey Logo"/>
-              <div>
+        <div class="fixed inset-0 z-50 bg-[#040817] text-white p-4 sm:p-8 overflow-y-auto flex flex-col justify-between select-none">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-cyan-500/30 pb-4">
+            <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+              <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="AppBey Logo"/>
+              <div class="min-w-0">
                 <div class="text-xs uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-2">
                   AppBey Arena Display System
                 </div>
-                <h1 class="text-2xl font-black text-white">Selector de Proyector / TV de Estadio</h1>
+                <h1 class="text-xl sm:text-2xl font-black text-white break-words">Selector de Proyector / TV de Estadio</h1>
               </div>
             </div>
-            <button onclick="location.hash='#/'" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700">
+            <button onclick="location.hash='#/'" class="self-start sm:self-auto px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 border border-slate-700">
               Salir
             </button>
           </div>
 
           <div class="my-auto max-w-2xl mx-auto w-full py-12 text-center space-y-6">
-            <div class="glass-card p-8 rounded-3xl border border-cyan-500/30 space-y-4">
+            <div class="glass-card p-5 sm:p-8 rounded-3xl border border-cyan-500/30 space-y-4">
               <div class="text-4xl">📺</div>
               <h2 class="text-xl font-black text-white">Elige un Torneo para Proyectar</h2>
               ${tournaments.length ? `
                 <div class="space-y-3 text-left">
                   ${tournaments.map(t => `
-                    <div onclick="location.hash='#/stadium-display/${t.id}'" class="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 cursor-pointer flex items-center justify-between transition">
-                      <div>
-                        <div class="font-bold text-white text-base">${t.title}</div>
+                    <div onclick="location.hash='#/stadium-display/${t.id}'" class="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 cursor-pointer flex items-center justify-between gap-3 transition">
+                      <div class="min-w-0">
+                        <div class="font-bold text-white text-base break-words">${t.title}</div>
                         <div class="text-xs text-cyan-400 font-mono">${t.venue_name} • ${t.format.toUpperCase()}</div>
                       </div>
-                      <span class="px-3 py-1.5 rounded-xl bg-cyan-600 text-white font-bold text-xs shadow">
+                      <span class="shrink-0 px-3 py-1.5 rounded-xl bg-cyan-600 text-white font-bold text-xs shadow">
                         Proyectar &rarr;
                       </span>
                     </div>
@@ -86,21 +86,21 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
     const recentMatches = matches.filter(m => m.status === 'finished').slice(-4);
 
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 bg-[#040817] text-white p-6 overflow-y-auto flex flex-col justify-between select-none">
+      <div class="fixed inset-0 z-50 bg-[#040817] text-white p-4 sm:p-6 overflow-y-auto flex flex-col justify-between select-none">
         <!-- Top Stadium Header -->
-        <div class="flex items-center justify-between border-b border-cyan-500/30 pb-4">
-          <div class="flex items-center gap-4">
-            <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-12 h-12 object-contain" alt="AppBey Logo"/>
-            <div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-cyan-500/30 pb-4">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+            <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" alt="AppBey Logo"/>
+            <div class="min-w-0">
               <div class="text-xs uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
                 AppBey Live Stadium Display • ${tournament.country}
               </div>
-              <h1 class="text-2xl md:text-3xl font-black text-white tracking-wide">${tournament.title}</h1>
+              <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-wide break-words">${tournament.title}</h1>
             </div>
           </div>
 
-          <div class="flex items-center gap-4">
+          <div class="flex flex-wrap items-center gap-3 sm:gap-4">
             <div class="text-right">
               <div class="text-xs text-slate-400">Ronda Actual</div>
               <div class="text-xl font-extrabold text-amber-400 font-mono">Ronda ${tournament.current_round} / ${tournament.total_rounds}</div>
@@ -114,10 +114,10 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
         <!-- Main Live Stations Grid -->
         <div class="my-6 grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
           ${activeMatches.length ? activeMatches.map(m => `
-            <div class="glass-card rounded-3xl p-6 border-2 ${m.status === 'in_progress' ? 'border-cyan-400 glow-cyan' : 'border-amber-400 animate-pulse'} flex flex-col justify-between space-y-6">
+            <div class="glass-card rounded-3xl p-4 sm:p-6 border-2 ${m.status === 'in_progress' ? 'border-cyan-400 glow-cyan' : 'border-amber-400 animate-pulse'} flex flex-col justify-between space-y-5 sm:space-y-6 min-w-0">
               <!-- Station Header -->
-              <div class="flex items-center justify-between">
-                <span class="px-4 py-1.5 rounded-full bg-blue-600/30 border border-cyan-400 text-cyan-300 font-black text-sm uppercase tracking-wider">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="px-3 sm:px-4 py-1.5 rounded-full bg-blue-600/30 border border-cyan-400 text-cyan-300 font-black text-xs sm:text-sm uppercase tracking-wider">
                   🏟️ ${window.getMatchStationLabel(m)}
                 </span>
                 <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase ${m.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
@@ -126,17 +126,17 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
               </div>
 
               <!-- Versus Display -->
-              <div class="grid grid-cols-3 gap-2 items-center text-center">
+              <div class="grid grid-cols-3 gap-1 sm:gap-2 items-center text-center min-w-0">
                 <!-- Blue Blader -->
                 <div class="space-y-2">
-                  ${window.renderAvatar(m.player_a, "w-20 h-20 sm:w-24 sm:h-24 mx-auto", "text-3xl", "border-4 border-blue-500 shadow-xl")}
-                  <div class="font-black text-lg sm:text-xl text-white truncate">${m.player_a ? m.player_a.display_name : 'TBD'}</div>
+                  ${window.renderAvatar(m.player_a, "w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto", "text-3xl", "border-4 border-blue-500 shadow-xl")}
+                  <div class="font-black text-sm sm:text-lg md:text-xl text-white truncate">${m.player_a ? m.player_a.display_name : 'TBD'}</div>
                   <div class="text-xs text-blue-400 font-bold truncate">${m.player_a ? m.player_a.favorite_combo || '' : ''}</div>
                 </div>
 
                 <!-- Live Score Counter -->
                 <div class="flex flex-col items-center justify-center">
-                  <div class="font-mono text-5xl sm:text-7xl font-black tracking-tight text-white flex items-center gap-2">
+                  <div class="font-mono text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-white flex items-center gap-1 sm:gap-2">
                     <span class="${m.score_a > m.score_b ? 'text-cyan-400' : 'text-slate-300'}">${m.score_a}</span>
                     <span class="text-slate-600 text-3xl">:</span>
                     <span class="${m.score_b > m.score_a ? 'text-rose-400' : 'text-slate-300'}">${m.score_b}</span>
@@ -146,8 +146,8 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
 
                 <!-- Red Blader -->
                 <div class="space-y-2">
-                  ${window.renderAvatar(m.player_b, "w-20 h-20 sm:w-24 sm:h-24 mx-auto", "text-3xl", "border-4 border-rose-500 shadow-xl")}
-                  <div class="font-black text-lg sm:text-xl text-white truncate">${m.player_b ? m.player_b.display_name : 'TBD'}</div>
+                  ${window.renderAvatar(m.player_b, "w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto", "text-3xl", "border-4 border-rose-500 shadow-xl")}
+                  <div class="font-black text-sm sm:text-lg md:text-xl text-white truncate">${m.player_b ? m.player_b.display_name : 'TBD'}</div>
                   <div class="text-xs text-rose-400 font-bold truncate">${m.player_b ? m.player_b.favorite_combo || '' : ''}</div>
                 </div>
               </div>

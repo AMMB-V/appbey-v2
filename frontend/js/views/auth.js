@@ -5,10 +5,10 @@ window.showAuthModal = (initialMode = "login") => {
 
   const modal = document.createElement("div");
   modal.id = "auth-modal";
-  modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md";
+  modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto";
 
   modal.innerHTML = `
-    <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
           <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-8 h-8 object-contain" alt="AppBey Logo"/>
@@ -56,8 +56,8 @@ window.showAuthModal = (initialMode = "login") => {
               <div id="register-avatar-preview-box">
                 ${window.renderAvatar({ display_name: "Nuevo Blader" }, "w-14 h-14", "text-xl", "border-2 border-cyan-400 shadow-lg")}
               </div>
-              <label for="register-avatar-file" class="absolute -bottom-1 -right-1 p-1 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <label for="register-avatar-file" class="absolute -bottom-1 -right-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shadow">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               </label>
               <input type="file" id="register-avatar-file" accept="image/*" class="hidden" onchange="window.handleRegisterAvatarUpload(event)"/>
             </div>

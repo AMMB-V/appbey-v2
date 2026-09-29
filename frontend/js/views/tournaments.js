@@ -20,10 +20,10 @@ window.renderTournamentsView = async (container) => {
 
       <!-- Filters Tab Bar -->
       <div class="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
-        <button type="button" onclick="window.filterTournaments('')" id="tab-all" class="t-tab px-4 py-2 rounded-lg text-sm font-bold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-300">Todos</button>
-        <button type="button" onclick="window.filterTournaments('in_progress')" id="tab-in_progress" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">En Curso</button>
-        <button type="button" onclick="window.filterTournaments('registration_open')" id="tab-registration_open" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">Inscripciones Abiertas</button>
-        <button type="button" onclick="window.filterTournaments('completed')" id="tab-completed" class="t-tab px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">Finalizados</button>
+        <button type="button" onclick="window.filterTournaments('')" id="tab-all" class="t-tab shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-300">Todos</button>
+        <button type="button" onclick="window.filterTournaments('in_progress')" id="tab-in_progress" class="t-tab shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">En Curso</button>
+        <button type="button" onclick="window.filterTournaments('registration_open')" id="tab-registration_open" class="t-tab shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">Inscripciones Abiertas</button>
+        <button type="button" onclick="window.filterTournaments('completed')" id="tab-completed" class="t-tab shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300">Finalizados</button>
       </div>
 
       <!-- Tournaments Grid -->

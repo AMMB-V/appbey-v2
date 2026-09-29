@@ -342,13 +342,13 @@ window.renderRankingsView = async (container) => {
 
       const modalEl = document.createElement("div");
       modalEl.id = "blader-detail-modal";
-      modalEl.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in";
+      modalEl.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto";
       modalEl.onclick = (e) => {
         if (e.target === modalEl) modalEl.remove();
       };
 
       modalEl.innerHTML = `
-        <div class="glass-card w-full max-w-lg rounded-2xl border border-slate-700 p-6 space-y-5 bg-slate-900 shadow-2xl relative" onclick="event.stopPropagation()">
+        <div class="glass-card w-full max-w-lg rounded-2xl border border-slate-700 p-6 space-y-5 bg-slate-900 shadow-2xl relative my-8 max-h-[calc(100vh-4rem)] overflow-y-auto" onclick="event.stopPropagation()">
           <button onclick="document.getElementById('blader-detail-modal').remove()" class="absolute top-4 right-4 p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition">
             ✕
           </button>

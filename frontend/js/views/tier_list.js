@@ -206,7 +206,7 @@ window.renderTierListView = async (container) => {
         </div>
 
         <!-- Part Detail Modal Container -->
-        <div id="part-detail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div id="part-detail-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
           <!-- Populated dynamically -->
         </div>
       </div>
@@ -451,7 +451,7 @@ window.renderTierListView = async (container) => {
       const tierConfig = tierMeta[part.tier] || tierMeta.C;
 
       modalEl.innerHTML = `
-        <div class="glass-card rounded-2xl max-w-lg w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl relative space-y-5 animate-in fade-in zoom-in duration-200">
+        <div class="glass-card rounded-2xl max-w-lg w-full p-6 border border-slate-700 bg-slate-900 shadow-2xl relative space-y-5 animate-in fade-in zoom-in duration-200 my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <!-- Close Button -->
           <button onclick="closePartModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

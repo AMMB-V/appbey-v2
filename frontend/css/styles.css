@@ -51,6 +51,13 @@ button, a, input, select, textarea {
   display: none;
 }
 
+/* Adds the iOS/Android gesture-bar inset to elements pinned to the bottom of
+   the viewport (used by the mobile bottom nav). Without this, the nav's
+   tap targets sit under the home-indicator area on notched phones. */
+.safe-bottom {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

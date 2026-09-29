@@ -5,10 +5,10 @@ window.openAdminUserManagementModal = async () => {
 
   const modal = document.createElement("div");
   modal.id = "admin-user-modal";
-  modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md";
+  modal.className = "fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto";
 
   modal.innerHTML = `
-    <div class="glass-card max-w-3xl w-full rounded-3xl p-6 border border-cyan-500/40 space-y-5 shadow-2xl max-h-[90vh] flex flex-col">
+    <div class="glass-card max-w-3xl w-full rounded-3xl p-4 sm:p-6 border border-cyan-500/40 space-y-5 shadow-2xl max-h-[calc(100vh-1rem)] sm:max-h-[90vh] flex flex-col my-2">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-xl">🛡️</span>
@@ -21,7 +21,7 @@ window.openAdminUserManagementModal = async () => {
       </div>
 
       <!-- Action Tabs -->
-      <div class="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div class="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
         <button onclick="switchAdminUserTab('list')" id="autab-list" class="autab-btn px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600/20 text-cyan-400 border border-cyan-500/30">
           Directorio de Usuarios
         </button>
@@ -160,6 +160,7 @@ window.openAdminUserManagementModal = async () => {
       if (!container) return;
 
       container.innerHTML = `
+        <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead class="text-[10px] uppercase text-slate-400 border-b border-slate-800">
             <tr>
@@ -174,6 +175,7 @@ window.openAdminUserManagementModal = async () => {
             ${users.map(renderAdminUserRow).join("")}
           </tbody>
         </table>
+        </div>
       `;
     } catch(err) {
       const container = document.getElementById("admin-users-list-panel");

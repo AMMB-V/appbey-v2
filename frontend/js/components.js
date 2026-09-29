@@ -54,17 +54,17 @@
   window.showAppConfirm = (title, message) => {
     return new Promise((resolve) => {
       const modal = document.createElement("div");
-      modal.className = "fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md";
+      modal.className = "fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto";
       modal.innerHTML = `
-        <div class="glass-card max-w-sm w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl text-center">
+        <div class="glass-card max-w-sm w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl text-center my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div class="text-3xl">⚖️</div>
           <h3 class="font-extrabold text-white text-base">${title || 'Confirmación'}</h3>
           <p class="text-xs text-slate-300 leading-relaxed">${message}</p>
           <div class="grid grid-cols-2 gap-2 pt-2">
-            <button id="modal-cancel-btn" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition active:scale-95">
+            <button id="modal-cancel-btn" class="min-h-[44px] py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition active:scale-95">
               Cancelar
             </button>
-            <button id="modal-confirm-btn" class="py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-md transition active:scale-95">
+            <button id="modal-confirm-btn" class="min-h-[44px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-md transition active:scale-95">
               Confirmar
             </button>
           </div>

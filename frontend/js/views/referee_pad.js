@@ -56,7 +56,7 @@ window.renderRefereePadView = async (container, matchId) => {
                   ${activeMatchesList.map(m => `
                     <div onclick="location.hash='#/referee/${m.id}'" class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700 hover:border-cyan-400 cursor-pointer transition flex items-center justify-between group shadow-md">
                       <div class="space-y-1">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                           <span class="px-2 py-0.5 rounded bg-blue-600/30 border border-cyan-400/40 text-cyan-300 font-mono font-bold text-[11px]">
                             ${window.getMatchStationLabel(m)}
                           </span>
@@ -235,7 +235,7 @@ window.renderRefereePadView = async (container, matchId) => {
             👑
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider">Combate Finalizado</span>
               <span class="font-extrabold text-amber-300 text-sm sm:text-base">Ganador Oficial: <strong>${winnerName}</strong></span>
             </div>
@@ -620,14 +620,14 @@ window.renderRefereePadView = async (container, matchId) => {
 
         <!-- Central Action Bar: Draw 0p, Undo, Manual Adjust, Reset -->
         <div class="glass-card rounded-2xl p-3 sm:p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <button onclick="submitFinish('draw_0p', 'draw', this)" class="referee-sub-btn min-h-[46px] sm:min-h-[50px] px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 active:scale-95 transition flex items-center gap-1.5 shadow-sm">
               <span>🤝</span> Empate / Sin Puntos (0p)
             </button>
             <span id="round-current-order" class="text-slate-500 text-[11px] hidden sm:inline">Asalto #${roundCount} en curso</span>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <div id="undo-button-container" class="inline-flex">
               ${match.games && match.games.length ? `
                 <button onclick="handleUndoLastFinish()" class="referee-sub-btn min-h-[44px] px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1.5 active:scale-95 transition">
@@ -1257,9 +1257,9 @@ window.renderRefereePadView = async (container, matchId) => {
 
     const modal = document.createElement("div");
     modal.id = "declare-winner-modal";
-    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto";
     modal.innerHTML = `
-      <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-amber-500/40 space-y-4 shadow-2xl">
+      <div class="glass-card max-w-md w-full rounded-3xl p-6 border border-amber-500/40 space-y-4 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div class="flex items-center gap-2">
             <span class="text-xl">🏁</span>
@@ -1349,9 +1349,9 @@ window.renderRefereePadView = async (container, matchId) => {
 
     const modal = document.createElement("div");
     modal.id = "manual-score-modal";
-    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto";
     modal.innerHTML = `
-      <div class="glass-card max-w-sm w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+      <div class="glass-card max-w-sm w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="font-bold text-white text-base">Ajuste Manual de Marcador</h3>
           <button onclick="document.getElementById('manual-score-modal').remove()" class="text-slate-400 hover:text-white text-lg">&times;</button>

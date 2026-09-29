@@ -1205,9 +1205,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     if (existing) existing.remove();
     const modal = document.createElement("div");
     modal.id = "bulk-part-modal";
-    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto";
     modal.innerHTML = `
-      <div class="glass-card max-w-xl w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+      <div class="glass-card max-w-xl w-full rounded-3xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <h3 class="font-extrabold text-white">Carga masiva de participantes</h3>
           <button onclick="document.getElementById('bulk-part-modal').remove()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
@@ -1733,9 +1733,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
       const modal = document.createElement("div");
       modal.id = "assign-ref-modal";
-      modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md";
+      modal.className = "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto";
       modal.innerHTML = `
-        <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl">
+        <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-cyan-500/40 space-y-4 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <h3 class="font-bold text-white text-base">Asignar Árbitro / Juez de Mesa</h3>
             <button onclick="document.getElementById('assign-ref-modal').remove()" class="text-slate-400 hover:text-white text-lg">&times;</button>
