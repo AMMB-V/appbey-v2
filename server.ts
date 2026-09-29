@@ -4151,8 +4151,18 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
-  // If already finished, dynamically reactivate to let the referee continue or test
+  // If already finished, dynamically reactivate to let the referee continue.
+  // Guarded the same way as reopen/undo-finish: if the winner already
+  // advanced to a next match that has started/finished (or the tournament
+  // already completed), block the reactivation instead of silently leaving
+  // a stale bracket/tournament state behind (e.g. two referees both
+  // recording the finishing point, or a duplicate/retried submission).
   if (m.status === "finished") {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
+    }
     m.status = "in_progress";
     m.winner_id = null;
   }
@@ -4497,8 +4507,23 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
     newStatus = (newScoreA > 0 || newScoreB > 0) ? "in_progress" : "pending";
   }
 
+  // Resolve the winner implied by the new state BEFORE mutating anything, so
+  // we can detect a duplicate/concurrent re-finish (e.g. two referees, or a
+  // retried request) submitting the same terminal result twice.
+  let impliedWinnerId: number | null | undefined = winner_id;
+  if (impliedWinnerId === undefined && newStatus === "finished") {
+    impliedWinnerId = newScoreA > newScoreB ? m.player_a_id : (newScoreB > newScoreA ? m.player_b_id : null);
+  }
+
   const wasFinished = m.status === "finished";
-  if (wasFinished && newStatus !== "finished") {
+  const isIdempotentReplay = wasFinished && newStatus === "finished" && impliedWinnerId === m.winner_id;
+  if (isIdempotentReplay) {
+    // Same finished result submitted again: don't re-apply ELO/stats/bracket
+    // advance a second time, just return the current state unchanged.
+    res.json(formatMatchDetails(m));
+    return;
+  }
+  if (wasFinished && (newStatus !== "finished" || impliedWinnerId !== m.winner_id)) {
     const revert = revertBracketPropagation(m);
     if (revert.blocked) {
       res.status(400).json({ detail: revert.detail });
@@ -4568,6 +4593,21 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
   if (!parsedWinnerId || (parsedWinnerId !== m.player_a_id && parsedWinnerId !== m.player_b_id)) {
     res.status(400).json({ detail: "ID de ganador no válido para este combate" });
     return;
+  }
+
+  const wasFinished = m.status === "finished";
+  if (wasFinished && m.winner_id === parsedWinnerId) {
+    // Same winner declared again (e.g. two referees, or a duplicate/retried
+    // request): don't re-apply ELO/stats/bracket advance a second time.
+    res.json(formatMatchDetails(m));
+    return;
+  }
+  if (wasFinished) {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
+    }
   }
 
   m.status = "finished";
