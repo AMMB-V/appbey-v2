@@ -3487,6 +3487,56 @@ function planTournamentGroups(t: Tournament, checkedInParts: TournamentParticipa
   return { groupIds, groups, assignment };
 }
 
+// Pairs a Swiss round while avoiding rematches when possible and never giving
+// the same participant a bye twice unless every remaining participant already
+// had one. Shared by tournament start (round 1) and /next-round.
+function pairSwissRound(t: Tournament, checkedInParts: TournamentParticipant[]): { p1: TournamentParticipant; p2: TournamentParticipant | null }[] {
+  const parts = [...checkedInParts].sort((a, b) => b.swiss_points - a.swiss_points || b.buchholz - a.buchholz || a.seed - b.seed);
+
+  const playedPairs = new Set<string>();
+  const hadBye = new Set<number>();
+  matches
+    .filter((m) => m.tournament_id === t.id && m.stage === "swiss")
+    .forEach((m) => {
+      if (m.is_bye) {
+        if (m.player_a_id) hadBye.add(m.player_a_id);
+        return;
+      }
+      if (m.player_a_id && m.player_b_id) {
+        const key = [m.player_a_id, m.player_b_id].sort((a, b) => a - b).join("-");
+        playedPairs.add(key);
+      }
+    });
+
+  const pool = [...parts];
+  let byePlayer: TournamentParticipant | null = null;
+  if (pool.length % 2 === 1) {
+    let byeIndex = -1;
+    for (let i = pool.length - 1; i >= 0; i--) {
+      if (!hadBye.has(pool[i].user_id)) {
+        byeIndex = i;
+        break;
+      }
+    }
+    if (byeIndex === -1) byeIndex = pool.length - 1;
+    byePlayer = pool.splice(byeIndex, 1)[0];
+  }
+
+  const pairings: { p1: TournamentParticipant; p2: TournamentParticipant | null }[] = [];
+  while (pool.length) {
+    const p1 = pool.shift()!;
+    let idx = pool.findIndex((p2) => {
+      const key = [p1.user_id, p2.user_id].sort((a, b) => a - b).join("-");
+      return !playedPairs.has(key);
+    });
+    if (idx === -1) idx = 0; // forced rematch: no valid opponent left to avoid repeating
+    const p2 = pool.splice(idx, 1)[0];
+    pairings.push({ p1, p2 });
+  }
+  if (byePlayer) pairings.push({ p1: byePlayer, p2: null });
+  return pairings;
+}
+
 function startGroupsElimTournament(t: Tournament, checkedInParts: TournamentParticipant[]) {
   const { groupIds, groups, assignment } = planTournamentGroups(t, checkedInParts);
   t.group_ids = groupIds;
@@ -3648,19 +3698,17 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
     });
     startGroupsElimTournament(t, parts);
   } else if (t.format === "swiss") {
-    // Generate Round 1 pairings
-    for (let i = 0; i < parts.length; i += 2) {
-      const p1 = parts[i];
-      const p2 = parts[i + 1] || null;
+    // Generate Round 1 pairings (rank-sorted, avoiding rematches by construction since none exist yet)
+    const pairings = pairSwissRound(t, parts);
+    pairings.forEach(({ p1, p2 }, index) => {
       const isBye = !p2;
-
       matches.push({
         id: nextId(matches),
         tournament_id: t.id,
         round_number: 1,
         stage: "swiss",
-        bracket_position: Math.floor(i / 2) + 1,
-        station_number: (Math.floor(i / 2) % 4) + 1,
+        bracket_position: index + 1,
+        station_number: (index % 4) + 1,
         player_a_id: p1.user_id,
         player_b_id: p2 ? p2.user_id : null,
         score_a: isBye ? t.match_target_points : 0,
@@ -3676,7 +3724,7 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
         p1.matches_won += 1;
         p1.matches_played += 1;
       }
-    }
+    });
   } else {
     // Single Elim Bracket
     let bracketSize = 1;
@@ -3875,22 +3923,18 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
     }
 
     t.current_round = nextRound;
-    const parts = participants
-      .filter((p) => p.tournament_id === id && p.checked_in)
-      .sort((a, b) => b.swiss_points - a.swiss_points || b.buchholz - a.buchholz);
+    const parts = participants.filter((p) => p.tournament_id === id && p.checked_in);
+    const pairings = pairSwissRound(t, parts);
 
-    for (let i = 0; i < parts.length; i += 2) {
-      const p1 = parts[i];
-      const p2 = parts[i + 1] || null;
+    pairings.forEach(({ p1, p2 }, index) => {
       const isBye = !p2;
-
       matches.push({
         id: nextId(matches),
         tournament_id: t.id,
         round_number: nextRound,
         stage: "swiss",
-        bracket_position: Math.floor(i / 2) + 1,
-        station_number: (Math.floor(i / 2) % 4) + 1,
+        bracket_position: index + 1,
+        station_number: (index % 4) + 1,
         player_a_id: p1.user_id,
         player_b_id: p2 ? p2.user_id : null,
         score_a: isBye ? t.match_target_points : 0,
@@ -3905,7 +3949,7 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
         p1.matches_won += 1;
         p1.matches_played += 1;
       }
-    }
+    });
 
     broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, current_round: nextRound });
     res.json({ message: `Ronda ${nextRound} generada exitosamente`, current_round: nextRound });
