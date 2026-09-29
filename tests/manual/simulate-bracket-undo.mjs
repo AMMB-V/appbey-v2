@@ -101,6 +101,7 @@ async function main() {
   // matchGames "asaltos" to undo — that's expected, separate behavior.)
   const undoRes = await req("POST", `/matches/${semi1.id}/reopen`, {}, adminToken);
   assert(undoRes.status === 200, `reopen allowed while final has not started (status ${undoRes.status}, ${JSON.stringify(undoRes.body)})`);
+  assert(!JSON.stringify(undoRes.body).includes("password_hash"), "match response does not expose user password hashes");
   matches = (await req("GET", `/tournaments/${tournamentId}/matches`, undefined, adminToken)).body;
   const finalAfterUndo = matches.find((m) => m.id === finalMatch.id);
   const slotCleared = finalAfterUndo.player_a_id !== semi1Winner && finalAfterUndo.player_b_id !== semi1Winner;

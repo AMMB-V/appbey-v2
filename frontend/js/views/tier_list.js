@@ -1,9 +1,9 @@
-// Beyblade X Official Meta Tier List View - Connected to WBO & Takara Tomy Live Feeds
+// AppBey's local Beyblade X part catalog and reference tier list.
 window.renderTierListView = async (container) => {
   container.innerHTML = `
     <div class="flex flex-col items-center justify-center py-20 text-slate-400 space-y-3">
       <div class="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-sm font-medium">Sincronizando con el servidor oficial de WBO & Takara Tomy...</p>
+      <p class="text-sm font-medium">Cargando las piezas registradas en AppBey...</p>
     </div>
   `;
 
@@ -26,8 +26,8 @@ window.renderTierListView = async (container) => {
     const tierMeta = {
       S: {
         label: "Tier S",
-        sub: "Meta Dominante",
-        desc: "Piezas obligatorias en Decks 3on3 con winrate > 60%",
+        sub: "Referencia destacada",
+        desc: "Clasificación de referencia local de AppBey",
         gradient: "from-amber-500 to-orange-600",
         border: "border-amber-500/40",
         badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/30",
@@ -35,8 +35,8 @@ window.renderTierListView = async (container) => {
       },
       A: {
         label: "Tier A",
-        sub: "Altamente Competitivo",
-        desc: "Piezas sólidas de torneo con sinergias letales",
+        sub: "Referencia competitiva",
+        desc: "Clasificación de referencia local de AppBey",
         gradient: "from-purple-600 to-indigo-600",
         border: "border-purple-500/40",
         badgeBg: "bg-purple-500/20 text-purple-300 border-purple-500/30",
@@ -44,8 +44,8 @@ window.renderTierListView = async (container) => {
       },
       B: {
         label: "Tier B",
-        sub: "Viable / Contra-Estrategia",
-        desc: "Opciones situacionales y tech counters",
+        sub: "Referencia situacional",
+        desc: "Opciones situacionales según la referencia local",
         gradient: "from-blue-600 to-cyan-600",
         border: "border-blue-500/40",
         badgeBg: "bg-blue-500/20 text-blue-300 border-blue-500/30",
@@ -53,8 +53,8 @@ window.renderTierListView = async (container) => {
       },
       C: {
         label: "Tier C",
-        sub: "Nicho / Casual",
-        desc: "Uso experimental o superado por nuevas piezas",
+        sub: "Referencia casual",
+        desc: "Clasificación de referencia local de AppBey",
         gradient: "from-slate-700 to-slate-800",
         border: "border-slate-700/40",
         badgeBg: "bg-slate-700/30 text-slate-300 border-slate-600/30",
@@ -76,36 +76,35 @@ window.renderTierListView = async (container) => {
 
     container.innerHTML = `
       <div class="space-y-6 max-w-6xl mx-auto pb-16">
-        <!-- Header & Live Connection Status Banner -->
+        <!-- Local catalog header -->
         <div class="glass-card rounded-2xl p-5 md:p-6 border border-slate-800 relative overflow-hidden bg-slate-900/60">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                  Catálogo Oficial Beyblade X
+                  Catálogo de AppBey
                 </span>
                 <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                  Takara Tomy Lineup
+                  Blades · Ratchets · Bits
                 </span>
               </div>
               <h1 class="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-                <span class="text-amber-400">🛡️</span> Piezas & Meta Tier List
+                <span class="text-amber-400">🛡️</span> Piezas & Datos de Referencia
               </h1>
               <p class="text-slate-400 text-sm max-w-2xl">
-                Base de datos completa de Blades, Ratchets y Bits conectada directamente con el catálogo oficial de
-                <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-semibold">Takara Tomy Lineup</a>.
+                AppBey tiene ${counts.total || parts.length} piezas registradas (${counts.blades || 0} blades, ${counts.ratchets || 0} ratchets y ${counts.bits || 0} bits). El listado no es exhaustivo; las clasificaciones y estadísticas son datos de referencia locales, no una conexión en vivo ni métricas oficiales.
               </p>
             </div>
 
             <div class="flex items-center gap-3 shrink-0">
               <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 flex items-center gap-2 transition">
-                <span>🔗 Catálogo Takara Tomy</span>
+                <span>🔗 Referencia Takara Tomy</span>
               </a>
-              <button id="btn-sync-tierlist" onclick="handleLiveSync()" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-2 shadow-lg shadow-cyan-900/30 transition transform active:scale-95">
+              <button id="btn-sync-tierlist" ${meta.status === "demo" ? 'onclick="handleLiveSync()"' : "disabled"} title="${meta.status === "demo" ? "Simulación local; no consulta fuentes oficiales" : "No hay una fuente de datos configurada"}" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center gap-2 shadow-lg shadow-cyan-900/30 transition transform active:scale-95">
                 <svg id="sync-spinner" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
-                <span>Actualizar</span>
+                <span>${meta.status === "demo" ? "Simular actualización" : "Sin fuente de datos"}</span>
               </button>
             </div>
           </div>
@@ -130,15 +129,15 @@ window.renderTierListView = async (container) => {
           <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center gap-3 bg-slate-900/40">
             <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-base">3on3</div>
             <div>
-              <div class="text-xs text-slate-400">Meta Deck Regla</div>
+            <div class="text-xs text-slate-400">Regla del Deck AppBey</div>
               <div class="text-xs font-semibold text-slate-200">Sin piezas repetidas</div>
             </div>
           </div>
           <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center gap-3 bg-slate-900/40">
-            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-base">WBO</div>
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-base">APP</div>
             <div>
               <div class="text-xs text-slate-400">Reglamento</div>
-              <div class="text-xs font-semibold text-emerald-400">Torneo Legal 2026</div>
+              <div class="text-xs font-semibold text-slate-300">Reglas verificables por evento</div>
             </div>
           </div>
         </div>
@@ -192,8 +191,8 @@ window.renderTierListView = async (container) => {
               <span class="text-slate-500 font-medium">Ordenar por:</span>
               <select id="sort-select" onchange="handleSortChange(this.value)" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1 focus:outline-none focus:border-cyan-500">
                 <option value="tier">Nivel de Tier (S → C)</option>
-                <option value="winrate">Mayor Win Rate % Oficial</option>
-                <option value="pickrate">Mayor Pick Rate % Oficial</option>
+                <option value="winrate">Mayor tasa de victorias (referencia)</option>
+                <option value="pickrate">Mayor tasa de uso (referencia)</option>
                 <option value="weight">Mayor Peso (Gramos)</option>
               </select>
             </div>
@@ -395,10 +394,12 @@ window.renderTierListView = async (container) => {
           }
 
           window.renderTierRows();
-          window.showToast?.("✅ Sincronización oficial completada con World Beyblade Organization y Takara Tomy.", "success");
+          window.showToast?.(meta.status === "demo"
+            ? "Actualización simulada: no se consultaron fuentes oficiales."
+            : "Datos de referencia actualizados.", "success");
         }
       } catch (err) {
-        window.showToast?.("Error al sincronizar con la fuente oficial: " + err.message, "error");
+        window.showToast?.("No se pudieron actualizar los datos: " + err.message, "error");
       } finally {
         if (spinner) spinner.classList.remove("animate-spin");
         if (btn) btn.disabled = false;
@@ -478,17 +479,17 @@ window.renderTierListView = async (container) => {
 
           <!-- Description -->
           <p class="text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-            ${part.description || "Pieza oficial de competición de la serie Beyblade X."}
+            ${part.description || "Pieza registrada en el catálogo de AppBey."}
           </p>
 
-          <!-- Official Competitive Metrics -->
+          <!-- Local reference metrics -->
           <div class="grid grid-cols-3 gap-2">
             <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <span class="text-[10px] text-slate-400 block font-medium">Win Rate Oficial</span>
+              <span class="text-[10px] text-slate-400 block font-medium">Tasa de victorias (referencia)</span>
               <span class="text-base font-black text-emerald-400">${part.win_rate_pct || 'N/A'}%</span>
             </div>
             <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <span class="text-[10px] text-slate-400 block font-medium">Pick Rate WBO</span>
+              <span class="text-[10px] text-slate-400 block font-medium">Tasa de uso (referencia)</span>
               <span class="text-base font-black text-amber-400">${part.pick_rate_pct || 'N/A'}%</span>
             </div>
             <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
@@ -544,13 +545,13 @@ window.renderTierListView = async (container) => {
           <div class="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/30 space-y-1">
             <div class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">💡 Combo Competitivo Recomendado:</div>
             <div class="text-xs font-bold text-white">${part.best_combo || "Configuración estándar de torneo"}</div>
-            <div class="text-[10px] text-slate-400">Reglamento: <strong class="text-emerald-400">${part.official_ruling || 'Legal WBO Standard'}</strong> • Fuente: ${part.source_reference || 'WBO Meta Feed'}</div>
+            <div class="text-[10px] text-slate-400">Estado de reglamento y procedencia: <strong class="text-amber-300">no verificados por AppBey</strong></div>
           </div>
 
           <!-- Action Buttons -->
           <div class="flex items-center justify-between gap-2 pt-2">
             <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 flex items-center gap-1.5 transition">
-              <span>🌐 Catálogo Takara Tomy Lineup</span>
+              <span>🌐 Consultar referencia Takara Tomy</span>
             </a>
             <button onclick="closePartModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
               Cerrar
@@ -572,7 +573,7 @@ window.renderTierListView = async (container) => {
   } catch (err) {
     container.innerHTML = `
       <div class="glass-card rounded-2xl p-8 text-center max-w-md mx-auto space-y-4 border border-rose-500/30 bg-rose-950/10">
-        <div class="text-rose-400 font-bold text-lg">Error al cargar Tier List Oficial</div>
+        <div class="text-rose-400 font-bold text-lg">Error al cargar las piezas</div>
         <p class="text-slate-400 text-xs">${err.message}</p>
         <button onclick="window.renderTierListView(document.getElementById('main-content'))" class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition">
           Reintentar Conexión
