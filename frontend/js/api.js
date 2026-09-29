@@ -171,7 +171,7 @@ class ApiClient {
   adminCreateUser(data) { return this.request("/users/admin-create", { method: "POST", body: data }); }
   updateUserRole(id, role) { return this.request(`/users/${id}/role`, { method: "PUT", body: { role } }); }
   getParts(category = "") { return this.request(`/beyblades/parts${category ? `?category=${encodeURIComponent(category)}` : ""}`); }
-  getMetaTierList() { return this.request("/beyblades/meta-tierlist"); }
+  getMetaTierList(options = {}) { return this.request("/beyblades/meta-tierlist", options); }
   syncMetaTierList() { return this.request("/beyblades/meta-tierlist/sync", { method: "POST" }); }
   updatePartTier(id, data) { return this.request(`/beyblades/parts/${id}/tier`, { method: "PUT", body: data }); }
   getDecks(userId = null) { return this.request(`/beyblades/decks${userId ? `?user_id=${userId}` : ""}`); }

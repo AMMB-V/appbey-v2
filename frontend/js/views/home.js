@@ -18,7 +18,7 @@ window.renderHomeView = async (container) => {
               </h1>
             </div>
             <p class="text-slate-300 max-w-xl text-sm md:text-base">
-              Plataforma competitiva oficial: Brackets en tiempo real, arbitraje táctil 3on3 Xtreme Stadium y constructor de Decks.
+              Plataforma competitiva de Beyblade X: brackets en tiempo real, marcador táctil y constructor de decks.
             </p>
           </div>
           <div class="flex flex-wrap gap-3">
@@ -46,7 +46,7 @@ window.renderHomeView = async (container) => {
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
           </div>
           <h3 class="font-bold text-lg text-white mb-1">Marcador BeyScore</h3>
-          <p class="text-xs text-slate-400">Arbitraje táctil oficial de mesa (Spin, Over, Burst y Xtreme Finish).</p>
+          <p class="text-xs text-slate-400">Marcador táctil para Spin, Over, Burst y Xtreme Finish.</p>
         </div>
 
         <div onclick="location.hash='#/stadium-display'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-indigo-400 transition transform hover:-translate-y-1 group">
@@ -61,8 +61,8 @@ window.renderHomeView = async (container) => {
           <div class="w-12 h-12 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
           </div>
-          <h3 class="font-bold text-lg text-white mb-1">Catálogo Takara Tomy</h3>
-          <p class="text-xs text-slate-400">Base de datos oficial de Blades, Ratchets y Bits Beyblade X.</p>
+          <h3 class="font-bold text-lg text-white mb-1">Catálogo de Piezas</h3>
+          <p class="text-xs text-slate-400">Blades, Ratchets y Bits Beyblade X.</p>
         </div>
 
         <div onclick="location.hash='#/rankings'" class="glass-card p-5 rounded-xl cursor-pointer hover:border-amber-400 transition transform hover:-translate-y-1 group">
@@ -70,7 +70,7 @@ window.renderHomeView = async (container) => {
             <span class="text-2xl">🏆</span>
           </div>
           <h3 class="font-bold text-lg text-white mb-1">Rankings Nacionales</h3>
-          <p class="text-xs text-slate-400">Clasificación oficial por Puntos de Temporada 1 y Elo de Temporada 2.</p>
+          <p class="text-xs text-slate-400">Registro oficial de puntos y Elo por temporada.</p>
         </div>
       </div>
 
@@ -142,7 +142,7 @@ window.renderHomeView = async (container) => {
           </div>
           <div>
             <div class="font-bold text-white">¿Eres organizador o Blader competidor?</div>
-            <div class="text-xs text-slate-400">Inicia sesión con tu cuenta para guardar tus decks 3on3 y participar en torneos oficiales.</div>
+            <div class="text-xs text-slate-400">Inicia sesión para guardar tus decks 3on3 y participar en torneos.</div>
           </div>
         </div>
         <button onclick="window.showAuthModal()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm shadow">
@@ -162,14 +162,14 @@ window.renderHomeView = async (container) => {
           <div class="text-3xl">🏟️</div>
           <h3 class="font-bold text-white text-base">No hay torneos activos en curso</h3>
           <p class="text-xs text-slate-400 max-w-md mx-auto">
-            La plataforma está en blanco y lista para la temporada oficial. Los organizadores y administradores pueden crear nuevos torneos con formato Suizo (WBO) o Eliminación Directa.
+            Aún no hay torneos activos. Los organizadores y administradores pueden crear torneos con formato Suizo o Eliminación Directa.
           </p>
           <div class="pt-1 flex items-center justify-center gap-3">
             <button onclick="location.hash='#/tournaments'" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xs shadow flex items-center gap-1.5 hover:from-blue-500 hover:to-cyan-500">
               <span>➕</span> Crear Torneo
             </button>
             <button onclick="location.hash='#/rankings'" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 hover:bg-slate-700">
-              Ver Rankings Oficiales
+              Ver Registro de Rankings
             </button>
           </div>
         </div>

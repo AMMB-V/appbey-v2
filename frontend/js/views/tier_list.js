@@ -12,17 +12,18 @@ window.renderTierListView = async (container) => {
     let parts = metaData.parts || [];
     let meta = metaData.meta || {};
     let counts = metaData.counts || {};
+    const canSyncCatalog = ["admin", "organizer"].includes(window.api.user?.role);
 
     let currentCat = "";
     let currentType = "";
     let currentSystem = "";
     let searchQuery = "";
-    let sortBy = "tier"; // 'tier', 'winrate', 'pickrate', 'weight'
+    let sortBy = "tier";
     let selectedPartForModal = null;
     let comparePartA = null;
     let comparePartB = null;
 
-    const tiers = ["S", "A", "B", "C"];
+    const tiers = ["S", "A", "B", "C", "N"];
     const tierMeta = {
       S: {
         label: "Tier S",
@@ -59,24 +60,29 @@ window.renderTierListView = async (container) => {
         border: "border-slate-700/40",
         badgeBg: "bg-slate-700/30 text-slate-300 border-slate-600/30",
         icon: "📦"
+      },
+      N: {
+        label: "Sin clasificar",
+        sub: "Piezas nuevas",
+        desc: "Piezas importadas sin una clasificación de tier",
+        gradient: "from-slate-800 to-slate-900",
+        border: "border-slate-600/40",
+        badgeBg: "bg-slate-700/30 text-slate-300 border-slate-600/30",
+        icon: "✨"
       }
     };
 
-    const formatTimeAgo = (dateString) => {
-      if (!dateString) return "Recientemente";
-      const diffMs = Date.now() - new Date(dateString).getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      if (diffMins < 1) return "Justo ahora";
-      if (diffMins === 1) return "Hace 1 minuto";
-      if (diffMins < 60) return `Hace ${diffMins} minutos`;
-      const diffHours = Math.floor(diffMins / 60);
-      if (diffHours === 1) return "Hace 1 hora";
-      return `Hace ${diffHours} horas`;
-    };
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]);
+    const formatStat = (value) => Number(value) > 0 ? escapeHtml(value) : "—";
 
     container.innerHTML = `
       <div class="space-y-6 max-w-6xl mx-auto pb-16">
-        <!-- Local catalog header -->
         <div class="glass-card rounded-2xl p-5 md:p-6 border border-slate-800 relative overflow-hidden bg-slate-900/60">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div class="space-y-2">
@@ -89,29 +95,26 @@ window.renderTierListView = async (container) => {
                 </span>
               </div>
               <h1 class="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-                <span class="text-amber-400">🛡️</span> Piezas & Datos de Referencia
+                <span class="text-amber-400">🛡️</span> Piezas Beyblade X
               </h1>
-              <p class="text-slate-400 text-sm max-w-2xl">
-                AppBey tiene ${counts.total || parts.length} piezas registradas (${counts.blades || 0} blades, ${counts.ratchets || 0} ratchets y ${counts.bits || 0} bits). El listado no es exhaustivo; las clasificaciones y estadísticas son datos de referencia locales, no una conexión en vivo ni métricas oficiales.
-              </p>
             </div>
 
-            <div class="flex items-center gap-3 shrink-0">
-              <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 flex items-center gap-2 transition">
-                <span>🔗 Referencia Takara Tomy</span>
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+              <a href="https://beyblade-x-api.onrender.com/swagger-ui.html" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 flex items-center gap-2 transition">
+                <span>🔗 Fuente del catálogo</span>
               </a>
-              <button id="btn-sync-tierlist" ${meta.status === "demo" ? 'onclick="handleLiveSync()"' : "disabled"} title="${meta.status === "demo" ? "Simulación local; no consulta fuentes oficiales" : "No hay una fuente de datos configurada"}" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center gap-2 shadow-lg shadow-cyan-900/30 transition transform active:scale-95">
+              ${canSyncCatalog ? `<button id="btn-sync-tierlist" onclick="handleLiveSync()" ${meta.status === "syncing" ? "disabled" : ""} class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center gap-2 shadow-lg shadow-cyan-900/30 transition transform active:scale-95">
                 <svg id="sync-spinner" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
-                <span>${meta.status === "demo" ? "Simular actualización" : "Sin fuente de datos"}</span>
-              </button>
+                <span>${meta.status === "syncing" ? "Actualizando..." : "Actualizar lista"}</span>
+              </button>` : ""}
             </div>
           </div>
         </div>
 
         <!-- Meta Summary Quick Bar -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center gap-3 bg-slate-900/40">
             <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black text-lg">S</div>
             <div>
@@ -124,20 +127,6 @@ window.renderTierListView = async (container) => {
             <div>
               <div class="text-xs text-slate-400">Piezas Tier A</div>
               <div class="text-lg font-extrabold text-white" id="count-tier-a">${counts.a_tier || 0}</div>
-            </div>
-          </div>
-          <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center gap-3 bg-slate-900/40">
-            <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-base">3on3</div>
-            <div>
-            <div class="text-xs text-slate-400">Regla del Deck AppBey</div>
-              <div class="text-xs font-semibold text-slate-200">Sin piezas repetidas</div>
-            </div>
-          </div>
-          <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center gap-3 bg-slate-900/40">
-            <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-base">APP</div>
-            <div>
-              <div class="text-xs text-slate-400">Reglamento</div>
-              <div class="text-xs font-semibold text-slate-300">Reglas verificables por evento</div>
             </div>
           </div>
         </div>
@@ -184,15 +173,14 @@ window.renderTierListView = async (container) => {
                 <option value="">Todos los Sistemas</option>
                 <option value="BX">BX (Basic Line)</option>
                 <option value="UX">UX (Unique Line)</option>
+                <option value="Custom">Custom</option>
               </select>
             </div>
 
             <div class="flex items-center gap-2">
               <span class="text-slate-500 font-medium">Ordenar por:</span>
               <select id="sort-select" onchange="handleSortChange(this.value)" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1 focus:outline-none focus:border-cyan-500">
-                <option value="tier">Nivel de Tier (S → C)</option>
-                <option value="winrate">Mayor tasa de victorias (referencia)</option>
-                <option value="pickrate">Mayor tasa de uso (referencia)</option>
+                <option value="tier">Nivel de Tier</option>
                 <option value="weight">Mayor Peso (Gramos)</option>
               </select>
             </div>
@@ -235,11 +223,7 @@ window.renderTierListView = async (container) => {
       }
 
       // Sort
-      if (sortBy === "winrate") {
-        filtered.sort((a, b) => (b.win_rate_pct || 0) - (a.win_rate_pct || 0));
-      } else if (sortBy === "pickrate") {
-        filtered.sort((a, b) => (b.pick_rate_pct || 0) - (a.pick_rate_pct || 0));
-      } else if (sortBy === "weight") {
+      if (sortBy === "weight") {
         filtered.sort((a, b) => b.weight_grams - a.weight_grams);
       }
 
@@ -275,9 +259,6 @@ window.renderTierListView = async (container) => {
     const renderPartCardHtml = (p) => {
       const trendIcon = getTrendBadgeHtml(p.trend);
       const typeClass = getTypeBadgeClass(p.type_attr);
-      const winRateClass = p.win_rate_pct >= 60 ? 'text-emerald-400' : p.win_rate_pct >= 50 ? 'text-cyan-400' : 'text-slate-300';
-      const winRateText = p.win_rate_pct ? `${p.win_rate_pct}%` : 'N/A';
-      const pickRateText = p.pick_rate_pct ? `${p.pick_rate_pct}%` : 'N/A';
 
       return `
         <div
@@ -287,30 +268,30 @@ window.renderTierListView = async (container) => {
           <div class="flex items-center justify-between gap-1">
             <div class="flex items-center gap-1.5">
               <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
-                ${p.code}
+                ${escapeHtml(p.code)}
               </span>
               <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
-                ${p.system}
+                ${escapeHtml(p.system)}
               </span>
             </div>
             <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${typeClass}">
-              ${p.type_attr}
+              ${escapeHtml(p.type_attr)}
             </span>
           </div>
 
           <div>
-            <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition truncate">${p.name}</h4>
+            <h4 class="font-bold text-white text-sm group-hover:text-cyan-400 transition truncate">${escapeHtml(p.name)}</h4>
             <div class="text-[11px] text-slate-400 flex items-center justify-between mt-0.5">
-              <span class="capitalize font-medium text-slate-300">${p.category}</span>
-              <span class="font-mono text-slate-400">${p.weight_grams}g</span>
+              <span class="capitalize font-medium text-slate-300">${escapeHtml(p.category)}</span>
+              <span class="font-mono text-slate-400">${p.weight_grams ? `${p.weight_grams}g` : "—"}</span>
             </div>
           </div>
 
           <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
             <div class="flex items-center gap-2">
-              <span class="text-rose-400 font-bold font-mono">ATK ${p.attack_stat || 50}</span>
-              <span class="text-blue-400 font-bold font-mono">DEF ${p.defense_stat || 50}</span>
-              <span class="text-amber-400 font-bold font-mono">STA ${p.stamina_stat || 50}</span>
+              <span class="text-rose-400 font-bold font-mono">ATK ${formatStat(p.attack_stat)}</span>
+              <span class="text-blue-400 font-bold font-mono">DEF ${formatStat(p.defense_stat)}</span>
+              <span class="text-amber-400 font-bold font-mono">STA ${formatStat(p.stamina_stat)}</span>
             </div>
             <span class="text-slate-400 group-hover:text-cyan-400 transition text-[11px] font-semibold flex items-center gap-0.5">
               Ver ficha <span>→</span>
@@ -362,47 +343,34 @@ window.renderTierListView = async (container) => {
       containerEl.innerHTML = tiers.map(tier => renderTierRowHtml(tier, filteredParts, tierMeta)).join("");
     };
 
-    // Live Sync Action
+    // The source can cold-start, so start the import and poll its server-side status.
     window.handleLiveSync = async () => {
       const btn = document.getElementById("btn-sync-tierlist");
       const spinner = document.getElementById("sync-spinner");
+      const label = btn?.querySelector("span");
       if (spinner) spinner.classList.add("animate-spin");
       if (btn) btn.disabled = true;
+      if (label) label.textContent = "Actualizando...";
 
       try {
-        const res = await window.api.syncMetaTierList();
-        if (res.success) {
-          parts = res.parts || parts;
-          meta = res.meta || meta;
-
-          // Update header labels
-          const timeLabel = document.getElementById("sync-time-label");
-          if (timeLabel) timeLabel.textContent = formatTimeAgo(meta.last_synced_at);
-
-          const matchLabel = document.getElementById("sync-matches-label");
-          if (matchLabel) matchLabel.textContent = meta.total_matches_analyzed ? meta.total_matches_analyzed.toLocaleString() : "2,840";
-
-          // Update patch notes list
-          const patchList = document.getElementById("patch-notes-list");
-          if (patchList && meta.patch_notes) {
-            patchList.innerHTML = meta.patch_notes.map(note => `
-              <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 text-slate-300 flex items-start gap-2">
-                <span class="text-cyan-400 mt-0.5">•</span>
-                <span>${note}</span>
-              </div>
-            `).join("");
-          }
-
-          window.renderTierRows();
-          window.showToast?.(meta.status === "demo"
-            ? "Actualización simulada: no se consultaron fuentes oficiales."
-            : "Datos de referencia actualizados.", "success");
+        const started = await window.api.syncMetaTierList();
+        let latest = started;
+        const deadline = Date.now() + 90_000;
+        while (latest.meta?.status === "syncing" && Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          latest = await window.api.getMetaTierList({ noCache: true });
         }
+        if (latest.meta?.status !== "synced") {
+          throw new Error(latest.meta?.last_error || "La fuente no terminó de actualizar el catálogo a tiempo.");
+        }
+        await window.renderTierListView(container);
+        window.showToast?.("Lista de piezas actualizada.", "success");
       } catch (err) {
         window.showToast?.("No se pudieron actualizar los datos: " + err.message, "error");
       } finally {
         if (spinner) spinner.classList.remove("animate-spin");
         if (btn) btn.disabled = false;
+        if (label) label.textContent = "Actualizar lista";
       }
     };
 
@@ -467,91 +435,39 @@ window.renderTierListView = async (container) => {
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">${part.code}</span>
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${part.system} • ${part.category}</span>
+                <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">${escapeHtml(part.code)}</span>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${escapeHtml(part.system)} • ${escapeHtml(part.category)}</span>
               </div>
-              <h3 class="text-xl font-black text-white mt-1">${part.name}</h3>
+              <h3 class="text-xl font-black text-white mt-1">${escapeHtml(part.name)}</h3>
               <span class="text-xs font-semibold ${part.type_attr === 'Attack' ? 'text-rose-400' : part.type_attr === 'Stamina' ? 'text-amber-400' : part.type_attr === 'Defense' ? 'text-blue-400' : 'text-purple-400'}">
-                Tipo ${part.type_attr} • ${part.weight_grams}g
+                Tipo ${escapeHtml(part.type_attr)} • ${part.weight_grams ? `${part.weight_grams}g` : "—"}
               </span>
             </div>
           </div>
 
           <!-- Description -->
           <p class="text-xs text-slate-300 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-            ${part.description || "Pieza registrada en el catálogo de AppBey."}
+            ${escapeHtml(part.description || "Pieza registrada en el catálogo de AppBey.")}
           </p>
 
-          <!-- Local reference metrics -->
-          <div class="grid grid-cols-3 gap-2">
-            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <span class="text-[10px] text-slate-400 block font-medium">Tasa de victorias (referencia)</span>
-              <span class="text-base font-black text-emerald-400">${part.win_rate_pct || 'N/A'}%</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <span class="text-[10px] text-slate-400 block font-medium">Tasa de uso (referencia)</span>
-              <span class="text-base font-black text-amber-400">${part.pick_rate_pct || 'N/A'}%</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <span class="text-[10px] text-slate-400 block font-medium">Tendencia</span>
-              <span class="text-xs font-bold text-cyan-400 block mt-1">${part.trend_label || 'Estable'}</span>
-            </div>
-          </div>
-
-          <!-- Stats Progress Bars -->
-          <div class="space-y-2 pt-2 border-t border-slate-800 text-xs">
-            <div>
-              <div class="flex justify-between text-slate-300 font-semibold mb-1">
-                <span>Ataque / Smash</span>
-                <span class="text-rose-400">${part.attack_stat}/100</span>
-              </div>
-              <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
-                <div class="bg-rose-500 h-2 rounded-full" style="width: ${part.attack_stat}%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between text-slate-300 font-semibold mb-1">
-                <span>Defensa / Knockout Resist</span>
-                <span class="text-blue-400">${part.defense_stat}/100</span>
-              </div>
-              <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
-                <div class="bg-blue-500 h-2 rounded-full" style="width: ${part.defense_stat}%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between text-slate-300 font-semibold mb-1">
-                <span>Resistencia / Stamina</span>
-                <span class="text-amber-400">${part.stamina_stat}/100</span>
-              </div>
-              <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
-                <div class="bg-amber-500 h-2 rounded-full" style="width: ${part.stamina_stat}%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between text-slate-300 font-semibold mb-1">
-                <span>Xtreme Dash / Velocidad</span>
-                <span class="text-cyan-400">${part.dash_stat}/100</span>
-              </div>
-              <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
-                <div class="bg-cyan-500 h-2 rounded-full" style="width: ${part.dash_stat}%"></div>
-              </div>
-            </div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+            <div class="rounded-lg bg-slate-950 p-2 text-slate-300">Ataque <strong class="text-rose-400">${formatStat(part.attack_stat)}</strong></div>
+            <div class="rounded-lg bg-slate-950 p-2 text-slate-300">Defensa <strong class="text-blue-400">${formatStat(part.defense_stat)}</strong></div>
+            <div class="rounded-lg bg-slate-950 p-2 text-slate-300">Resistencia <strong class="text-amber-400">${formatStat(part.stamina_stat)}</strong></div>
+            <div class="rounded-lg bg-slate-950 p-2 text-slate-300">Dash <strong class="text-cyan-400">${formatStat(part.dash_stat)}</strong></div>
           </div>
 
           <!-- Recommended Combo & Legality -->
           <div class="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/30 space-y-1">
             <div class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">💡 Combo Competitivo Recomendado:</div>
-            <div class="text-xs font-bold text-white">${part.best_combo || "Configuración estándar de torneo"}</div>
+            <div class="text-xs font-bold text-white">${escapeHtml(part.best_combo || "Configuración estándar de torneo")}</div>
             <div class="text-[10px] text-slate-400">Estado de reglamento y procedencia: <strong class="text-amber-300">no verificados por AppBey</strong></div>
           </div>
 
           <!-- Action Buttons -->
           <div class="flex items-center justify-between gap-2 pt-2">
-            <a href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 flex items-center gap-1.5 transition">
-              <span>🌐 Consultar referencia Takara Tomy</span>
+            <a href="https://beyblade-x-api.onrender.com/swagger-ui.html" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 flex items-center gap-1.5 transition">
+              <span>🌐 Ver fuente del catálogo</span>
             </a>
             <button onclick="closePartModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
               Cerrar

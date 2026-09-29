@@ -42,10 +42,10 @@ AppBey ofrece una suite completa inspirada en las mejores mecánicas de **Challo
 
 ---
 
-## 📊 Base de Datos Real & Rankings Temporada #1 y #2
+## 📊 Registro de Rankings Temporada #1 y #2
 
-AppBey cuenta con la base de datos oficial del Ranking Nacional Individual (Asociación Panameña de Beyblade):
-- **Temporada 1 (Histórica y Oficial)**: 96 Bladers registrados con su puntaje acumulado, victorias, derrotas, porcentaje de winrate y podio nacional:
+AppBey mantiene un registro de rankings y resultados de temporadas:
+- **Temporada 1 (Histórica)**: 96 Bladers registrados con su puntaje acumulado, victorias, derrotas, porcentaje de winrate y podio:
   - 🥇 **#1 Yorch** (Campeón Nacional)
   - 🥈 **#2 Woonka** (2do Lugar)
   - 🥉 **#3 Kanghy** (3er Lugar)
@@ -92,7 +92,7 @@ appbey_v2/
 │           ├── referee_pad.js     # Marcador táctil WBO BeyScore
 │           ├── stadium_display.js # Proyector TV para estadios
 │           ├── deck_builder.js    # Constructor de Decks 3on3
-│           ├── tier_list.js       # Meta Tier List de piezas
+│           ├── tier_list.js       # Catálogo y clasificación de piezas
 │           ├── rankings.js        # Tablas de clasificación T1 y T2
 │           ├── hall_of_fame.js    # Salón de la Fama
 │           ├── social.js          # Muro de la comunidad
@@ -211,6 +211,15 @@ El despliegue de producción usa Vercel para el frontend estático, Render para 
   - `APPBEY_DEMO_DATA=false`
   - `APPBEY_ADMIN_EMAIL=(correo inicial de la organización)`
   - `APPBEY_ADMIN_PASSWORD=(mínimo 12 caracteres)`
+  - `BEYBLADE_X_API_BASE_URL=https://beyblade-x-api.onrender.com/beybladex`
+
+El catálogo de piezas puede actualizarse desde la vista de piezas por un
+organizador o administrador. AppBey importa blades, ratchets y bits de la API
+comunitaria Beyblade X; no es una fuente oficial de Takara Tomy. La importación
+conserva las piezas ya existentes y sus IDs para no romper decks guardados, y
+las piezas nuevas quedan sin clasificar hasta que un organizador las revise.
+Si el servicio externo está dormido o no responde, la actualización informa el
+error y conserva el catálogo actual.
 
 `SECRET_KEY` es la variable recomendada para Render. Si no está configurada, el
 servidor puede arrancar usando un secreto temporal, pero los JWT se invalidarán

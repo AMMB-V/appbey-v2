@@ -38,7 +38,7 @@ window.renderRefereePadView = async (container, matchId) => {
                 <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-14 h-14 object-contain shrink-0" alt="AppBey Logo"/>
                 <div>
                   <h2 class="text-xl sm:text-2xl font-black text-white">Marcador BeyScore</h2>
-                  <p class="text-xs text-slate-400">Reglamento Oficial Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>
+                  <p class="text-xs text-slate-400">Puntuación Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>
                 </div>
               </div>
               <button onclick="location.hash='#/referee/standalone'" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">

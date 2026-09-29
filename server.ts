@@ -18,6 +18,7 @@ const parsedPort = Number.parseInt(process.env.PORT || "3000", 10);
 const PORT = Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort <= 65535 ? parsedPort : 3000;
 const HOST = "0.0.0.0";
 const startedAt = new Date().toISOString();
+const BEYBLADE_X_API_BASE_URL = (process.env.BEYBLADE_X_API_BASE_URL || "https://beyblade-x-api.onrender.com/beybladex").replace(/\/+$/, "");
 let isReady = false;
 const isProduction = process.env.NODE_ENV === "production";
 const demoDataEnabled = process.env.APPBEY_DEMO_DATA === "true";
@@ -144,7 +145,7 @@ interface BeybladePart {
   defense_stat: number;
   stamina_stat: number;
   dash_stat: number;
-  tier: "S" | "A" | "B" | "C";
+  tier: "S" | "A" | "B" | "C" | "N";
   description: string;
   pick_rate_pct?: number;
   win_rate_pct?: number;
@@ -158,14 +159,16 @@ interface BeybladePart {
 
 interface MetaSyncState {
   source_name: string;
+  source_url?: string;
   official_url: string;
   secondary_url: string;
   meta_version: string;
   last_synced_at: string;
   total_matches_analyzed: number;
-  status: "live_connected" | "synced" | "demo" | "not_configured";
+  status: "live_connected" | "synced" | "demo" | "not_configured" | "syncing" | "error";
   auto_sync_interval_mins: number;
   patch_notes: string[];
+  last_error?: string;
 }
 
 interface BladerDeck {
@@ -392,35 +395,38 @@ function nextId(records: readonly { id: number }[]): number {
 }
 
 function getMetaSyncSummary(): MetaSyncState {
+  const interruptedSync = metaSyncState.status === "syncing" && !catalogSyncInProgress;
+  const normalizedStatus = interruptedSync
+    ? "error"
+    : metaSyncState.status === "demo"
+      ? "not_configured"
+      : metaSyncState.status;
   return {
     ...metaSyncState,
-    source_name: demoDataEnabled ? "AppBey simulated reference data" : "AppBey local reference catalog",
-    meta_version: "AppBey local reference catalog",
-    last_synced_at: demoDataEnabled ? metaSyncState.last_synced_at : "",
-    total_matches_analyzed: 0,
-    status: demoDataEnabled ? "demo" : "not_configured",
-    patch_notes: demoDataEnabled ? [
-      "Los tiers y porcentajes mostrados son datos de referencia locales, no métricas oficiales.",
-      "El catálogo de AppBey no se mantiene sincronizado automáticamente con Takara Tomy ni con WBO.",
-      "Verifica el reglamento aplicable antes de usar una pieza en un evento."
-    ] : []
+    source_name: "Beyblade X API (comunitaria)",
+    source_url: `${BEYBLADE_X_API_BASE_URL.replace(/\/beybladex$/, "")}/swagger-ui.html`,
+    official_url: "https://beyblade.takaratomy.co.jp/beyblade-x/lineup/",
+    secondary_url: "https://worldbeyblade.org",
+    meta_version: "Catálogo comunitario",
+    last_synced_at: metaSyncState.status === "demo" ? "" : metaSyncState.last_synced_at,
+    status: normalizedStatus,
+    last_error: interruptedSync
+      ? "La actualización anterior se interrumpió. Puedes volver a intentarlo."
+      : metaSyncState.last_error,
+    patch_notes: [...metaSyncState.patch_notes]
   };
 }
 
 let metaSyncState: MetaSyncState = {
-  source_name: demoDataEnabled ? "AppBey simulated reference data" : "AppBey local reference catalog",
-  official_url: "https://worldbeyblade.org",
-  secondary_url: "https://beyblade.takaratomy.co.jp",
-  meta_version: "AppBey local reference catalog",
-  last_synced_at: new Date().toISOString(),
+  source_name: "Beyblade X API (comunitaria)",
+  official_url: "https://beyblade-x-api.onrender.com/swagger-ui.html",
+  secondary_url: "https://beyblade.takaratomy.co.jp/beyblade-x/lineup/",
+  meta_version: "Catálogo comunitario",
+  last_synced_at: "",
   total_matches_analyzed: 0,
-  status: demoDataEnabled ? "demo" : "not_configured",
-  auto_sync_interval_mins: 15,
-  patch_notes: demoDataEnabled ? [
-    "Los tiers y porcentajes mostrados son datos de referencia locales, no métricas oficiales.",
-    "El catálogo de AppBey no se mantiene sincronizado automáticamente con Takara Tomy ni con WBO.",
-    "Verifica el reglamento aplicable antes de usar una pieza en un evento."
-  ] : []
+  status: "not_configured",
+  auto_sync_interval_mins: 0,
+  patch_notes: []
 };
 
 type PersistedState = {
@@ -2602,11 +2608,149 @@ api.put("/users/:id/role", requireRoles(["admin"]), (req: AuthRequest, res) => {
 });
 
 // --- Beyblades & Decks ---
+type CatalogSourcePart = Record<string, unknown>;
+
+function catalogString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function catalogNumber(value: unknown, fallback: number): number {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function catalogSourceNumber(record: CatalogSourcePart, key: string, fallback: number): number {
+  return Object.hasOwn(record, key) ? catalogNumber(record[key], 0) : fallback;
+}
+
+function catalogType(record: CatalogSourcePart, existing?: BeybladePart): string {
+  const suppliedType = catalogString(record.bladeType) ||
+    catalogString(record.type) ||
+    catalogString(record.category) ||
+    catalogString(record.type_attr);
+  const normalizedType = suppliedType?.toLowerCase();
+  if (normalizedType === "attack") return "Attack";
+  if (normalizedType === "stamina") return "Stamina";
+  if (normalizedType === "defense") return "Defense";
+  if (normalizedType === "balance") return "Balance";
+  return suppliedType || existing?.type_attr || "Sin datos";
+}
+
+function catalogNameKey(name: string): string {
+  return name.replace(/\s*\([^)]*\)\s*$/, "").trim().toLocaleLowerCase();
+}
+
+function mergeExternalParts(
+  existingParts: BeybladePart[],
+  collections: Array<{ category: "blade" | "ratchet" | "bit"; endpoint: string; records: CatalogSourcePart[] }>,
+  syncedAt: string
+): BeybladePart[] {
+  const merged = [...existingParts];
+  let nextPartId = nextId(merged);
+
+  for (const collection of collections) {
+    const seenNames = new Set<string>();
+    for (const record of collection.records) {
+      const name = catalogString(record.name);
+      if (!name) throw new Error(`La fuente devolvió una pieza sin nombre en /${collection.endpoint}.`);
+      const nameKey = catalogNameKey(name);
+      if (seenNames.has(nameKey)) continue;
+      seenNames.add(nameKey);
+
+      const existingIndex = merged.findIndex((part) =>
+        part.category === collection.category && catalogNameKey(part.name) === nameKey
+      );
+      const existing = existingIndex >= 0 ? merged[existingIndex] : undefined;
+      const line = (catalogString(record.line) || "").toUpperCase();
+      const system = line.includes("UNIQUE") || line.includes("UX")
+        ? "UX"
+        : line.includes("BASIC") || line.includes("BX")
+          ? "BX"
+          : line.includes("CUSTOM")
+            ? "Custom"
+            : existing?.system || "BX";
+      const rawCode = catalogString(record.code) || existing?.code || name;
+      const attack = Math.max(0, Math.min(100, catalogSourceNumber(record, "attack", existing?.attack_stat ?? 0)));
+      const defense = Math.max(0, Math.min(100, catalogSourceNumber(record, "defense", existing?.defense_stat ?? 0)));
+      const stamina = Math.max(0, Math.min(100, catalogSourceNumber(record, "stamina", existing?.stamina_stat ?? 0)));
+      const dash = Math.max(0, Math.min(100, catalogSourceNumber(record, "dash", existing?.dash_stat ?? 0)));
+      const weight = Math.max(0, catalogSourceNumber(record, "weight", existing?.weight_grams ?? 0));
+      const detail = catalogString(record.description);
+      const sourceDetails = [
+        detail,
+        catalogString(record.hasbroName) && `Nombre Hasbro: ${catalogString(record.hasbroName)}`,
+        catalogString(record.spinDirection) && `Giro: ${catalogString(record.spinDirection)}`,
+        catalogString(record.releaseDate) && `Lanzamiento: ${catalogString(record.releaseDate)}`,
+        catalogString(record.collaboration) && `Colaboración: ${catalogString(record.collaboration)}`,
+        catalogString(record.compatibility) && `Compatibilidad: ${catalogString(record.compatibility)}`,
+        catalogString(record.tipShape) && `Forma: ${catalogString(record.tipShape)}`,
+        catalogString(record.material) && `Material: ${catalogString(record.material)}`
+      ].filter(Boolean).join(" · ");
+      const part: BeybladePart = {
+        ...(existing || {}),
+        id: existing?.id ?? nextPartId++,
+        code: rawCode,
+        name,
+        category: collection.category,
+        system,
+        type_attr: catalogType(record, existing),
+        weight_grams: weight,
+        attack_stat: attack,
+        defense_stat: defense,
+        stamina_stat: stamina,
+        dash_stat: dash,
+        tier: existing?.tier || "N",
+        description: sourceDetails || existing?.description || "Pieza de Beyblade X.",
+        last_updated: syncedAt,
+        source_reference: `${BEYBLADE_X_API_BASE_URL}/${collection.endpoint}`
+      };
+
+      if (existingIndex >= 0) merged[existingIndex] = part;
+      else merged.push(part);
+    }
+  }
+  return merged;
+}
+
+async function fetchCatalogCollection(endpoint: string): Promise<CatalogSourcePart[]> {
+  let response: globalThis.Response;
+  try {
+    response = await fetch(`${BEYBLADE_X_API_BASE_URL}/${endpoint}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(70_000)
+    });
+  } catch (error) {
+    const detail = error instanceof Error && error.name === "TimeoutError"
+      ? "La fuente tardó demasiado en responder."
+      : "No se pudo conectar con la fuente de datos.";
+    throw new Error(`${detail} (${endpoint})`);
+  }
+
+  if (!response.ok) throw new Error(`La fuente respondió HTTP ${response.status} (${endpoint}).`);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error(`La fuente devolvió JSON inválido (${endpoint}).`);
+  }
+  if (!Array.isArray(payload) || payload.length === 0 || payload.length > 5000) {
+    throw new Error(`La fuente devolvió una lista vacía o inválida (${endpoint}).`);
+  }
+  if (payload.some((item) => !item || typeof item !== "object" || Array.isArray(item))) {
+    throw new Error(`La fuente devolvió piezas inválidas (${endpoint}).`);
+  }
+  return payload as CatalogSourcePart[];
+}
+
+let catalogSyncInProgress = false;
+
 api.get("/beyblades/meta-tierlist", (req, res) => {
   const sTiers = parts.filter((p) => p.tier === "S");
   const aTiers = parts.filter((p) => p.tier === "A");
   const bTiers = parts.filter((p) => p.tier === "B");
   const cTiers = parts.filter((p) => p.tier === "C");
+  const unranked = parts.filter((p) => p.tier === "N");
 
   res.json({
     meta: getMetaSyncSummary(),
@@ -2619,46 +2763,69 @@ api.get("/beyblades/meta-tierlist", (req, res) => {
       s_tier: sTiers.length,
       a_tier: aTiers.length,
       b_tier: bTiers.length,
-      c_tier: cTiers.length
+      c_tier: cTiers.length,
+      unranked: unranked.length
     },
     top_picks: parts.slice().sort((a, b) => (b.pick_rate_pct || 0) - (a.pick_rate_pct || 0)).slice(0, 5)
   });
 });
 
-api.post("/beyblades/meta-tierlist/sync", (req, res) => {
-  if (!demoDataEnabled) {
-    res.status(503).json({ detail: "La sincronización oficial requiere una fuente de datos configurada" });
-    return;
+api.post("/beyblades/meta-tierlist/sync", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {
+  if (!catalogSyncInProgress) {
+    catalogSyncInProgress = true;
+    metaSyncState = { ...metaSyncState, status: "syncing", last_error: undefined };
+    void persistState().catch(() => undefined);
+
+    void (async () => {
+      try {
+        const endpoints = [
+          { category: "blade" as const, endpoint: "blades" },
+          { category: "ratchet" as const, endpoint: "ratchets" },
+          { category: "bit" as const, endpoint: "bits" }
+        ];
+        const collections = await Promise.all(endpoints.map(async ({ category, endpoint }) => ({
+          category,
+          endpoint,
+          records: await fetchCatalogCollection(endpoint)
+        })));
+        const syncedAt = new Date().toISOString();
+        const previousParts = parts;
+        const previousMeta = metaSyncState;
+        parts = mergeExternalParts(previousParts, collections, syncedAt);
+        metaSyncState = {
+          ...metaSyncState,
+          source_name: "Beyblade X API (comunitaria)",
+          last_synced_at: syncedAt,
+          meta_version: "Catálogo comunitario",
+          status: "synced",
+          last_error: undefined,
+          patch_notes: [`Catálogo actualizado: ${collections.reduce((total, item) => total + item.records.length, 0)} piezas importadas.`]
+        };
+        try {
+          await persistState();
+        } catch (error) {
+          parts = previousParts;
+          metaSyncState = previousMeta;
+          throw error;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Error desconocido al actualizar el catálogo.";
+        metaSyncState = {
+          ...metaSyncState,
+          status: "error",
+          last_error: message.slice(0, 240)
+        };
+        console.error("Beyblade X catalog synchronization failed:", message);
+        await persistState().catch(() => undefined);
+      } finally {
+        catalogSyncInProgress = false;
+      }
+    })();
   }
-  // Demo-only simulation. Production must use a verified provider integration.
-  metaSyncState.last_synced_at = new Date().toISOString();
-  metaSyncState.status = "demo";
-
-  // Simulate slight live tournament meta fluctuation
-  parts.forEach((p) => {
-    p.last_updated = metaSyncState.last_synced_at;
-    if (p.tier === "S") {
-      const delta = (Math.random() * 1.2 - 0.5);
-      p.pick_rate_pct = Math.min(99.5, Math.max(50.0, Number(((p.pick_rate_pct || 70) + delta).toFixed(1))));
-      p.win_rate_pct = Math.min(85.0, Math.max(58.0, Number(((p.win_rate_pct || 64) + (delta * 0.4)).toFixed(1))));
-    } else if (p.tier === "A") {
-      const delta = (Math.random() * 1.6 - 0.8);
-      p.pick_rate_pct = Math.min(65.0, Math.max(25.0, Number(((p.pick_rate_pct || 40) + delta).toFixed(1))));
-      p.win_rate_pct = Math.min(62.0, Math.max(50.0, Number(((p.win_rate_pct || 54) + (delta * 0.5)).toFixed(1))));
-    }
-  });
-
-  const timestampStr = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  metaSyncState.patch_notes.unshift(`[${timestampStr}] Simulación local de datos de referencia; no se consultaron fuentes oficiales.`);
-  if (metaSyncState.patch_notes.length > 8) {
-    metaSyncState.patch_notes.pop();
-  }
-
-  res.json({
+  res.status(202).json({
     success: true,
-    message: "Datos de referencia simulados; no se consultaron fuentes oficiales",
-    meta: getMetaSyncSummary(),
-    parts
+    message: "Actualización del catálogo iniciada.",
+    meta: getMetaSyncSummary()
   });
 });
 
@@ -2670,7 +2837,7 @@ api.put("/beyblades/parts/:id/tier", requireRoles(["organizer", "admin"]), (req:
     res.status(404).json({ detail: "Pieza no encontrada" });
     return;
   }
-  if (tier && ["S", "A", "B", "C"].includes(tier)) {
+  if (tier && ["S", "A", "B", "C", "N"].includes(tier)) {
     p.tier = tier;
   }
   if (trend) p.trend = trend;
