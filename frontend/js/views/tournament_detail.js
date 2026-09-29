@@ -119,7 +119,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     return `
       <div class="glass-card rounded-2xl p-4 sm:p-5 border ${borderClass} space-y-4">
         <div class="flex items-center justify-between text-xs pb-2 border-b border-slate-800">
-          <span class="font-bold text-slate-300">Ronda ${m.round_number} • Mesa / Stadium #${m.station_number}</span>
+          <span class="font-bold text-slate-300">Ronda ${m.round_number} • ${window.getMatchStationLabel(m)}</span>
           ${getMatchStatusBadge(m.status)}
         </div>
 
@@ -195,22 +195,30 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const advancers = tour.advancers_per_group || 2;
     const groupStageMatches = matches.filter(m => m.group_id || m.stage === "group_stage");
     const groupStageComplete = groupStageMatches.length > 0 && groupStageMatches.every(m => m.status === "finished");
-    const getHeadToHead = (participant, groupId) => {
+    // Shows the result of the direct match(es) against the rival(s) tied on
+    // group points, e.g. "1-0" (this player won) instead of their overall
+    // group win/draw/loss record (which duplicated the V/E/D columns).
+    const getHeadToHead = (participant, groupId, groupParticipants) => {
+      const tiedOpponents = (groupParticipants || []).filter(other =>
+        other.user_id !== participant.user_id &&
+        (other.group_points || 0) === (participant.group_points || 0)
+      );
+      if (!tiedOpponents.length) return "—";
+      const tiedIds = new Set(tiedOpponents.map(other => other.user_id));
       const directMatches = groupStageMatches.filter(m =>
         m.status === "finished" &&
         m.group_id === groupId &&
-        ((m.player_a_id === participant.user_id && m.player_b_id) || (m.player_b_id === participant.user_id && m.player_a_id))
+        ((m.player_a_id === participant.user_id && tiedIds.has(m.player_b_id)) ||
+          (m.player_b_id === participant.user_id && tiedIds.has(m.player_a_id)))
       );
       if (!directMatches.length) return "—";
       let wins = 0;
-      let draws = 0;
       let losses = 0;
       directMatches.forEach(m => {
-        if (m.winner_id === null) draws += 1;
-        else if (m.winner_id === participant.user_id) wins += 1;
-        else losses += 1;
+        if (m.winner_id === participant.user_id) wins += 1;
+        else if (m.winner_id) losses += 1;
       });
-      return `${wins}-${draws}-${losses}`;
+      return `${wins}-${losses}`;
     };
     // Collect group IDs
     let groupMap = {};
@@ -386,7 +394,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                         <th class="py-2.5 px-2 text-center">Empates</th>
                         <th class="py-2.5 px-2 text-center">Derrotas</th>
                         <th title="Diferencia de puntos (a favor menos en contra)" class="py-2.5 px-2 text-center">DIF</th>
-                        <th title="Victorias, empates y derrotas en partidas finalizadas de este grupo" class="py-2.5 px-2 text-center">Directo (V-E-D)</th>
+                        <th title="Resultado del combate directo contra el rival empatado en puntos de grupo (V-D)" class="py-2.5 px-2 text-center">Directo (V-D)</th>
                         <th class="py-2.5 px-3 text-center">Estado</th>
                         ${isOrganizer ? '<th class="py-2.5 px-2 text-center">Reasignar Grupo</th>' : ''}
                       </tr>
@@ -431,7 +439,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                               ${diffStr}
                             </td>
                             <td class="py-2.5 px-2 text-center text-slate-300 font-mono text-[11px]">
-                              ${getHeadToHead(p, gid)}
+                              ${getHeadToHead(p, gid, list)}
                             </td>
                             <td class="py-2.5 px-3 text-center">
                               ${groupStageComplete ? (isQual ? `
@@ -624,7 +632,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                           title="Haz clic para ver el marcador oficial de este match"
                         >
                           <div class="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800/80 pb-1.5">
-                            <span class="font-mono font-bold text-slate-300">Mesa #${m.station_number || 1}</span>
+                            <span class="font-mono font-bold text-slate-300">${window.getMatchStationLabel(m)}</span>
                             ${getMatchStatusBadge(m.status)}
                           </div>
 

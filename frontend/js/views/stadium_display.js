@@ -118,7 +118,7 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
               <!-- Station Header -->
               <div class="flex items-center justify-between">
                 <span class="px-4 py-1.5 rounded-full bg-blue-600/30 border border-cyan-400 text-cyan-300 font-black text-sm uppercase tracking-wider">
-                  🏟️ Stadium / Mesa #${m.station_number}
+                  🏟️ ${window.getMatchStationLabel(m)}
                 </span>
                 <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase ${m.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">
                   ${m.status === 'in_progress' ? '• EN COMBATE' : '⚠️ LLAMADO A MESA'}

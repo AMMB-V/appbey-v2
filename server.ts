@@ -4006,9 +4006,9 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
     if (m.player_a_id && m.player_b_id && m.winner_id) {
       updateEloRatings(m.player_a_id, m.player_b_id, m.winner_id);
     }
-    if (t && t.format === "single_elim") {
-      advanceSingleElimination(m);
-    }
+    // Advance the bracket for both pure single-elim tournaments and the knockout
+    // stage of groups_elim tournaments (advanceSingleElimination checks stage_type).
+    advanceSingleElimination(m);
   } else {
     m.status = "in_progress";
   }
@@ -4255,9 +4255,9 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
     if (m.player_a_id && m.player_b_id && m.winner_id) {
       updateEloRatings(m.player_a_id, m.player_b_id, m.winner_id);
     }
-    if (t && t.format === "single_elim") {
-      advanceSingleElimination(m);
-    }
+    // Advance the bracket for both pure single-elim tournaments and the knockout
+    // stage of groups_elim tournaments (advanceSingleElimination checks stage_type).
+    advanceSingleElimination(m);
   }
 
   recalcTournamentStats(m.tournament_id);
@@ -4320,9 +4320,9 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
   if (m.player_a_id && m.player_b_id && m.winner_id) {
     updateEloRatings(m.player_a_id, m.player_b_id, m.winner_id);
   }
-  if (t && t.format === "single_elim") {
-    advanceSingleElimination(m);
-  }
+  // Advance the bracket for both pure single-elim tournaments and the knockout
+  // stage of groups_elim tournaments (advanceSingleElimination checks stage_type).
+  advanceSingleElimination(m);
   recalcTournamentStats(m.tournament_id);
 
   broadcastTournament(m.tournament_id, "score_update", {

@@ -58,7 +58,7 @@ window.renderRefereePadView = async (container, matchId) => {
                       <div class="space-y-1">
                         <div class="flex items-center gap-2">
                           <span class="px-2 py-0.5 rounded bg-blue-600/30 border border-cyan-400/40 text-cyan-300 font-mono font-bold text-[11px]">
-                            Mesa #${m.station_number || m.bracket_position}
+                            ${window.getMatchStationLabel(m)}
                           </span>
                           <span class="text-[11px] text-slate-400 truncate max-w-[140px]">${m.tournament_title}</span>
                         </div>
@@ -248,7 +248,7 @@ window.renderRefereePadView = async (container, matchId) => {
         <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
           ${next ? `
             <button onclick="location.hash='#/referee/${next.id}'" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 active:scale-95 transition">
-              <span>➡️</span> Siguiente Combate (Mesa #${next.station_number || next.bracket_position})
+              <span>➡️</span> Siguiente Combate (${window.getMatchStationLabel(next)})
             </button>
           ` : ''}
           ${!isStandalone && m.tournament_id ? `
@@ -272,7 +272,7 @@ window.renderRefereePadView = async (container, matchId) => {
     return `
       <div class="bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
         <span class="text-[11px] uppercase font-bold text-slate-400 shrink-0 flex items-center gap-1 px-1">
-          <span>🏟️</span> Mesas:
+          <span>🏟️</span> Grupos:
         </span>
         <div class="flex items-center gap-2 shrink-0">
           ${matchesList.map(m => {
@@ -288,7 +288,7 @@ window.renderRefereePadView = async (container, matchId) => {
             
             return `
               <button onclick="location.hash='#/referee/${m.id}'" class="px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition active:scale-95 ${badgeBg}">
-                <span>Mesa #${m.station_number || m.bracket_position}:</span>
+                <span>${window.getMatchStationLabel(m)}:</span>
                 <span class="font-bold">${nameA} vs ${nameB}</span>
                 <span class="font-mono text-[10px] px-1.5 py-0.5 rounded ${isCurrent ? 'bg-slate-950 text-cyan-300' : 'bg-slate-900 text-slate-300'}">
                   ${m.score_a}-${m.score_b}
@@ -301,6 +301,18 @@ window.renderRefereePadView = async (container, matchId) => {
       </div>
     `;
   };
+
+  const renderTopStatus = (isFinished) => `
+    <span class="font-bold text-amber-400 flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full ${isFinished ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
+      ${isStandalone ? 'Marcador Libre BeyScore' : `${window.getMatchStationLabel(match)} • Ronda ${match.round_number || 1}`}
+    </span>
+    ${nextMatch ? `
+      <button onclick="location.hash='#/referee/${nextMatch.id}'" class="hidden sm:flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition font-bold">
+        <span>➡️ Siguiente: ${window.getMatchStationLabel(nextMatch)}</span>
+      </button>
+    ` : ''}
+  `;
 
   const renderRoundHistoryItem = (g, m, actualOrder) => {
     const isDraw = g.finish_type === "draw_0p" || g.awarded_to === "draw";
@@ -375,15 +387,7 @@ window.renderRefereePadView = async (container, matchId) => {
               </button>
             `}
             <span class="text-slate-600">|</span>
-            <span class="font-bold text-amber-400 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full ${isFinished ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}"></span>
-              ${isStandalone ? 'Marcador Libre BeyScore' : `Stadium #${match.station_number || match.bracket_position} • Ronda ${match.round_number || 1}`}
-            </span>
-            ${nextMatch ? `
-              <button onclick="location.hash='#/referee/${nextMatch.id}'" class="hidden sm:flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition font-bold">
-                <span>➡️ Siguiente combate #${nextMatch.station_number || nextMatch.bracket_position}</span>
-              </button>
-            ` : ''}
+            <span id="top-status-container" class="flex items-center gap-1.5 flex-wrap">${renderTopStatus(isFinished)}</span>
           </div>
 
           <!-- Target Points Quick Selector -->
@@ -421,7 +425,7 @@ window.renderRefereePadView = async (container, matchId) => {
         </div>
 
         <!-- Quick Match Switcher Bar (All Tournament Mesas) -->
-        ${renderMatchSwitcherBar(tournamentMatches, match.id)}
+        <div id="match-switcher-container">${renderMatchSwitcherBar(tournamentMatches, match.id)}</div>
 
         <!-- Launch Audio / Voice Chime Banner (Dynamic) -->
         <div id="chant-banner" class="hidden py-2 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-center text-sm uppercase tracking-widest shadow-lg animate-pulse">
@@ -735,6 +739,18 @@ window.renderRefereePadView = async (container, matchId) => {
     const bannerContainer = document.getElementById("finish-banner-container");
     if (bannerContainer) {
       bannerContainer.innerHTML = renderFinishBanner(isFinished, winnerName, currentMatch, nextMatch);
+    }
+
+    // 4b. Top status bar (group/station label, finished dot, next-match shortcut)
+    const topStatusContainer = document.getElementById("top-status-container");
+    if (topStatusContainer) {
+      topStatusContainer.innerHTML = renderTopStatus(isFinished);
+    }
+
+    // 4c. Group/match switcher bar so other referees see finished matches live
+    const switcherContainer = document.getElementById("match-switcher-container");
+    if (switcherContainer && !isStandalone) {
+      switcherContainer.innerHTML = renderMatchSwitcherBar(tournamentMatches, currentMatch.id);
     }
 
     // 5. Round counters

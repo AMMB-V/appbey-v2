@@ -166,7 +166,7 @@ test("service worker serves the cached SPA shell when offline", async () => {
       addEventListener: (name, callback) => listeners.set(name, callback)
     },
     caches: {
-      match: async (request) => request === "/?v=3.7.0" ? shell : undefined
+      match: async (request) => /^\/\?v=/.test(request) ? shell : undefined
     },
     fetch: async () => { throw new Error("offline"); },
     URL,

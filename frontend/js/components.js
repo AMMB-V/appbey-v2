@@ -82,6 +82,15 @@
     });
   };
 
+  // Referees are assigned per tournament group, not per physical station, so
+  // matches belonging to a group stage are labeled by their group letter.
+  // Knockout/playoff matches have no group_id and fall back to the station number.
+  window.getMatchStationLabel = (m) => {
+    if (!m) return "Grupo A";
+    if (m.group_id) return `Grupo ${m.group_id}`;
+    return `Mesa #${m.station_number || m.bracket_position || 1}`;
+  };
+
   // Official Logo & Avatar Renderer
   // Uses official AppBey Spinning Top Logo for players by default, or clean custom image if provided
   window.renderAvatar = (user, sizeClass = "w-8 h-8", textClass = "text-xs", borderClass = "border border-slate-700") => {
