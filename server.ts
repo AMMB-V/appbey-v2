@@ -3615,6 +3615,13 @@ api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: A
         created_at: new Date().toISOString()
       });
     }
+    // Byes must immediately push the advancing player into round 2, otherwise
+    // they sit "finished" forever and the bracket never fills subsequent rounds.
+    for (const byeMatch of matches.filter((match) =>
+      match.tournament_id === t.id && match.round_number === 1 && match.is_bye
+    )) {
+      advanceSingleElimination(byeMatch);
+    }
   }
 
   broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, status: t.status, current_round: t.current_round, stage_type: t.stage_type });
