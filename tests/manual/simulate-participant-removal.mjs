@@ -194,7 +194,7 @@ async function main() {
     title: `Simulacro Remocion Grupos ${SUFFIX}`,
     format: "groups_elim",
     max_participants: 4,
-    group_count: 1,
+    group_count: 2,
     advancers_per_group: 2,
     match_target_points: 3,
     venue_name: "Arena de Pruebas",

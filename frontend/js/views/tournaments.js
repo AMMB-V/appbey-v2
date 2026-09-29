@@ -65,11 +65,11 @@ window.renderTournamentsView = async (container) => {
             <div class="grid grid-cols-2 gap-2 text-xs py-2 border-y border-slate-800">
               <div>
                 <span class="text-slate-500 block">Formato</span>
-                <span class="font-semibold text-slate-200">${t.format === 'groups_elim' ? 'Grupos + Playoff (Challonge)' : t.format === 'swiss' ? 'Sistema Suizo' : 'Eliminación Directa'}</span>
+                <span class="font-semibold text-slate-200">${t.format === 'groups_elim' ? 'Grupos + Playoff (Challonge)' : t.format === 'round_robin' ? 'Todos contra Todos (Liga)' : t.format === 'swiss' ? 'Sistema Suizo' : 'Eliminación Directa'}</span>
               </div>
               <div>
                 <span class="text-slate-500 block">Regla</span>
-                <span class="font-semibold text-slate-200">${t.battle_type === '3on3_deck' ? '3on3 Deck (4 pts)' : '1on1 (3 pts)'}</span>
+                <span class="font-semibold text-slate-200">${t.battle_type === '3on3_deck' ? '3on3 Deck' : '1on1'} (${t.match_target_points || 4} pts)</span>
               </div>
               <div>
                 <span class="text-slate-500 block">Lugar</span>
@@ -275,7 +275,7 @@ window.openCreateTournamentModal = () => {
 window.toggleGroupOptions = (format) => {
   const panel = document.getElementById("group-config-panel");
   if (panel) {
-    panel.style.display = format === "groups_elim" || format === "round_robin" ? "block" : "none";
+    panel.style.display = format === "groups_elim" ? "block" : "none";
   }
 };
 

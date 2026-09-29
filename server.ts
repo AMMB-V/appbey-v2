@@ -391,20 +391,35 @@ function nextId(records: readonly { id: number }[]): number {
   return records.reduce((maximum, record) => Math.max(maximum, record.id), 0) + 1;
 }
 
+function getMetaSyncSummary(): MetaSyncState {
+  return {
+    ...metaSyncState,
+    source_name: demoDataEnabled ? "AppBey simulated reference data" : "AppBey local reference catalog",
+    meta_version: "AppBey local reference catalog",
+    last_synced_at: demoDataEnabled ? metaSyncState.last_synced_at : "",
+    total_matches_analyzed: 0,
+    status: demoDataEnabled ? "demo" : "not_configured",
+    patch_notes: demoDataEnabled ? [
+      "Los tiers y porcentajes mostrados son datos de referencia locales, no métricas oficiales.",
+      "El catálogo de AppBey no se mantiene sincronizado automáticamente con Takara Tomy ni con WBO.",
+      "Verifica el reglamento aplicable antes de usar una pieza en un evento."
+    ] : []
+  };
+}
+
 let metaSyncState: MetaSyncState = {
-  source_name: "World Beyblade Organization (WBO) & Takara Tomy Competitive Meta Feed",
+  source_name: demoDataEnabled ? "AppBey simulated reference data" : "AppBey local reference catalog",
   official_url: "https://worldbeyblade.org",
   secondary_url: "https://beyblade.takaratomy.co.jp",
-  meta_version: "BX/UX Meta Ver. 2026.3 (WBO Sanctioned)",
+  meta_version: "AppBey local reference catalog",
   last_synced_at: new Date().toISOString(),
-  total_matches_analyzed: demoDataEnabled ? 2840 : 0,
+  total_matches_analyzed: 0,
   status: demoDataEnabled ? "demo" : "not_configured",
   auto_sync_interval_mins: 15,
   patch_notes: demoDataEnabled ? [
-    "Sincronización oficial WBO: Silver Wolf y Whale Wave ingresan al Meta Tier S/A tras los torneos G1.",
-    "Ajuste en pick rates: Ratchet 9-60 y Bit Disc Ball mantienen dominancia en torneos 3on3 Deck.",
-    "Elevate (E) y Glide (G) integrados al catálogo competitivo oficial con métricas de resistencia y rebote.",
-    "Regla de Deck 3on3: No se permiten piezas repetidas según el reglamento oficial WBO y TT."
+    "Los tiers y porcentajes mostrados son datos de referencia locales, no métricas oficiales.",
+    "El catálogo de AppBey no se mantiene sincronizado automáticamente con Takara Tomy ni con WBO.",
+    "Verifica el reglamento aplicable antes de usar una pieza en un evento."
   ] : []
 };
 
@@ -1189,7 +1204,7 @@ function seedDatabase() {
     created_at: now
   }));
 
-  // Parts with Live Meta Data from WBO & Takara Tomy Competitive Database
+  // AppBey's local part catalog and reference data; no live provider is connected.
   parts = [
     // Blades
     { id: 1, code: "BX-23", name: "Phoenix Wing", category: "blade", system: "BX", type_attr: "Attack", weight_grams: 38.2, attack_stat: 95, defense_stat: 70, stamina_stat: 65, dash_stat: 90, tier: "S", pick_rate_pct: 84.5, win_rate_pct: 66.8, trend: "stable", trend_label: "Meta Dominante #1", best_combo: "Phoenix Wing 9-60 GF / Point", official_ruling: "Legal WBO Standard", last_updated: now, source_reference: "WBO World Rankings 2026", description: "Blade pesada de metal pintado con tremendo poder de smash y Xtreme Dash." },
@@ -2594,7 +2609,7 @@ api.get("/beyblades/meta-tierlist", (req, res) => {
   const cTiers = parts.filter((p) => p.tier === "C");
 
   res.json({
-    meta: metaSyncState,
+    meta: getMetaSyncSummary(),
     parts,
     counts: {
       total: parts.length,
@@ -2617,8 +2632,7 @@ api.post("/beyblades/meta-tierlist/sync", (req, res) => {
   }
   // Demo-only simulation. Production must use a verified provider integration.
   metaSyncState.last_synced_at = new Date().toISOString();
-  metaSyncState.total_matches_analyzed += Math.floor(Math.random() * 45) + 15;
-  metaSyncState.status = "live_connected";
+  metaSyncState.status = "demo";
 
   // Simulate slight live tournament meta fluctuation
   parts.forEach((p) => {
@@ -2635,15 +2649,15 @@ api.post("/beyblades/meta-tierlist/sync", (req, res) => {
   });
 
   const timestampStr = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  metaSyncState.patch_notes.unshift(`[${timestampStr}] Sincronización en vivo completada con la base de datos oficial WBO/TT. Total de combates procesados: ${metaSyncState.total_matches_analyzed}.`);
+  metaSyncState.patch_notes.unshift(`[${timestampStr}] Simulación local de datos de referencia; no se consultaron fuentes oficiales.`);
   if (metaSyncState.patch_notes.length > 8) {
     metaSyncState.patch_notes.pop();
   }
 
   res.json({
     success: true,
-    message: "Tier List sincronizada exitosamente con WBO y Takara Tomy Live Data Feed",
-    meta: metaSyncState,
+    message: "Datos de referencia simulados; no se consultaron fuentes oficiales",
+    meta: getMetaSyncSummary(),
     parts
   });
 });
@@ -2828,8 +2842,8 @@ api.get("/tournaments", (req, res) => {
 });
 
 api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {
-  const data = req.body;
-  if (!data.title || typeof data.title !== "string" || !data.title.trim()) {
+  const data = req.body && typeof req.body === "object" ? req.body : {};
+  if (!data.title || typeof data.title !== "string" || data.title.trim().length < 3) {
     res.status(400).json({ detail: "El título del torneo es obligatorio (mínimo 3 caracteres)" });
     return;
   }
@@ -2838,8 +2852,22 @@ api.post("/tournaments", requireRoles(["organizer", "admin"]), (req: AuthRequest
   if (data.format === "single_elim" || data.format === "round_robin" || data.format === "swiss") {
     format = data.format;
   }
-  const groupCount = data.group_count ? Math.max(2, Math.min(32, parseInt(data.group_count, 10))) : undefined;
-  const advancersPerGroup = data.advancers_per_group ? Math.max(1, Math.min(4, parseInt(data.advancers_per_group, 10) || 2)) : 2;
+  const rawGroupCount = data.group_count;
+  const groupCount = rawGroupCount === undefined || rawGroupCount === null || rawGroupCount === ""
+    ? undefined
+    : Number(rawGroupCount);
+  if (groupCount !== undefined && (!Number.isInteger(groupCount) || groupCount < 2 || groupCount > 16)) {
+    res.status(400).json({ detail: "La cantidad de grupos debe estar entre 2 y 16" });
+    return;
+  }
+  const rawAdvancers = data.advancers_per_group;
+  const advancersPerGroup = rawAdvancers === undefined || rawAdvancers === null || rawAdvancers === ""
+    ? 2
+    : Number(rawAdvancers);
+  if (!Number.isInteger(advancersPerGroup) || advancersPerGroup < 1 || advancersPerGroup > 4) {
+    res.status(400).json({ detail: "Los clasificados por grupo deben estar entre 1 y 4" });
+    return;
+  }
   const defaultTieBreaks = ["victories_losses", "point_difference", "head_to_head", "points_for_seed"];
   const requestedTieBreaks: string[] = Array.isArray(data.tie_break_priority)
     ? data.tie_break_priority.map((value: unknown) => String(value)).filter((value: string) => defaultTieBreaks.includes(value))
@@ -3734,12 +3762,12 @@ api.get("/tournaments/:id/matches", (req, res) => {
         sets_won_a: m.sets_won_a || 0,
         sets_won_b: m.sets_won_b || 0,
         sets: m.sets || [],
-        player_a: playerA,
-        player_b: playerB,
+        player_a: publicUser(playerA),
+        player_b: publicUser(playerB),
         player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
         player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
         winner: publicUser(users.find((u) => u.id === m.winner_id)),
-        referee: users.find((u) => u.id === m.referee_id) || null,
+        referee: publicUser(users.find((u) => u.id === m.referee_id)),
         games: matchGames.filter((g) => g.match_id === m.id)
       };
     })
@@ -4095,26 +4123,26 @@ function formatMatchDetails(m: TournamentMatch) {
     sets_won_a: isElimination ? (m.sets_won_a || 0) : undefined,
     sets_won_b: isElimination ? (m.sets_won_b || 0) : undefined,
     sets,
-    player_a: playerA,
-    player_b: playerB,
+    player_a: publicUser(playerA),
+    player_b: publicUser(playerB),
     player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
     player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
     winner: publicUser(users.find((u) => u.id === m.winner_id)),
-    referee: users.find((u) => u.id === m.referee_id) || null,
+    referee: publicUser(users.find((u) => u.id === m.referee_id)),
     tournament: t,
     games: matchGames.filter((g) => g.match_id === m.id),
     tournament_matches: matches
       .filter((tm) => tm.tournament_id === m.tournament_id)
       .map((tm) => ({
         ...tm,
-        player_a: users.find((u) => u.id === tm.player_a_id) || null,
-        player_b: users.find((u) => u.id === tm.player_b_id) || null,
+        player_a: publicUser(users.find((u) => u.id === tm.player_a_id)),
+        player_b: publicUser(users.find((u) => u.id === tm.player_b_id)),
         winner: publicUser(users.find((u) => u.id === tm.winner_id))
       })),
     next_combat: nextCombat ? {
       ...nextCombat,
-      player_a: users.find((u) => u.id === nextCombat.player_a_id) || null,
-      player_b: users.find((u) => u.id === nextCombat.player_b_id) || null
+      player_a: publicUser(users.find((u) => u.id === nextCombat.player_a_id)),
+      player_b: publicUser(users.find((u) => u.id === nextCombat.player_b_id))
     } : null
   };
 }
