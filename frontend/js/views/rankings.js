@@ -3,7 +3,7 @@ window.renderRankingsView = async (container) => {
   container.innerHTML = `
     <div class="text-center py-16 text-slate-500 flex flex-col items-center gap-3">
       <div class="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-xs sm:text-sm font-medium">Cargando Rankings Oficiales de la Asociación Panameña de Beyblade...</span>
+      <span class="text-xs sm:text-sm font-medium">Cargando rankings...</span>
     </div>
   `;
 
@@ -145,12 +145,11 @@ window.renderRankingsView = async (container) => {
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
-                <span>🇵🇦</span> Asociación Panameña de Beyblade • APB
+                <span>🇵🇦</span> Registro oficial
               </div>
               <h1 class="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-                <span class="text-amber-400">🏆</span> Ranking Oficial de Bladers
+                <span class="text-amber-400">🏆</span> Ranking de Bladers
               </h1>
-              <p class="text-slate-400 text-xs md:text-sm">Registro histórico oficial con 96 bladers clasificados, estadísticas completas de partidas, victorias, puntos y win rate.</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -167,7 +166,7 @@ window.renderRankingsView = async (container) => {
               <select id="season-selector" onchange="window.handleSeasonChange(this.value)" class="bg-slate-900 border border-slate-700 text-cyan-300 font-bold rounded-xl px-3 py-2 text-xs outline-none focus:border-cyan-400">
                 ${seasons.map(s => `
                   <option value="${s.id}" ${s.id === selectedSeasonId ? 'selected' : ''}>
-                    ${s.name} ${s.id === 1 ? '📜 (Oficial 96 Bladers)' : '⚡ (Activa)'}
+                    ${s.name} ${s.id === 1 ? '📜 (Histórica · 96 bladers)' : '⚡ (Activa)'}
                   </option>
                 `).join("")}
               </select>
@@ -262,7 +261,7 @@ window.renderRankingsView = async (container) => {
               />
             </div>
             <div id="ranking-count-summary" class="text-xs text-slate-400 font-mono">
-              Mostrando <strong class="text-white">${filtered.length}</strong> de <strong class="text-cyan-400">${rawRankingData.length}</strong> Bladers Oficiales
+              Mostrando <strong class="text-white">${filtered.length}</strong> de <strong class="text-cyan-400">${rawRankingData.length}</strong> bladers registrados
             </div>
           </div>
 
@@ -303,7 +302,7 @@ window.renderRankingsView = async (container) => {
 
       const countEl = document.getElementById("ranking-count-summary");
       if (countEl) {
-        countEl.innerHTML = `Mostrando <strong class="text-white">${filtered.length}</strong> de <strong class="text-cyan-400">${rawRankingData.length}</strong> Bladers Oficiales`;
+        countEl.innerHTML = `Mostrando <strong class="text-white">${filtered.length}</strong> de <strong class="text-cyan-400">${rawRankingData.length}</strong> bladers registrados`;
       }
     };
 
@@ -361,7 +360,7 @@ window.renderRankingsView = async (container) => {
             <div>
               <h2 class="text-xl font-black text-white">${name}</h2>
               <div class="text-xs text-amber-300 font-mono">@${username} • Panamá 🇵🇦</div>
-              <div class="text-xs text-slate-400 mt-0.5">Asociación Panameña de Beyblade</div>
+              <div class="text-xs text-slate-400 mt-0.5">Registro oficial</div>
             </div>
           </div>
 
