@@ -286,6 +286,11 @@ interface TournamentMatch {
   sets?: Array<{ set_number: number; score_a: number; score_b: number; winner_id: number | null }>;
   status: "pending" | "calling" | "in_progress" | "finished";
   is_bye: boolean;
+  // Set when a participant is removed/withdrawn from a bracket match whose
+  // opponent slot was still undecided (TBD). Once the opponent slot is
+  // eventually filled by advanceSingleElimination, that opponent auto-wins
+  // by walkover instead of the match staying stuck forever.
+  walkover_pending?: "player_a" | "player_b" | null;
   created_at: string;
 }
 
@@ -1970,6 +1975,76 @@ function advanceSingleElimination(m: TournamentMatch) {
     winner_id: m.winner_id,
     next_match_id: nextMatch.id
   });
+
+  // If the opponent slot of nextMatch was already vacated by a withdrawn
+  // participant (see withdrawParticipantFromMatches), the player who just
+  // filled the other slot advances automatically without playing.
+  if (nextMatch.walkover_pending === "player_a" && nextMatch.player_a_id === null && nextMatch.player_b_id) {
+    forfeitMatch(nextMatch, nextMatch.player_b_id);
+  } else if (nextMatch.walkover_pending === "player_b" && nextMatch.player_b_id === null && nextMatch.player_a_id) {
+    forfeitMatch(nextMatch, nextMatch.player_a_id);
+  }
+}
+
+// Finishes a match by walkover in favor of winnerId (used when the opponent
+// withdraws/is removed from the tournament). Skips ELO updates since no game
+// was actually played, but still recalculates stats and advances the bracket
+// so the tournament doesn't get stuck on a forfeited match.
+function forfeitMatch(m: TournamentMatch, winnerId: number) {
+  m.status = "finished";
+  m.winner_id = winnerId;
+  matchGames.push({
+    id: nextId(matchGames),
+    match_id: m.id,
+    game_order: matchGames.filter((g) => g.match_id === m.id).length + 1,
+    finish_type: "forfeit",
+    awarded_to: winnerId === m.player_a_id ? "player_a" : "player_b",
+    points: 0,
+    created_at: new Date().toISOString()
+  });
+  updateStatsAfterMatch(m);
+  advanceSingleElimination(m);
+  broadcastTournament(m.tournament_id, "score_update", {
+    match_id: m.id,
+    station_number: m.station_number,
+    score_a: m.score_a,
+    score_b: m.score_b,
+    status: m.status,
+    winner_id: m.winner_id
+  });
+}
+
+// Called right before removing a participant from an in-progress tournament.
+// Resolves every one of their pending/in_progress/calling matches so the
+// bracket/group stage never gets stuck waiting on someone who is no longer
+// competing:
+//   - If the opponent is already known, the opponent wins by walkover.
+//   - If the opponent slot is still TBD (bracket match awaiting the winner
+//     of another match), the withdrawing player's slot is vacated and the
+//     match is flagged so the eventual opponent wins by walkover once known.
+function withdrawParticipantFromMatches(tournamentId: number, userId: number) {
+  const pending = matches.filter((m) =>
+    m.tournament_id === tournamentId &&
+    m.status !== "finished" &&
+    (m.player_a_id === userId || m.player_b_id === userId)
+  );
+
+  for (const m of pending) {
+    const isA = m.player_a_id === userId;
+    const opponentId = isA ? m.player_b_id : m.player_a_id;
+    if (opponentId) {
+      forfeitMatch(m, opponentId);
+    } else {
+      if (isA) {
+        m.player_a_id = null;
+        m.walkover_pending = "player_a";
+      } else {
+        m.player_b_id = null;
+        m.walkover_pending = "player_b";
+      }
+      broadcastTournament(tournamentId, "tournament_updated", { tournament_id: tournamentId, match_id: m.id, message: "Participante removido, casilla vacante en espera de rival" });
+    }
+  }
 }
 
 // Reverses the bracket-slot propagation done by advanceSingleElimination when a
@@ -3289,7 +3364,15 @@ api.delete("/tournaments/:id/participants/:userId", requireAuth, (req: AuthReque
     return;
   }
 
+  // Resolve any pending/in_progress/calling matches involving this participant
+  // BEFORE removing them, so the bracket/group stage never gets stuck waiting
+  // on someone who withdrew mid-tournament (opponent wins by walkover).
+  if (t.status === "in_progress") {
+    withdrawParticipantFromMatches(id, userId);
+  }
+
   participants.splice(pIdx, 1);
+  recalcTournamentStats(id);
   broadcastTournament(id, "tournament_updated", { tournament_id: id, message: "Participante removido" });
   res.json({ message: "Participante removido con éxito", user_id: userId });
 });
