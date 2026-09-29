@@ -1972,6 +1972,100 @@ function advanceSingleElimination(m: TournamentMatch) {
   });
 }
 
+// Reverses the bracket-slot propagation done by advanceSingleElimination when a
+// finished elimination match is reopened/undone. Returns { blocked: true } when
+// the winner's next match has already started/finished, since undoing then
+// would silently desync a bracket that already moved on.
+function revertBracketPropagation(m: TournamentMatch): { blocked: boolean; detail?: string } {
+  const t = tournaments.find((tour) => tour.id === m.tournament_id);
+  if (!t || !m.winner_id) return { blocked: false };
+
+  const isPlayoffOrElim = t.format === "single_elim" || t.stage_type === "knockout";
+  if (!isPlayoffOrElim) return { blocked: false };
+
+  const nextRound = m.round_number + 1;
+  if (nextRound > (t.total_rounds || 0)) {
+    // m was the Gran Final; revert the tournament completion it triggered.
+    if (t.status === "completed") {
+      t.status = "in_progress";
+      t.stage_type = "knockout";
+      t.winner_user_id = null;
+      t.runner_up_user_id = null;
+      broadcastTournament(t.id, "tournament_updated", { tournament_id: t.id, status: "in_progress" });
+    }
+    return { blocked: false };
+  }
+
+  const nextPos = Math.floor((m.bracket_position + 1) / 2);
+  const isSlotA = m.bracket_position % 2 === 1;
+  const nextMatch = matches.find((match) => match.tournament_id === t.id && !match.group_id && match.round_number === nextRound && match.bracket_position === nextPos);
+  if (!nextMatch) return { blocked: false };
+
+  const slotPlayer = isSlotA ? nextMatch.player_a_id : nextMatch.player_b_id;
+  if (slotPlayer !== m.winner_id) return { blocked: false };
+
+  const nextHasProgress = nextMatch.status !== "pending" || matchGames.some((g) => g.match_id === nextMatch.id);
+  if (nextHasProgress) {
+    return { blocked: true, detail: "No se puede deshacer: el ganador ya avanzó y su siguiente combate ya inició o finalizó." };
+  }
+
+  if (isSlotA) nextMatch.player_a_id = null;
+  else nextMatch.player_b_id = null;
+  return { blocked: false };
+}
+
+// Rebuilds score_a/score_b/sets/sets_won_a/sets_won_b/status/winner_id purely
+// from the recorded matchGames, mirroring record-finish's set-closing logic.
+// Used after removing a game (undo-finish) so multi-set elimination matches
+// stay consistent instead of summing points across already-closed sets.
+function recomputeMatchFromGames(m: TournamentMatch) {
+  const t = tournaments.find((tour) => tour.id === m.tournament_id);
+  const target = m.target_points || t?.match_target_points || 4;
+  const isElimination = !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim");
+  const setTarget = m.set_target_points || target;
+
+  const games = matchGames.filter((g) => g.match_id === m.id).sort((a, b) => a.id - b.id);
+
+  m.score_a = 0;
+  m.score_b = 0;
+  m.winner_id = null;
+  m.status = games.length ? "in_progress" : "pending";
+
+  if (isElimination) {
+    m.sets = [];
+    m.sets_won_a = 0;
+    m.sets_won_b = 0;
+    m.set_target_points = setTarget;
+  }
+
+  for (const g of games) {
+    if (g.awarded_to === "player_a") m.score_a += g.points;
+    else if (g.awarded_to === "player_b") m.score_b += g.points;
+
+    const threshold = isElimination ? setTarget : target;
+    if (m.score_a >= threshold || m.score_b >= threshold) {
+      if (isElimination) {
+        const setWinner = m.score_a > m.score_b ? m.player_a_id : m.player_b_id;
+        m.sets!.push({ set_number: (m.sets || []).length + 1, score_a: m.score_a, score_b: m.score_b, winner_id: setWinner });
+        if (setWinner === m.player_a_id) m.sets_won_a = (m.sets_won_a || 0) + 1;
+        else if (setWinner === m.player_b_id) m.sets_won_b = (m.sets_won_b || 0) + 1;
+        m.score_a = 0;
+        m.score_b = 0;
+        if ((m.sets_won_a || 0) >= 2 || (m.sets_won_b || 0) >= 2) {
+          m.status = "finished";
+          m.winner_id = (m.sets_won_a || 0) > (m.sets_won_b || 0) ? m.player_a_id : m.player_b_id;
+        } else {
+          m.status = "in_progress";
+        }
+      } else {
+        m.status = "finished";
+        if (m.score_a > m.score_b) m.winner_id = m.player_a_id;
+        else if (m.score_b > m.score_a) m.winner_id = m.player_b_id;
+      }
+    }
+  }
+}
+
 function createWalkinBlader(displayName: string, country?: string, favoriteCombo?: string): User {
   const baseUsername = displayName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 15) || "blader";
   let uniqueUsername = baseUsername;
@@ -4053,32 +4147,27 @@ api.post("/matches/:id/undo-finish", requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
+  if (m.status === "finished") {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
+    }
+  }
+
   const lastGame = mGames[mGames.length - 1];
   const gIdx = matchGames.findIndex((g) => g.id === lastGame.id);
   if (gIdx !== -1) {
     matchGames.splice(gIdx, 1);
   }
 
-  let sa = 0;
-  let sb = 0;
-  const remaining = matchGames.filter((g) => g.match_id === m.id);
-  for (const g of remaining) {
-    if (g.awarded_to === "player_a") sa += g.points;
-    if (g.awarded_to === "player_b") sb += g.points;
-  }
-  m.score_a = sa;
-  m.score_b = sb;
+  // Rebuild score/sets state from the remaining games instead of naively
+  // summing points across already-closed sets (bug: overcounted best-of-3
+  // elimination matches when undoing a point from a later set).
+  recomputeMatchFromGames(m);
 
   const t = tournaments.find((tour) => tour.id === m.tournament_id);
   const target = m.target_points || t?.match_target_points || 4;
-
-  if (m.score_a >= target || m.score_b >= target) {
-    m.status = "finished";
-    m.winner_id = m.score_a > m.score_b ? m.player_a_id : m.player_b_id;
-  } else {
-    m.status = remaining.length > 0 ? "in_progress" : "pending";
-    m.winner_id = null;
-  }
 
   recalcTournamentStats(m.tournament_id);
 
@@ -4089,7 +4178,10 @@ api.post("/matches/:id/undo-finish", requireAuth, (req: AuthRequest, res) => {
     score_b: m.score_b,
     target_points: target,
     status: m.status,
-    winner_id: m.winner_id
+    winner_id: m.winner_id,
+    sets_won_a: m.sets_won_a || 0,
+    sets_won_b: m.sets_won_b || 0,
+    sets: m.sets || []
   });
 
   res.json(formatMatchDetails(m));
@@ -4113,6 +4205,14 @@ api.post("/matches/:id/reopen", requireAuth, (req: AuthRequest, res) => {
   if (!isAuthorized) {
     res.status(403).json({ detail: "Permisos insuficientes para administrar este combate" });
     return;
+  }
+
+  if (m.status === "finished") {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
+    }
   }
 
   m.status = "in_progress";
@@ -4148,6 +4248,14 @@ api.post("/matches/:id/target-points", requireAuth, (req: AuthRequest, res) => {
   }
   const t = tournaments.find((tour) => tour.id === m.tournament_id);
   const target = Math.max(1, parseInt(req.body.target_points, 10) || 4);
+  const willUnfinish = m.status === "finished" && !(m.score_a >= target || m.score_b >= target);
+  if (willUnfinish) {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
+    }
+  }
   m.target_points = target;
 
   if (m.score_a >= target || m.score_b >= target) {
@@ -4193,11 +4301,22 @@ api.post("/matches/:id/reset", requireAuth, (req: AuthRequest, res) => {
     return;
   }
 
+  if (m.status === "finished") {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
+    }
+  }
+
   matchGames = matchGames.filter((g) => g.match_id !== m.id);
   m.score_a = 0;
   m.score_b = 0;
   m.status = "pending";
   m.winner_id = null;
+  m.sets = [];
+  m.sets_won_a = 0;
+  m.sets_won_b = 0;
 
   recalcTournamentStats(m.tournament_id);
 
@@ -4207,7 +4326,10 @@ api.post("/matches/:id/reset", requireAuth, (req: AuthRequest, res) => {
     score_a: 0,
     score_b: 0,
     status: "pending",
-    winner_id: null
+    winner_id: null,
+    sets_won_a: 0,
+    sets_won_b: 0,
+    sets: []
   });
 
   res.json(formatMatchDetails(m));
@@ -4234,20 +4356,32 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
   }
 
   const { score_a, score_b, status, winner_id } = req.body;
-  if (score_a !== undefined) m.score_a = Math.max(0, parseInt(score_a, 10) || 0);
-  if (score_b !== undefined) m.score_b = Math.max(0, parseInt(score_b, 10) || 0);
+  const newScoreA = score_a !== undefined ? Math.max(0, parseInt(score_a, 10) || 0) : m.score_a;
+  const newScoreB = score_b !== undefined ? Math.max(0, parseInt(score_b, 10) || 0) : m.score_b;
 
   const target = m.target_points || t?.match_target_points || 4;
 
+  let newStatus: "calling" | "finished" | "in_progress" | "pending";
   if (status) {
-    m.status = status;
+    newStatus = status;
+  } else if (newScoreA >= target || newScoreB >= target) {
+    newStatus = "finished";
   } else {
-    if (m.score_a >= target || m.score_b >= target) {
-      m.status = "finished";
-    } else {
-      m.status = (m.score_a > 0 || m.score_b > 0) ? "in_progress" : "pending";
+    newStatus = (newScoreA > 0 || newScoreB > 0) ? "in_progress" : "pending";
+  }
+
+  const wasFinished = m.status === "finished";
+  if (wasFinished && newStatus !== "finished") {
+    const revert = revertBracketPropagation(m);
+    if (revert.blocked) {
+      res.status(400).json({ detail: revert.detail });
+      return;
     }
   }
+
+  m.score_a = newScoreA;
+  m.score_b = newScoreB;
+  m.status = newStatus;
 
   if (winner_id !== undefined) {
     m.winner_id = winner_id;
