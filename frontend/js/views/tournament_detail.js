@@ -330,16 +330,16 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/20">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-cyan-300">📊 Fase de Grupos Estilo Challonge</span>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Siembra en Serpentina</span>
+              <span class="text-sm font-bold text-cyan-300">📊 ${tour.format === "round_robin" ? "Todos contra Todos (Round Robin)" : "Fase de Grupos Estilo Challonge"}</span>
+              ${tour.format !== "round_robin" ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Siembra en Serpentina</span>' : ''}
             </div>
             <p class="text-xs text-slate-400">
-              Sistema Round Robin por grupo (3 pts victoria, 1 pto empate). Desempates: victorias/derrotas &rarr; diferencia de puntos &rarr; enfrentamiento entre jugadores empatados &rarr; puntos a favor y seed.
+              Sistema Round Robin ${tour.format === "round_robin" ? "" : "por grupo "}(3 pts victoria, 1 pto empate). Desempates: victorias/derrotas &rarr; diferencia de puntos &rarr; enfrentamiento entre jugadores empatados &rarr; puntos a favor y seed.
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold whitespace-nowrap">
-              Top ${advancers} por grupo clasifican a Eliminatorias
+            <span class="px-3 py-1.5 rounded-xl ${tour.format === "round_robin" ? "bg-amber-500/20 text-amber-300 border-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"} border text-xs font-bold whitespace-nowrap">
+              ${tour.format === "round_robin" ? "El 1º lugar es el campeón" : `Top ${advancers} por grupo clasifican a Eliminatorias`}
             </span>
             ${isOrganizer && ["registration_open", "check_in"].includes(tour.status) && matches.length === 0 ? `
               <label class="flex items-center gap-1.5 text-[11px] text-slate-300 whitespace-nowrap">
@@ -378,8 +378,8 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                       <span class="text-[11px] text-slate-400">${list.length} Bladers en contienda</span>
                     </div>
                   </div>
-                  <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                    Top ${advancers} a Playoffs
+                  <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold ${tour.format === "round_robin" ? "bg-amber-500/10 text-amber-400 border-amber-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"} border">
+                    ${tour.format === "round_robin" ? "Clasificación Final" : `Top ${advancers} a Playoffs`}
                   </span>
                 </div>
 
@@ -403,9 +403,13 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                       ${list.map((p, pIdx) => {
                         const rank = p.group_rank || (pIdx + 1);
                         const isQual = groupStageComplete && rank <= advancers;
-                        const statusLabel = !groupStageComplete
-                          ? (groupStageMatches.length ? "En competencia" : "Inscrito")
-                          : isQual ? "Clasificado" : "Eliminado";
+                        const statusLabel = tour.format === "round_robin"
+                          ? (!groupStageComplete
+                              ? (groupStageMatches.length ? "En competencia" : "Inscrito")
+                              : rank === 1 ? "Campeón" : rank === 2 ? "Sub-campeón" : `${rank}º Lugar`)
+                          : !groupStageComplete
+                            ? (groupStageMatches.length ? "En competencia" : "Inscrito")
+                            : isQual ? "Clasificado" : "Eliminado";
                         const diffVal = p.group_diff || 0;
                         const diffStr = diffVal > 0 ? `+${diffVal}` : `${diffVal}`;
                         const diffColor = diffVal > 0 ? 'text-emerald-400' : diffVal < 0 ? 'text-rose-400' : 'text-slate-400';
@@ -442,7 +446,11 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                               ${getHeadToHead(p, gid, list)}
                             </td>
                             <td class="py-2.5 px-3 text-center">
-                              ${groupStageComplete ? (isQual ? `
+                              ${groupStageComplete ? (tour.format === "round_robin" ? `
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${rank === 1 ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-slate-800 text-slate-300 border-slate-700"} border shadow-sm">
+                                  ${statusLabel}
+                                </span>
+                              ` : isQual ? `
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
                                   ✓ Clasificado
                                 </span>
@@ -484,6 +492,42 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
   // Render Challonge Interactive Knockout Bracket Tree
   const renderChallongeKnockoutBracket = (matchesList, tour, isOrganizer) => {
+    // round_robin has no playoff phase at all (backend rejects /generate-playoffs
+    // for it): the champion is simply 1st place in the final standings once every
+    // match concludes, so this tab must show that instead of a playoffs call-to-action.
+    if (tour.format === "round_robin") {
+      if (tour.status === "completed") {
+        const podium = [...participants]
+          .filter(p => p.group_rank)
+          .sort((a, b) => (a.group_rank || 999) - (b.group_rank || 999))
+          .slice(0, 3);
+        const medal = ["🥇", "🥈", "🥉"];
+        return `
+          <div class="glass-card rounded-2xl p-6 sm:p-8 border border-amber-500/30 text-center space-y-5">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-3xl shadow-xl shadow-amber-500/30">🏆</div>
+            <h2 class="text-xl sm:text-2xl font-black text-white">Torneo Finalizado</h2>
+            <p class="text-xs sm:text-sm text-slate-300">Round Robin no tiene fase eliminatoria: el campeón es el 1º lugar de la clasificación final.</p>
+            <div class="max-w-md mx-auto space-y-2">
+              ${podium.map((p, idx) => `
+                <div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                  <span class="text-xl">${medal[idx] || "🎖️"}</span>
+                  ${window.renderAvatar(p.user, "w-7 h-7", "text-[10px]", "border border-slate-700")}
+                  <span class="font-bold text-white text-sm">${p.user?.username || "N/A"}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="glass-card rounded-2xl p-6 sm:p-8 border border-cyan-500/30 text-center space-y-3">
+          <div class="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-3xl shadow-xl shadow-cyan-500/30">📊</div>
+          <h2 class="text-xl sm:text-2xl font-black text-white">Round Robin — Sin Playoffs</h2>
+          <p class="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">Este torneo no tiene fase eliminatoria. El campeón será quien termine 1º en la clasificación final una vez concluyan todos los combates.</p>
+        </div>
+      `;
+    }
+
     // Filter matches that are part of the knockout stage
     const playoffMatches = matchesList.filter(m => !m.group_id && m.stage !== "group_stage");
     const isKnockoutActive = tour.stage_type === 'knockout' || playoffMatches.length > 0;

@@ -1804,8 +1804,12 @@ function recalcTournamentStats(tournamentId: number) {
     p.buchholz = oppIds.reduce((sum, oppId) => sum + (userMap.get(oppId)?.swiss_points || 0), 0);
   }
 
-  // Group stage standings ranking (configured tournament tiebreak rule)
-  if (tour && tour.format === "groups_elim") {
+  // Group stage standings ranking (configured tournament tiebreak rule).
+  // Applies to both groups_elim (multiple groups feeding a playoff bracket)
+  // and round_robin (a single group "A" with no playoff phase) since both
+  // create matches with group_id set and the frontend renders the same
+  // group-standings table (group_rank, W/D/L, diff, head-to-head) for either.
+  if (tour && (tour.format === "groups_elim" || tour.format === "round_robin")) {
     const advancers = tour.advancers_per_group || 2;
     const groupStageMatches = matches.filter((match) => match.tournament_id === tournamentId && (match.group_id || match.stage === "group_stage"));
     const groupStageComplete = groupStageMatches.length > 0 && groupStageMatches.every((match) => match.status === "finished");
@@ -1853,6 +1857,24 @@ function recalcTournamentStats(tournamentId: number) {
         p.group_rank = idx + 1;
         p.is_qualified_playoffs = groupStageComplete && idx < advancers;
       });
+    }
+
+    // round_robin has no playoff phase (unlike groups_elim, which advances via
+    // /generate-playoffs): once every match is finished the final standings ARE
+    // the result, so the tournament must complete itself here automatically
+    // (mirrors how advanceSingleElimination completes single_elim/knockout, and
+    // how /next-round completes swiss after the last round).
+    if (tour.format === "round_robin" && groupStageComplete && tour.status !== "completed") {
+      const ranked = allT
+        .filter((p) => p.group_id)
+        .sort((a, b) => (a.group_rank || Number.MAX_SAFE_INTEGER) - (b.group_rank || Number.MAX_SAFE_INTEGER));
+      tour.status = "completed";
+      tour.stage_type = "completed";
+      tour.winner_user_id = ranked[0]?.user_id ?? null;
+      tour.runner_up_user_id = ranked[1]?.user_id ?? null;
+      tour.third_place_user_id = ranked[2]?.user_id ?? null;
+      distributePrizes(tour);
+      broadcastTournament(tour.id, "tournament_updated", { tournament_id: tour.id, status: "completed", winner_id: tour.winner_user_id });
     }
   }
 }
