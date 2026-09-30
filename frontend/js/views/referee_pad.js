@@ -1,113 +1,231 @@
 // Official BeyScore Compatible Referee Pad & Live Scoreboard
 // Replicates official WBO BeyScore mechanics: Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p
 
+// Local, in-memory lobby selection (tournament -> group -> queue) so the
+// step-by-step flow below persists across re-renders without touching the
+// URL hash (the hash only changes once a specific match is opened to score).
+let refereeLobbyState = { tournamentId: null, groupKey: undefined };
+
+const escapeRefHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[character] || character));
+
+// Step-by-step referee lobby: pick the active tournament, then the group (or
+// the knockout bracket) to arbitrate, then get a randomized, anti-repeat
+// queue of that group's pending combats. This replaces the old flat list of
+// every pending match across all tournaments, which pushed a single referee
+// into silently working through one whole group back-to-back.
+window.__renderRefereeLobby = async (container) => {
+  try {
+    const allTournaments = await window.api.getTournaments();
+    const activeTournaments = allTournaments.filter(t => t.status === "in_progress");
+    const tournamentsList = allTournaments.slice(0, 6);
+
+    // Auto-advance into the only active tournament so referees don't have to
+    // click through an unnecessary selection step when there's nothing to pick.
+    if (refereeLobbyState.tournamentId && !activeTournaments.some(t => t.id === refereeLobbyState.tournamentId)) {
+      refereeLobbyState = { tournamentId: null, groupKey: undefined };
+    }
+    if (!refereeLobbyState.tournamentId && activeTournaments.length === 1) {
+      refereeLobbyState.tournamentId = activeTournaments[0].id;
+    }
+
+    const selectedTournament = refereeLobbyState.tournamentId
+      ? activeTournaments.find(t => t.id === refereeLobbyState.tournamentId)
+      : null;
+
+    let groups = [];
+    if (selectedTournament) {
+      try {
+        const resp = await window.api.getRefereeGroups(selectedTournament.id);
+        groups = resp.groups || [];
+      } catch (_e) {
+        groups = [];
+      }
+      // Group the referee was viewing may have finished/emptied out; fall back cleanly.
+      if (refereeLobbyState.groupKey !== undefined && !groups.some(g => (g.group_id || "") === (refereeLobbyState.groupKey || ""))) {
+        refereeLobbyState.groupKey = undefined;
+      }
+    }
+
+    let queue = [];
+    const groupSelected = selectedTournament && refereeLobbyState.groupKey !== undefined;
+    if (groupSelected) {
+      try {
+        const resp = await window.api.getRefereeQueue(selectedTournament.id, refereeLobbyState.groupKey);
+        queue = resp.matches || [];
+      } catch (_e) {
+        queue = [];
+      }
+    }
+
+    const stepBadge = (n, label, active, done) => `
+      <div class="flex items-center gap-2 ${active ? 'text-cyan-300' : done ? 'text-emerald-400' : 'text-slate-600'}">
+        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border ${active ? 'border-cyan-400 bg-cyan-500/20' : done ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700'}">${done && !active ? '✓' : n}</span>
+        <span class="text-[11px] font-bold uppercase tracking-wide">${label}</span>
+      </div>`;
+
+    const stepsBar = `
+      <div class="flex flex-wrap items-center gap-3 pb-1">
+        ${stepBadge(1, "Torneo", !selectedTournament, !!selectedTournament)}
+        <span class="text-slate-700">›</span>
+        ${stepBadge(2, "Grupo", !!selectedTournament && !groupSelected, groupSelected)}
+        <span class="text-slate-700">›</span>
+        ${stepBadge(3, "Combates", groupSelected, false)}
+      </div>`;
+
+    let stepContent = "";
+    if (!selectedTournament) {
+      // Step 1: choose which live tournament to referee.
+      stepContent = activeTournaments.length ? `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${activeTournaments.map(t => `
+            <div onclick="window.__refereeSelectTournament(${t.id})" class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition flex items-center justify-between">
+              <div>
+                <div class="font-bold text-white text-sm">${escapeRefHtml(t.title)}</div>
+                <div class="text-[11px] text-slate-400">${escapeRefHtml(t.location || 'Online')} • Ronda ${t.current_round} / ${t.total_rounds || 1}</div>
+              </div>
+              <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">En Curso</span>
+            </div>
+          `).join("")}
+        </div>
+      ` : `<p class="text-xs text-slate-500 text-center py-6">No hay torneos en curso en este momento. Inicia uno desde la sección de Torneos.</p>`;
+    } else if (!groupSelected) {
+      // Step 2: choose the group (mesa) to arbitrate within that tournament.
+      stepContent = `
+        <div class="flex items-center justify-between">
+          <button onclick="window.__refereeBackToTournaments()" class="text-cyan-400 hover:underline text-xs font-bold flex items-center gap-1">← Cambiar torneo</button>
+          <span class="text-xs text-slate-400 truncate max-w-[55%] text-right">${escapeRefHtml(selectedTournament.title)}</span>
+        </div>
+        ${groups.length ? `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            ${groups.map(g => `
+              <div onclick="window.__refereeSelectGroup('${escapeRefHtml(g.group_id === null ? "__none__" : g.group_id)}')" class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700 hover:border-cyan-400 cursor-pointer transition flex items-center justify-between group shadow-md">
+                <div class="space-y-1">
+                  <div class="font-bold text-white text-sm">${escapeRefHtml(g.label)}</div>
+                  <div class="text-[11px] text-slate-400 flex items-center gap-2">
+                    <span class="text-cyan-300 font-bold">${g.pending_count}</span> pendientes
+                    ${g.in_progress_count ? `<span class="text-amber-300 font-bold">• ${g.in_progress_count} en curso</span>` : ""}
+                  </div>
+                </div>
+                <button class="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs group-hover:bg-cyan-400 transition">Elegir &rarr;</button>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<p class="text-xs text-slate-500 text-center py-6">No hay grupos ni combates pendientes de arbitrar en este torneo por ahora.</p>`}
+      `;
+    } else {
+      // Step 3: randomized, anti-repeat queue for the chosen group.
+      const groupLabel = groups.find(g => (g.group_id || "") === (refereeLobbyState.groupKey || ""))?.label || "Combates";
+      stepContent = `
+        <div class="flex items-center justify-between">
+          <button onclick="window.__refereeBackToGroups()" class="text-cyan-400 hover:underline text-xs font-bold flex items-center gap-1">← Cambiar grupo</button>
+          <span class="text-xs text-slate-400 truncate max-w-[55%] text-right">${escapeRefHtml(selectedTournament.title)} • ${escapeRefHtml(groupLabel)}</span>
+        </div>
+        ${queue.length ? `
+          <div class="space-y-2.5">
+            ${queue.map((m, idx) => `
+              <div onclick="location.hash='#/referee/${m.id}'" class="p-4 rounded-2xl ${idx === 0 ? 'bg-cyan-950/40 border-2 border-cyan-400/60' : 'bg-slate-900/90 border border-slate-700 hover:border-cyan-400'} cursor-pointer transition flex items-center justify-between group shadow-md">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    ${idx === 0 ? `<span class="px-2 py-0.5 rounded bg-cyan-500 text-slate-950 font-black text-[10px] uppercase">Siguiente recomendado</span>` : ""}
+                    ${m.forced_repeat ? `<span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[10px]" title="No hay rival disponible sin repetir jugador: combate obligatorio en este punto del grupo.">⚠ Repite jugador (obligatorio)</span>` : ""}
+                  </div>
+                  <div class="font-bold text-white text-sm flex items-center gap-2">
+                    <span class="truncate max-w-[100px]">${escapeRefHtml(m.player_a ? m.player_a.display_name : 'TBD')}</span>
+                    <span class="text-xs font-mono text-cyan-400 font-bold">${m.score_a}-${m.score_b}</span>
+                    <span class="truncate max-w-[100px]">${escapeRefHtml(m.player_b ? m.player_b.display_name : 'TBD')}</span>
+                  </div>
+                </div>
+                <button class="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs group-hover:bg-cyan-400 transition shrink-0">Arbitrar &rarr;</button>
+              </div>
+            `).join("")}
+          </div>
+        ` : `<p class="text-xs text-slate-500 text-center py-6">Este grupo no tiene combates pendientes por ahora.</p>`}
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="max-w-4xl mx-auto space-y-6 py-6 select-none">
+        <!-- Standalone BeyScore Quick Board Card -->
+        <div class="glass-card rounded-3xl p-6 sm:p-8 border-2 border-cyan-500/50 bg-gradient-to-b from-slate-900/90 to-slate-950/95 space-y-5 shadow-2xl">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5">
+            <div class="flex items-center gap-3 text-center sm:text-left">
+              <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-14 h-14 object-contain shrink-0" alt="AppBey Logo"/>
+              <div>
+                <h2 class="text-xl sm:text-2xl font-black text-white">Marcador BeyScore</h2>
+                <p class="text-xs text-slate-400">Puntuación Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>
+              </div>
+            </div>
+            <button onclick="location.hash='#/referee/standalone'" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
+              🎮 Iniciar Marcador Libre
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+              <span>⚡</span> Elegir Mesa para Arbitrar y Puntuar
+            </h3>
+            ${stepsBar}
+            ${stepContent}
+          </div>
+
+          <!-- Quick jump into full tournament view -->
+          <div class="space-y-3 pt-2 border-t border-slate-800">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <span>🏆</span> Ver Detalle Completo de un Torneo:
+            </h3>
+            ${tournamentsList.length ? `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${tournamentsList.map(t => `
+                  <div onclick="location.hash='#/tournaments/${t.id}'" class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition flex items-center justify-between">
+                    <div class="font-bold text-white text-xs truncate max-w-[70%]">${escapeRefHtml(t.title)}</div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+                      ${t.status === 'in_progress' ? 'En Curso' : t.status}
+                    </span>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `<p class="text-xs text-slate-500 text-center py-4">No hay torneos registrados todavía.</p>`}
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div class="text-center py-16 text-slate-400">Error al cargar mesa: ${err.message}</div>`;
+  }
+};
+
+window.__refereeSelectTournament = (tournamentId) => {
+  refereeLobbyState = { tournamentId, groupKey: undefined };
+  window.__refereeRerenderLobby();
+};
+
+window.__refereeSelectGroup = (groupKey) => {
+  refereeLobbyState.groupKey = groupKey === "__none__" ? null : groupKey;
+  window.__refereeRerenderLobby();
+};
+
+window.__refereeBackToTournaments = () => {
+  refereeLobbyState = { tournamentId: null, groupKey: undefined };
+  window.__refereeRerenderLobby();
+};
+
+window.__refereeBackToGroups = () => {
+  refereeLobbyState.groupKey = undefined;
+  window.__refereeRerenderLobby();
+};
+
+window.__refereeRerenderLobby = () => {
+  const main = document.getElementById("main-content");
+  if (main) window.__renderRefereeLobby(main);
+};
+
 window.renderRefereePadView = async (container, matchId) => {
   // If no matchId is provided in URL, allow selecting active tournament match OR launch standalone scoreboard
   if (!matchId) {
-    try {
-      const allTournaments = await window.api.getTournaments();
-      const activeTournaments = allTournaments.filter(t => t.status === "in_progress");
-      const tournamentsList = allTournaments.slice(0, 6);
-
-      // Fetch active/pending matches from active tournaments to show direct scoring entry
-      let activeMatchesList = [];
-      try {
-        const matchesArrays = await Promise.all(
-          activeTournaments.slice(0, 3).map(t => window.api.getMatches(t.id).catch(() => []))
-        );
-        matchesArrays.forEach((mArr, idx) => {
-          const t = activeTournaments[idx];
-          if (mArr && mArr.length) {
-            mArr.forEach(m => {
-              if (m.status === "in_progress" || m.status === "calling" || m.status === "pending") {
-                activeMatchesList.push({ ...m, tournament_title: t.title });
-              }
-            });
-          }
-        });
-      } catch (_e) {
-        activeMatchesList = [];
-      }
-
-      container.innerHTML = `
-        <div class="max-w-4xl mx-auto space-y-6 py-6 select-none">
-          <!-- Standalone BeyScore Quick Board Card -->
-          <div class="glass-card rounded-3xl p-6 sm:p-8 border-2 border-cyan-500/50 bg-gradient-to-b from-slate-900/90 to-slate-950/95 space-y-5 shadow-2xl">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-5">
-              <div class="flex items-center gap-3 text-center sm:text-left">
-                <img src="/assets/images/appbey_logo_transparent.png?v=3.4" class="w-14 h-14 object-contain shrink-0" alt="AppBey Logo"/>
-                <div>
-                  <h2 class="text-xl sm:text-2xl font-black text-white">Marcador BeyScore</h2>
-                  <p class="text-xs text-slate-400">Puntuación Beyblade X (Spin 1p, Over 2p, Burst 2p, Xtreme 3p, Draw 0p)</p>
-                </div>
-              </div>
-              <button onclick="location.hash='#/referee/standalone'" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/30 transition transform active:scale-95">
-                🎮 Iniciar Marcador Libre
-              </button>
-            </div>
-
-            <!-- Direct Active Tournament Matches -->
-            ${activeMatchesList.length ? `
-              <div class="space-y-3">
-                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                  <span>⚡</span> Combates Listos para Arbitrar y Puntuar:
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  ${activeMatchesList.map(m => `
-                    <div onclick="location.hash='#/referee/${m.id}'" class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700 hover:border-cyan-400 cursor-pointer transition flex items-center justify-between group shadow-md">
-                      <div class="space-y-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="px-2 py-0.5 rounded bg-blue-600/30 border border-cyan-400/40 text-cyan-300 font-mono font-bold text-[11px]">
-                            ${window.getMatchStationLabel(m)}
-                          </span>
-                          <span class="text-[11px] text-slate-400 truncate max-w-[140px]">${m.tournament_title}</span>
-                        </div>
-                        <div class="font-bold text-white text-sm flex items-center gap-2">
-                          <span class="truncate max-w-[80px]">${m.player_a ? m.player_a.display_name : 'TBD'}</span>
-                          <span class="text-xs font-mono text-cyan-400 font-bold">${m.score_a}-${m.score_b}</span>
-                          <span class="truncate max-w-[80px]">${m.player_b ? m.player_b.display_name : 'TBD'}</span>
-                        </div>
-                      </div>
-                      <button class="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs group-hover:bg-cyan-400 transition">
-                        Arbitrar &rarr;
-                      </button>
-                    </div>
-                  `).join("")}
-                </div>
-              </div>
-            ` : ''}
-
-            <!-- Active Tournaments Mesas -->
-            <div class="space-y-3 pt-2">
-              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <span>🏆</span> Seleccionar Torneo para Ver Todas las Mesas:
-              </h3>
-              ${tournamentsList.length ? `
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  ${tournamentsList.map(t => `
-                    <div onclick="location.hash='#/tournaments/${t.id}'" class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition flex items-center justify-between">
-                      <div>
-                        <div class="font-bold text-white text-sm">${t.title}</div>
-                        <div class="text-[11px] text-slate-400">${t.location || 'Online'} • Ronda ${t.current_round} / ${t.total_rounds || 1}</div>
-                      </div>
-                      <span class="px-3 py-1 rounded-full text-[10px] font-bold ${t.status === 'in_progress' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
-                        ${t.status === 'in_progress' ? 'En Curso' : t.status}
-                      </span>
-                    </div>
-                  `).join("")}
-                </div>
-              ` : `
-                <p class="text-xs text-slate-500 text-center py-4">No hay torneos activos en este momento.</p>
-              `}
-            </div>
-          </div>
-        </div>
-      `;
-      return;
-    } catch(err) {
-      container.innerHTML = `<div class="text-center py-16 text-slate-400">Error al cargar mesa: ${err.message}</div>`;
-      return;
-    }
+    await window.__renderRefereeLobby(container);
+    return;
   }
 
   const isStandalone = matchId === "standalone";

@@ -295,6 +295,10 @@ interface TournamentMatch {
   // by walkover instead of the match staying stuck forever.
   walkover_pending?: "player_a" | "player_b" | null;
   created_at: string;
+  // Bumped whenever the match is called, scored, finished, undone or reopened.
+  // Used to infer which match a group's referee was most recently working on,
+  // so the referee queue can avoid recommending the same players back-to-back.
+  updated_at?: string;
 }
 
 interface Season {
@@ -3907,6 +3911,29 @@ api.get("/tournaments/:id/participants", (req, res) => {
   );
 });
 
+function serializeMatchForList(m: TournamentMatch, t?: Tournament) {
+  const partA = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_a_id);
+  const partB = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_b_id);
+  const playerA = users.find((u) => u.id === m.player_a_id) || null;
+  const playerB = users.find((u) => u.id === m.player_b_id) || null;
+  return {
+    ...m,
+    is_elimination: !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim"),
+    best_of_sets: !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim") ? 3 : 1,
+    set_target_points: m.set_target_points || m.target_points || t?.match_target_points || 4,
+    sets_won_a: m.sets_won_a || 0,
+    sets_won_b: m.sets_won_b || 0,
+    sets: m.sets || [],
+    player_a: publicUser(playerA),
+    player_b: publicUser(playerB),
+    player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
+    player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
+    winner: publicUser(users.find((u) => u.id === m.winner_id)),
+    referee: publicUser(users.find((u) => u.id === m.referee_id)),
+    games: matchGames.filter((g) => g.match_id === m.id)
+  };
+}
+
 api.get("/tournaments/:id/matches", (req, res) => {
   const id = parseInt(req.params.id, 10);
   const t = tournaments.find((tour) => tour.id === id);
@@ -3915,30 +3942,113 @@ api.get("/tournaments/:id/matches", (req, res) => {
   if (round) list = list.filter((m) => m.round_number === round);
   list.sort((a, b) => a.round_number - b.round_number || a.bracket_position - b.bracket_position);
 
-  res.json(
-    list.map((m) => {
-      const partA = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_a_id);
-      const partB = participants.find((p) => p.tournament_id === m.tournament_id && p.user_id === m.player_b_id);
-      const playerA = users.find((u) => u.id === m.player_a_id) || null;
-      const playerB = users.find((u) => u.id === m.player_b_id) || null;
+  res.json(list.map((m) => serializeMatchForList(m, t)));
+});
+
+// A referee is meant to work ONE group (or the knockout bracket) at a time,
+// not the whole tournament at once. This endpoint lists the "tables" a
+// referee can pick from: each active group plus a synthetic "no group"
+// bucket for knockout/single-elim matches, with pending/live counts so the
+// selector only surfaces groups that still need work.
+api.get("/tournaments/:id/referee/groups", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const tMatches = matches.filter((m) => m.tournament_id === id);
+  const keys = Array.from(new Set(tMatches.map((m) => m.group_id || "")));
+  const groups = keys
+    .map((key) => {
+      const groupId = key || null;
+      const gMatches = tMatches.filter((m) => (m.group_id || "") === key);
       return {
-        ...m,
-        is_elimination: !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim"),
-        best_of_sets: !m.group_id && (t?.stage_type === "knockout" || t?.format === "single_elim") ? 3 : 1,
-        set_target_points: m.set_target_points || m.target_points || t?.match_target_points || 4,
-        sets_won_a: m.sets_won_a || 0,
-        sets_won_b: m.sets_won_b || 0,
-        sets: m.sets || [],
-        player_a: publicUser(playerA),
-        player_b: publicUser(playerB),
-        player_a_deck: partA?.deck || (playerA?.favorite_combo ? [playerA.favorite_combo] : []),
-        player_b_deck: partB?.deck || (playerB?.favorite_combo ? [playerB.favorite_combo] : []),
-        winner: publicUser(users.find((u) => u.id === m.winner_id)),
-        referee: publicUser(users.find((u) => u.id === m.referee_id)),
-        games: matchGames.filter((g) => g.match_id === m.id)
+        group_id: groupId,
+        label: groupId ? `Grupo ${groupId}` : (t.stage_type === "knockout" || t.format === "single_elim" ? (t.knockout_round_name || "Eliminatorias / Bracket") : "Combates"),
+        pending_count: gMatches.filter((m) => m.status === "pending").length,
+        in_progress_count: gMatches.filter((m) => m.status === "in_progress" || m.status === "calling").length,
+        finished_count: gMatches.filter((m) => m.status === "finished").length,
+        total_count: gMatches.length
       };
     })
-  );
+    .filter((g) => g.pending_count > 0 || g.in_progress_count > 0)
+    .sort((a, b) => (a.group_id || "\uffff").localeCompare(b.group_id || "\uffff"));
+
+  res.json({ tournament_id: t.id, tournament_title: t.title, groups });
+});
+
+// Builds an anti-repetition, randomized referee queue for one group (or the
+// knockout bucket when groupKey is null): no blader should face two
+// consecutive combats unless every remaining pending match unavoidably
+// includes them (e.g. only rematches/tie-breaks are left for that group).
+function buildRefereeMatchQueue(tournamentId: number, groupKey: string | null) {
+  const groupMatches = matches.filter((m) => m.tournament_id === tournamentId && (m.group_id || null) === groupKey);
+  const pending = groupMatches.filter((m) => m.status === "pending");
+
+  // Seed "recent players" from whichever match in this group was touched
+  // most recently (currently being arbitrated, or the last one finished),
+  // so the very first recommendation also avoids an immediate repeat.
+  const active = groupMatches
+    .filter((m) => m.status === "in_progress" || m.status === "calling")
+    .sort((a, b) => (b.updated_at || b.created_at).localeCompare(a.updated_at || a.created_at))[0];
+  const lastTouched = active || groupMatches
+    .filter((m) => m.status === "finished")
+    .sort((a, b) => (b.updated_at || b.created_at).localeCompare(a.updated_at || a.created_at))[0];
+
+  let recentPlayers = new Set<number>();
+  if (lastTouched) {
+    if (lastTouched.player_a_id) recentPlayers.add(lastTouched.player_a_id);
+    if (lastTouched.player_b_id) recentPlayers.add(lastTouched.player_b_id);
+  }
+
+  // Shuffle first (Fisher-Yates) so equally-valid candidates come out "al
+  // azar" instead of always following seed/creation order.
+  const remaining = pending.slice();
+  for (let i = remaining.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+  }
+
+  const ordered: Array<{ match: TournamentMatch; forced_repeat: boolean }> = [];
+  while (remaining.length) {
+    let idx = remaining.findIndex((m) =>
+      !(m.player_a_id && recentPlayers.has(m.player_a_id)) &&
+      !(m.player_b_id && recentPlayers.has(m.player_b_id))
+    );
+    let forced = false;
+    if (idx === -1) {
+      // Every remaining match repeats someone: unavoidable (last match(es)
+      // of the group, or all that's left are rematches for one blader).
+      idx = 0;
+      forced = true;
+    }
+    const chosen = remaining.splice(idx, 1)[0];
+    ordered.push({ match: chosen, forced_repeat: forced });
+    recentPlayers = new Set<number>();
+    if (chosen.player_a_id) recentPlayers.add(chosen.player_a_id);
+    if (chosen.player_b_id) recentPlayers.add(chosen.player_b_id);
+  }
+
+  return ordered;
+}
+
+api.get("/tournaments/:id/referee/queue", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const t = tournaments.find((tour) => tour.id === id);
+  if (!t) {
+    res.status(404).json({ detail: "Torneo no encontrado" });
+    return;
+  }
+  const rawGroup = typeof req.query.group === "string" ? req.query.group : "";
+  const groupKey = rawGroup && rawGroup !== "__none__" ? rawGroup : null;
+  const queue = buildRefereeMatchQueue(id, groupKey);
+
+  res.json({
+    tournament_id: t.id,
+    group_id: groupKey,
+    matches: queue.map(({ match, forced_repeat }) => ({ ...serializeMatchForList(match, t), forced_repeat }))
+  });
 });
 
 api.post("/tournaments/:id/start", requireRoles(["organizer", "admin"]), (req: AuthRequest, res) => {
@@ -4345,6 +4455,7 @@ api.post("/matches/:id/call", requireAuth, (req: AuthRequest, res) => {
   const { station_number, status } = req.body;
   if (station_number) m.station_number = station_number;
   if (status) m.status = status;
+  m.updated_at = new Date().toISOString();
 
   const playerA = users.find((u) => u.id === m.player_a_id);
   const playerB = users.find((u) => u.id === m.player_b_id);
@@ -4408,6 +4519,7 @@ api.post("/matches/:id/record-finish", requireAuth, (req: AuthRequest, res) => {
   const pts = pointsMap[finish_type];
 
   if (!m.referee_id && req.user) m.referee_id = req.user.id;
+  m.updated_at = new Date().toISOString();
 
   const newGame: MatchGame = {
     id: nextId(matchGames),
@@ -4514,6 +4626,7 @@ api.post("/matches/:id/undo-finish", requireAuth, (req: AuthRequest, res) => {
   if (gIdx !== -1) {
     matchGames.splice(gIdx, 1);
   }
+  m.updated_at = new Date().toISOString();
 
   // Rebuild score/sets state from the remaining games instead of naively
   // summing points across already-closed sets (bug: overcounted best-of-3
@@ -4571,6 +4684,7 @@ api.post("/matches/:id/reopen", requireAuth, (req: AuthRequest, res) => {
 
   m.status = "in_progress";
   m.winner_id = null;
+  m.updated_at = new Date().toISOString();
   const currentTarget = m.target_points || t?.match_target_points || 4;
   if (req.body.target_points) {
     m.target_points = Math.max(1, parseInt(req.body.target_points, 10));
@@ -4671,6 +4785,7 @@ api.post("/matches/:id/reset", requireAuth, (req: AuthRequest, res) => {
   m.sets = [];
   m.sets_won_a = 0;
   m.sets_won_b = 0;
+  m.updated_at = new Date().toISOString();
 
   recalcTournamentStats(m.tournament_id);
 
@@ -4751,6 +4866,7 @@ api.put("/matches/:id/manual-score", requireAuth, (req: AuthRequest, res) => {
   m.score_a = newScoreA;
   m.score_b = newScoreB;
   m.status = newStatus;
+  m.updated_at = new Date().toISOString();
 
   if (winner_id !== undefined) {
     m.winner_id = winner_id;
@@ -4830,6 +4946,7 @@ api.post("/matches/:id/declare-winner", requireAuth, (req: AuthRequest, res) => 
   m.status = "finished";
   m.winner_id = parsedWinnerId;
   if (!m.referee_id && req.user) m.referee_id = req.user.id;
+  m.updated_at = new Date().toISOString();
 
   matchGames.push({
     id: nextId(matchGames),
