@@ -387,13 +387,22 @@ window.renderRefereePadView = async (container, matchId) => {
 
   const renderMatchSwitcherBar = (matchesList, currentMatchId) => {
     if (!matchesList || matchesList.length <= 1) return '';
+    // Only show combats from the same group (or the same knockout bracket
+    // when there's no group_id) as the match currently being arbitrated,
+    // so a referee assigned to one group doesn't see every other group's
+    // combats mixed into this switcher bar.
+    const currentMatch = matchesList.find(m => m.id === currentMatchId);
+    const currentGroupId = currentMatch ? (currentMatch.group_id || null) : null;
+    const groupMatches = matchesList.filter(m => (m.group_id || null) === currentGroupId);
+    if (groupMatches.length <= 1) return '';
+    const groupLabel = currentGroupId ? `Grupo ${currentGroupId}` : 'Combates';
     return `
       <div class="bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
         <span class="text-[11px] uppercase font-bold text-slate-400 shrink-0 flex items-center gap-1 px-1">
-          <span>🏟️</span> Grupos:
+          <span>🏟️</span> ${groupLabel}:
         </span>
         <div class="flex items-center gap-2 shrink-0">
-          ${matchesList.map(m => {
+          ${groupMatches.map(m => {
             const isCurrent = m.id === currentMatchId;
             const isFin = m.status === 'finished';
             const nameA = m.player_a ? m.player_a.display_name.split(' ')[0] : 'TBD';
