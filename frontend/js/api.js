@@ -198,6 +198,8 @@ class ApiClient {
   generatePlayoffs(id) { return this.request(`/tournaments/${id}/generate-playoffs`, { method: "POST" }); }
   getParticipants(id, noCache = false) { return this.request(`/tournaments/${id}/participants`, { noCache }); }
   getMatches(id, round = null, noCache = false) { return this.request(`/tournaments/${id}/matches${round ? `?round_number=${encodeURIComponent(round)}` : ""}`, { noCache }); }
+  getRefereeGroups(id, noCache = true) { return this.request(`/tournaments/${id}/referee/groups`, { noCache }); }
+  getRefereeQueue(id, groupId, noCache = true) { return this.request(`/tournaments/${id}/referee/queue?group=${encodeURIComponent(groupId === null || groupId === undefined ? "__none__" : groupId)}`, { noCache }); }
   getMatch(id, noCache = false) { return this.request(`/matches/${id}`, { noCache }); }
   getNextCombat(id) { return this.request(`/matches/${id}/next-combat`, { noCache: true }); }
   callMatch(id, stationNumber, status = "calling") { return this.request(`/matches/${id}/call`, { method: "POST", body: { station_number: stationNumber, status } }); }
