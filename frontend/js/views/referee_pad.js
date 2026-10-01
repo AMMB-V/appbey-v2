@@ -892,11 +892,6 @@ window.renderRefereePadView = async (container, matchId) => {
         cardB.classList.add("border-rose-500/40");
       }
     }
-      } else {
-        cardB.classList.remove("border-amber-400", "glow-gold");
-        cardB.classList.add("border-rose-500/40");
-      }
-    }
 
     // 4. Finish banner
     const bannerContainer = document.getElementById("finish-banner-container");
