@@ -4392,6 +4392,13 @@ function getNextCombat(m: TournamentMatch) {
       const weightDiff = statusWeight(b.status) - statusWeight(a.status);
       if (weightDiff !== 0) return weightDiff;
 
+      // In the same group, prioritize matches where neither player just played in `m` (anti-repeat / rest)
+      const repeatsPlayerA = (a.player_a_id && (a.player_a_id === m.player_a_id || a.player_a_id === m.player_b_id)) ||
+        (a.player_b_id && (a.player_b_id === m.player_a_id || a.player_b_id === m.player_b_id)) ? 1 : 0;
+      const repeatsPlayerB = (b.player_a_id && (b.player_a_id === m.player_a_id || b.player_a_id === m.player_b_id)) ||
+        (b.player_b_id && (b.player_b_id === m.player_a_id || b.player_b_id === m.player_b_id)) ? 1 : 0;
+      if (repeatsPlayerA !== repeatsPlayerB) return repeatsPlayerA - repeatsPlayerB;
+
       return a.id - b.id;
     })[0] || null
   );

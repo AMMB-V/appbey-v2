@@ -233,13 +233,30 @@ window.renderRefereePadView = async (container, matchId) => {
   let tournamentMatches = [];
   let nextMatch = null;
   let lastLocalActionTime = 0;
+  let currentRenderedMatchId = null;
+
+  const resolveNextMatch = (currentMatch) => {
+    if (!currentMatch?.tournament_id || !currentMatch.id) return null;
+    if (currentMatch.next_combat) return currentMatch.next_combat;
+    if (tournamentMatches && tournamentMatches.length) {
+      const candidates = tournamentMatches.filter(
+        (c) => c.id !== currentMatch.id && !c.is_bye && c.status !== "finished"
+      );
+      const sameGroup = candidates.filter((c) => (c.group_id || null) === (currentMatch.group_id || null));
+      return (sameGroup.length ? sameGroup : candidates)[0] || null;
+    }
+    return null;
+  };
 
   const refreshNextMatch = async (currentMatch) => {
     if (!currentMatch?.tournament_id || !currentMatch.id) return null;
+    if (currentMatch.next_combat) return currentMatch.next_combat;
+    const resolved = resolveNextMatch(currentMatch);
+    if (resolved) return resolved;
     try {
       return await window.api.getNextCombat(currentMatch.id);
     } catch (_error) {
-      return currentMatch.next_combat || null;
+      return null;
     }
   };
 
@@ -276,10 +293,12 @@ window.renderRefereePadView = async (container, matchId) => {
       };
       tournamentMatches = [];
       nextMatch = null;
-      if (document.getElementById("score-display-a") && document.getElementById("score-display-b")) {
-        updateLiveScoreboardDOM();
-      } else {
+      const shouldFullRender = (currentRenderedMatchId !== match.id) || !document.getElementById("score-display-a");
+      if (shouldFullRender) {
+        currentRenderedMatchId = match.id;
         renderUI();
+      } else {
+        updateLiveScoreboardDOM();
       }
       return;
     }
@@ -296,14 +315,14 @@ window.renderRefereePadView = async (container, matchId) => {
             tournamentMatches = [];
           }
         }
-        // Always resolve the next match from its dedicated API response so
-        // player names and playoff state are not left from a cached snapshot.
-        nextMatch = await refreshNextMatch(match);
+        nextMatch = match.next_combat || resolveNextMatch(match);
       }
-      if (document.getElementById("score-display-a") && document.getElementById("score-display-b")) {
-        updateLiveScoreboardDOM();
-      } else {
+      const shouldFullRender = (currentRenderedMatchId !== match.id) || !document.getElementById("score-display-a");
+      if (shouldFullRender) {
+        currentRenderedMatchId = match.id;
         renderUI();
+      } else {
+        updateLiveScoreboardDOM();
       }
     } catch(err) {
       container.innerHTML = `
@@ -496,10 +515,15 @@ window.renderRefereePadView = async (container, matchId) => {
   };
 
   const renderUI = () => {
+    currentRenderedMatchId = match.id;
     const target = match.target_points || (match.tournament ? match.tournament.match_target_points : 4) || 4;
-    const isFinished = match.status === "finished" || match.score_a >= target || match.score_b >= target;
+    const isFinished = match.status === "finished" ||
+      (!match.is_elimination && (match.score_a >= target || match.score_b >= target)) ||
+      (match.is_elimination && ((match.sets_won_a || 0) >= 2 || (match.sets_won_b || 0) >= 2));
     const roundCount = (match.games ? match.games.length : 0) + 1;
     const winnerName = getMatchWinnerName(match);
+    const isWonA = isFinished && (match.winner_id === match.player_a_id || (!match.winner_id && match.score_a > match.score_b));
+    const isWonB = isFinished && (match.winner_id === match.player_b_id || (!match.winner_id && match.score_b > match.score_a));
 
     container.innerHTML = `
       <div class="max-w-4xl mx-auto space-y-4 pb-16 select-none">
@@ -569,7 +593,7 @@ window.renderRefereePadView = async (container, matchId) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           <!-- CORNER AZUL (PLAYER A / 1) -->
-          <div id="corner-card-a" class="glass-card rounded-3xl p-5 border-2 ${match.score_a >= target ? 'border-amber-400 glow-gold' : 'border-blue-500/40'} bg-gradient-to-b from-blue-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
+          <div id="corner-card-a" class="glass-card rounded-3xl p-5 border-2 ${isWonA ? 'border-amber-400 glow-gold' : 'border-blue-500/40'} bg-gradient-to-b from-blue-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
             <!-- Player Info & Score Header -->
             <div class="flex items-center justify-between border-b border-blue-900/40 pb-3">
               <div class="flex items-center gap-3">
@@ -658,7 +682,7 @@ window.renderRefereePadView = async (container, matchId) => {
           </div>
 
           <!-- CORNER ROJO (PLAYER B / 2) -->
-          <div id="corner-card-b" class="glass-card rounded-3xl p-5 border-2 ${match.score_b >= target ? 'border-amber-400 glow-gold' : 'border-rose-500/40'} bg-gradient-to-b from-rose-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
+          <div id="corner-card-b" class="glass-card rounded-3xl p-5 border-2 ${isWonB ? 'border-amber-400 glow-gold' : 'border-rose-500/40'} bg-gradient-to-b from-rose-950/30 via-slate-900/90 to-slate-950 space-y-4 shadow-xl">
             <!-- Player Info & Score Header -->
             <div class="flex items-center justify-between border-b border-rose-900/40 pb-3">
               <div class="flex items-center gap-3">
@@ -819,7 +843,9 @@ window.renderRefereePadView = async (container, matchId) => {
     } : match;
 
     const target = currentMatch.target_points || (currentMatch.tournament ? currentMatch.tournament.match_target_points : 4) || 4;
-    const isFinished = currentMatch.status === "finished" || currentMatch.score_a >= target || currentMatch.score_b >= target;
+    const isFinished = currentMatch.status === "finished" ||
+      (!currentMatch.is_elimination && (currentMatch.score_a >= target || currentMatch.score_b >= target)) ||
+      (currentMatch.is_elimination && ((currentMatch.sets_won_a || 0) >= 2 || (currentMatch.sets_won_b || 0) >= 2));
     const roundCount = (currentMatch.games ? currentMatch.games.length : 0) + 1;
     const winnerName = getMatchWinnerName(currentMatch);
 
@@ -844,8 +870,9 @@ window.renderRefereePadView = async (container, matchId) => {
 
     // 3. Highlight winning corner cards
     const cardA = document.getElementById("corner-card-a");
+    const wonA = isFinished && (currentMatch.winner_id === currentMatch.player_a_id || (!currentMatch.winner_id && currentMatch.score_a > currentMatch.score_b));
     if (cardA) {
-      if (currentMatch.score_a >= target) {
+      if (wonA) {
         cardA.classList.add("border-amber-400", "glow-gold");
         cardA.classList.remove("border-blue-500/40");
       } else {
@@ -855,10 +882,16 @@ window.renderRefereePadView = async (container, matchId) => {
     }
 
     const cardB = document.getElementById("corner-card-b");
+    const wonB = isFinished && (currentMatch.winner_id === currentMatch.player_b_id || (!currentMatch.winner_id && currentMatch.score_b > currentMatch.score_a));
     if (cardB) {
-      if (currentMatch.score_b >= target) {
+      if (wonB) {
         cardB.classList.add("border-amber-400", "glow-gold");
         cardB.classList.remove("border-rose-500/40");
+      } else {
+        cardB.classList.remove("border-amber-400", "glow-gold");
+        cardB.classList.add("border-rose-500/40");
+      }
+    }
       } else {
         cardB.classList.remove("border-amber-400", "glow-gold");
         cardB.classList.add("border-rose-500/40");
@@ -1047,8 +1080,8 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = await refreshNextMatch(serverUpdated);
         }
+        nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       }
     } catch(err) {
@@ -1088,8 +1121,8 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = await refreshNextMatch(serverUpdated);
         }
+        nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
         loadMatch();
@@ -1111,8 +1144,10 @@ window.renderRefereePadView = async (container, matchId) => {
     }
     lastFinishTapTime = now;
 
-    const target = match.target_points || 4;
-    const isFinished = match.status === "finished" || match.score_a >= target || match.score_b >= target;
+    const target = match.target_points || (match.tournament ? match.tournament.match_target_points : 4) || 4;
+    const isFinished = match.status === "finished" ||
+      (!match.is_elimination && (match.score_a >= target || match.score_b >= target)) ||
+      (match.is_elimination && ((match.sets_won_a || 0) >= 2 || (match.sets_won_b || 0) >= 2));
     
     if (isFinished) {
       window.showToast?.("Este combate ya finalizó. Pulsa 'Reabrir (+1 Meta)' si necesitas continuar anotando asaltos.", "info");
@@ -1165,11 +1200,40 @@ window.renderRefereePadView = async (container, matchId) => {
       created_at: new Date().toISOString()
     });
 
-    if (match.score_a >= target || match.score_b >= target) {
+    if (match.is_elimination) {
+      match.sets_won_a = match.sets_won_a || 0;
+      match.sets_won_b = match.sets_won_b || 0;
+      match.sets = match.sets || [];
+      const setTarget = match.set_target_points || target;
+      if (match.score_a >= setTarget || match.score_b >= setTarget) {
+        const setWinner = match.score_a > match.score_b ? match.player_a_id : match.player_b_id;
+        match.sets.push({ set_number: match.sets.length + 1, score_a: match.score_a, score_b: match.score_b, winner_id: setWinner });
+        if (setWinner === match.player_a_id) match.sets_won_a += 1;
+        else if (setWinner === match.player_b_id) match.sets_won_b += 1;
+        match.score_a = 0;
+        match.score_b = 0;
+      }
+      if (match.sets_won_a >= 2 || match.sets_won_b >= 2) {
+        match.status = 'finished';
+        match.winner_id = match.sets_won_a > match.sets_won_b ? match.player_a_id : match.player_b_id;
+      } else {
+        match.status = 'in_progress';
+      }
+    } else if (match.score_a >= target || match.score_b >= target) {
       match.status = 'finished';
       match.winner_id = match.score_a > match.score_b ? match.player_a_id : match.player_b_id;
     } else {
       match.status = 'in_progress';
+    }
+
+    if (tournamentMatches && tournamentMatches.length) {
+      const tm = tournamentMatches.find(m => m.id === match.id);
+      if (tm) {
+        tm.score_a = match.score_a;
+        tm.score_b = match.score_b;
+        tm.status = match.status;
+        tm.winner_id = match.winner_id;
+      }
     }
 
     // Instant local DOM update
@@ -1186,8 +1250,8 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = await refreshNextMatch(serverUpdated);
         }
+        nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       }
     } catch(err) {
@@ -1239,8 +1303,8 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = await refreshNextMatch(serverUpdated);
         }
+        nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
         loadMatch();
@@ -1275,8 +1339,8 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = await refreshNextMatch(serverUpdated);
         }
+        nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
         loadMatch();
@@ -1320,8 +1384,8 @@ window.renderRefereePadView = async (container, matchId) => {
         match = serverUpdated;
         if (serverUpdated.tournament_matches) {
           tournamentMatches = serverUpdated.tournament_matches;
-          nextMatch = await refreshNextMatch(serverUpdated);
         }
+        nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
         loadMatch();
@@ -1454,20 +1518,43 @@ window.renderRefereePadView = async (container, matchId) => {
         localState.winner = choice;
         document.getElementById("declare-winner-modal")?.remove();
         window.showToast?.("Combate finalizado exitosamente", "success");
-        loadMatch();
+        updateLiveScoreboardDOM();
         return;
       }
 
+      // Optimistic 0ms update: render winner and next combat immediately without flicker
+      lastLocalActionTime = Date.now();
+      match.status = "finished";
+      match.winner_id = winnerId;
+      if (tournamentMatches && tournamentMatches.length) {
+        const tm = tournamentMatches.find(m => m.id === match.id);
+        if (tm) {
+          tm.status = "finished";
+          tm.winner_id = winnerId;
+        }
+      }
+      nextMatch = resolveNextMatch(match);
+      document.getElementById("declare-winner-modal")?.remove();
+      updateLiveScoreboardDOM();
+      window.showToast?.("¡Ganador oficial declarado y combate finalizado!", "success");
+
       try {
-        await window.api.declareWinner(matchId, {
+        const serverUpdated = await window.api.declareWinner(matchId, {
           winner_id: winnerId,
           finish_reason: reason
         });
-        document.getElementById("declare-winner-modal")?.remove();
-        window.showToast?.("¡Ganador oficial declarado y combate finalizado!", "success");
-        loadMatch();
+        lastLocalActionTime = Date.now();
+        if (serverUpdated && serverUpdated.id) {
+          match = serverUpdated;
+          if (serverUpdated.tournament_matches) {
+            tournamentMatches = serverUpdated.tournament_matches;
+          }
+          nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
+          updateLiveScoreboardDOM();
+        }
       } catch(err) {
         window.showToast?.(err.message || "Error al declarar ganador", "error");
+        loadMatch();
       }
     };
   };
@@ -1665,7 +1752,7 @@ window.renderRefereePadView = async (container, matchId) => {
       // Guard: only execute if user is currently on the referee view
       if (!window.location.hash.startsWith("#/referee")) return;
       // Skip echo if user just performed a local action (prevent layout jitter/re-renders)
-      if (Date.now() - lastLocalActionTime < 1800) return;
+      if (Date.now() - lastLocalActionTime < 2500) return;
 
       if (data && (data.match_id === parsedId || (match && data.tournament_id === match.tournament_id))) {
         loadMatch();
