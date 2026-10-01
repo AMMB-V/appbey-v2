@@ -388,12 +388,15 @@ window.renderRefereePadView = async (container, matchId) => {
   const renderMatchSwitcherBar = (matchesList, currentMatchId) => {
     if (!matchesList || matchesList.length <= 1) return '';
     // Only show combats from the same group (or the same knockout bracket
-    // when there's no group_id) as the match currently being arbitrated,
-    // so a referee assigned to one group doesn't see every other group's
-    // combats mixed into this switcher bar.
+    // when there's no group_id) as the match currently being arbitrated.
+    // Finished matches are hidden so only pending, active, or currently arbitrated
+    // matches remain visible in the switcher bar.
     const currentMatch = matchesList.find(m => m.id === currentMatchId);
     const currentGroupId = currentMatch ? (currentMatch.group_id || null) : null;
-    const groupMatches = matchesList.filter(m => (m.group_id || null) === currentGroupId);
+    const groupMatches = matchesList.filter(m =>
+      (m.group_id || null) === currentGroupId &&
+      (m.id === currentMatchId || m.status !== 'finished')
+    );
     if (groupMatches.length <= 1) return '';
     const groupLabel = currentGroupId ? `Grupo ${currentGroupId}` : 'Combates';
     return `

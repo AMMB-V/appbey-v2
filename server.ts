@@ -4370,13 +4370,31 @@ api.post("/tournaments/:id/next-round", requireRoles(["organizer", "admin"]), (r
 
 // --- Matches & Referee Pad ---
 function getNextCombat(m: TournamentMatch) {
-  return matches
-    .filter((candidate) => candidate.tournament_id === m.tournament_id && candidate.id !== m.id && candidate.status === "pending" && !candidate.is_bye)
-    .sort((a, b) => {
-      if (a.group_id === m.group_id && b.group_id !== m.group_id) return -1;
-      if (a.group_id !== m.group_id && b.group_id === m.group_id) return 1;
+  // Find matches from the same tournament that are not completed yet and not byes.
+  // We prioritize matches from the same group/stage first, followed by pending/calling matches.
+  const candidates = matches.filter(
+    (candidate) =>
+      candidate.tournament_id === m.tournament_id &&
+      candidate.id !== m.id &&
+      !candidate.is_bye &&
+      candidate.status !== "finished"
+  );
+
+  return (
+    candidates.sort((a, b) => {
+      // Prioritize same group first
+      const sameGroupA = a.group_id === m.group_id ? 1 : 0;
+      const sameGroupB = b.group_id === m.group_id ? 1 : 0;
+      if (sameGroupA !== sameGroupB) return sameGroupB - sameGroupA;
+
+      // Prioritize calling/in_progress matches that are ready to play over pending
+      const statusWeight = (s: string) => (s === "calling" ? 3 : s === "in_progress" ? 2 : 1);
+      const weightDiff = statusWeight(b.status) - statusWeight(a.status);
+      if (weightDiff !== 0) return weightDiff;
+
       return a.id - b.id;
-    })[0] || null;
+    })[0] || null
+  );
 }
 
 function formatMatchDetails(m: TournamentMatch) {

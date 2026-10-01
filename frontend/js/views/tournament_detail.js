@@ -195,30 +195,27 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const advancers = tour.advancers_per_group || 2;
     const groupStageMatches = matches.filter(m => m.group_id || m.stage === "group_stage");
     const groupStageComplete = groupStageMatches.length > 0 && groupStageMatches.every(m => m.status === "finished");
-    // Shows the result of the direct match(es) against the rival(s) tied on
-    // group points, e.g. "1-0" (this player won) instead of their overall
-    // group win/draw/loss record (which duplicated the V/E/D columns).
+    // Shows one binary result per tied opponent: 1 for a direct advantage,
+    // 0 when there is no direct advantage.
     const getHeadToHead = (participant, groupId, groupParticipants) => {
       const tiedOpponents = (groupParticipants || []).filter(other =>
         other.user_id !== participant.user_id &&
         (other.group_points || 0) === (participant.group_points || 0)
       );
       if (!tiedOpponents.length) return "—";
-      const tiedIds = new Set(tiedOpponents.map(other => other.user_id));
-      const directMatches = groupStageMatches.filter(m =>
-        m.status === "finished" &&
-        m.group_id === groupId &&
-        ((m.player_a_id === participant.user_id && tiedIds.has(m.player_b_id)) ||
-          (m.player_b_id === participant.user_id && tiedIds.has(m.player_a_id)))
-      );
-      if (!directMatches.length) return "—";
-      let wins = 0;
-      let losses = 0;
-      directMatches.forEach(m => {
-        if (m.winner_id === participant.user_id) wins += 1;
-        else if (m.winner_id) losses += 1;
-      });
-      return `${wins}-${losses}`;
+      const results = tiedOpponents.map(opponent => {
+        const directMatches = groupStageMatches.filter(m =>
+          m.status === "finished" &&
+          m.group_id === groupId &&
+          ((m.player_a_id === participant.user_id && m.player_b_id === opponent.user_id) ||
+            (m.player_b_id === participant.user_id && m.player_a_id === opponent.user_id))
+        );
+        if (!directMatches.length) return null;
+        const wins = directMatches.filter(m => m.winner_id === participant.user_id).length;
+        const losses = directMatches.filter(m => m.winner_id === opponent.user_id).length;
+        return wins > losses ? "1" : "0";
+      }).filter(result => result !== null);
+      return results.length ? results.join(" · ") : "—";
     };
     // Collect group IDs
     let groupMap = {};
@@ -334,7 +331,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
               ${tour.format !== "round_robin" ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Siembra en Serpentina</span>' : ''}
             </div>
             <p class="text-xs text-slate-400">
-              Sistema Round Robin ${tour.format === "round_robin" ? "" : "por grupo "}(3 pts victoria, 1 pto empate). Desempates: victorias/derrotas &rarr; diferencia de puntos &rarr; enfrentamiento entre jugadores empatados &rarr; puntos a favor y seed.
+              Sistema Round Robin ${tour.format === "round_robin" ? "" : "por grupo "}(3 pts victoria, 1 pto empate). Desempates: victorias/derrotas &rarr; diferencia de puntos &rarr; enfrentamiento directo entre empatados &rarr; puntos a favor y posición inicial.
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -394,7 +391,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                         <th class="py-2.5 px-2 text-center">Empates</th>
                         <th class="py-2.5 px-2 text-center">Derrotas</th>
                         <th title="Diferencia de puntos (a favor menos en contra)" class="py-2.5 px-2 text-center">DIF</th>
-                        <th title="Resultado del combate directo contra el rival empatado en puntos de grupo (V-D)" class="py-2.5 px-2 text-center">Directo (V-D)</th>
+                        <th title="Resultado frente a cada rival empatado: 1 = ventaja directa, 0 = sin ventaja. Si hay varios rivales, se muestran en el orden de la tabla." class="py-2.5 px-2 text-center">Directo (1/0)</th>
                         <th class="py-2.5 px-3 text-center">Estado</th>
                         ${isOrganizer ? '<th class="py-2.5 px-2 text-center">Reasignar Grupo</th>' : ''}
                       </tr>
@@ -425,7 +422,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                                 <div class="min-w-0">
                                   <div class="font-bold text-white text-xs truncate flex items-center gap-1.5">
                                     <span>${p.user?.display_name || ''}</span>
-                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300 font-mono font-normal">S#${p.seed || pIdx + 1}</span>
+                                    <span title="Posición inicial en el torneo" class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300 font-mono font-normal">Inicial #${p.seed || pIdx + 1}</span>
                                   </div>
                                 </div>
                               </div>
@@ -1370,11 +1367,11 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
         <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
           <p>
-            Al igual que en <strong class="text-cyan-300">challonge.com</strong>, los participantes se ordenan por su <strong>Seed inicial o Ranking</strong> y se siembran en zigzag a lo largo de los grupos para garantizar que ningún grupo quede desbalanceado con todos los jugadores fuertes.
+            Al igual que en <strong class="text-cyan-300">challonge.com</strong>, los participantes se ordenan por su <strong>posición inicial o ranking</strong> y se distribuyen en zigzag a lo largo de los grupos para garantizar que ningún grupo quede desbalanceado con todos los jugadores fuertes.
           </p>
 
           <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] space-y-1">
-            <div class="text-cyan-400 font-bold">Patrón de Distribución (Serpentine Seeding):</div>
+            <div class="text-cyan-400 font-bold">Patrón de distribución serpentina:</div>
             <div>• Vuelta 1 (Izq a Der): Semilla 1 &rarr; Grupo A, Semilla 2 &rarr; Grupo B, Semilla 3 &rarr; Grupo C...</div>
             <div>• Vuelta 2 (Der a Izq): Semilla N &rarr; Grupo C, Semilla N+1 &rarr; Grupo B, Semilla N+2 &rarr; Grupo A...</div>
           </div>
