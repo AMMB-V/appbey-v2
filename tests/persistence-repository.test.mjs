@@ -7,8 +7,6 @@ import { persistenceTables } from "../src/backend/persistence/schema.ts";
 function createState() {
   return {
     users: [{ id: 1, username: "blader" }],
-    wallets: [],
-    transactions: [],
     parts: [],
     decks: [],
     tournaments: [],
@@ -69,4 +67,20 @@ test("repository loads relational rows and marks persistence ready", async () =>
   assert.deepEqual(state.users, [{ id: 7, username: "loaded" }]);
   assert.equal(database.isReady, true);
   await database.close();
+});
+
+test("persistence schema and state contract exclude retired wallet tables", () => {
+  const names = persistenceTables.map((table) => table.name);
+  assert.ok(!names.includes("appbey_wallets"));
+  assert.ok(!names.includes("appbey_transactions"));
+  assert.ok(!persistenceTables.some((table) => ["wallets", "transactions"].includes(table.key)));
+});
+
+test("repository ignores legacy wallet collections in stored state", async () => {
+  const database = new PersistenceDatabase(undefined, false);
+  const repository = new PersistenceRepository(database, () => createState(), () => {});
+  const legacy = { ...createState(), wallets: [{ id: 1 }], transactions: [{ id: 1 }] };
+  const result = repository.withDefaults ? repository.withDefaults(legacy, createState()) : repository["withDefaults"](legacy, createState());
+  assert.equal("wallets" in result, false);
+  assert.equal("transactions" in result, false);
 });

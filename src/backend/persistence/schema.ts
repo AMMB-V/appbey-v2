@@ -13,14 +13,9 @@ import type {
   Tournament,
   TournamentMatch,
   TournamentParticipant,
-  Transaction,
-  User,
-  Wallet
-} from "../models.js";
+  User} from "../models.js";
 export type PersistedState = {
   users: User[];
-  wallets: Wallet[];
-  transactions: Transaction[];
   parts: BeybladePart[];
   decks: BladerDeck[];
   tournaments: Tournament[];
@@ -62,19 +57,6 @@ export const persistenceTables: PersistenceTable[] = [
     { name: "is_verified", type: "BOOLEAN", field: "is_verified" },
     { name: "created_at", type: "TEXT", field: "created_at" }
   ], indexes: ["username", "email", "role"] },
-  { key: "wallets", name: "appbey_wallets", columns: [
-    { name: "user_id", type: "BIGINT", field: "user_id" },
-    { name: "balance", type: "NUMERIC", field: "balance" },
-    { name: "created_at", type: "TEXT", field: "created_at" }
-  ], indexes: ["user_id"] },
-  { key: "transactions", name: "appbey_transactions", columns: [
-    { name: "wallet_id", type: "BIGINT", field: "wallet_id" },
-    { name: "amount", type: "NUMERIC", field: "amount" },
-    { name: "tx_type", type: "TEXT", field: "tx_type" },
-    { name: "reason", type: "TEXT", field: "reason" },
-    { name: "reference_id", type: "TEXT", field: "reference_id" },
-    { name: "created_at", type: "TEXT", field: "created_at" }
-  ], indexes: ["wallet_id", "created_at"] },
   { key: "parts", name: "appbey_parts", columns: [
     { name: "code", type: "TEXT", field: "code" },
     { name: "name", type: "TEXT", field: "name" },

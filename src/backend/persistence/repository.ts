@@ -94,8 +94,6 @@ export class PersistenceRepository {
   private withDefaults(state: Partial<PersistedState> | undefined, fallback: PersistedState): PersistedState {
     return {
       users: state?.users || fallback.users,
-      wallets: state?.wallets || fallback.wallets,
-      transactions: state?.transactions || fallback.transactions,
       parts: state?.parts || fallback.parts,
       decks: state?.decks || fallback.decks,
       tournaments: state?.tournaments || fallback.tournaments,
@@ -132,8 +130,6 @@ export class PersistenceRepository {
   private collectionRows(state: PersistedState, key: PersistedCollectionName): readonly object[] {
     switch (key) {
       case "users": return state.users;
-      case "wallets": return state.wallets;
-      case "transactions": return state.transactions;
       case "parts": return state.parts;
       case "decks": return state.decks;
       case "tournaments": return state.tournaments;
@@ -153,8 +149,6 @@ export class PersistenceRepository {
   private assignCollection(state: PersistedState, key: PersistedCollectionName, rows: unknown[]): void {
     switch (key) {
       case "users": state.users = rows as PersistedState["users"]; break;
-      case "wallets": state.wallets = rows as PersistedState["wallets"]; break;
-      case "transactions": state.transactions = rows as PersistedState["transactions"]; break;
       case "parts": state.parts = rows as PersistedState["parts"]; break;
       case "decks": state.decks = rows as PersistedState["decks"]; break;
       case "tournaments": state.tournaments = rows as PersistedState["tournaments"]; break;

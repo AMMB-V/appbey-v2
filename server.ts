@@ -31,9 +31,7 @@ import type {
   Tournament,
   TournamentMatch,
   TournamentParticipant,
-  Transaction,
-  User,
-  Wallet
+  User
 } from "./src/backend/models.js";
 import { RealtimeHub } from "./src/backend/realtime.js";
 
@@ -114,8 +112,6 @@ const publicUser = (user?: User | null) => {
 
 // Stores
 let users: User[] = [];
-let wallets: Wallet[] = [];
-let transactions: Transaction[] = [];
 let parts: BeybladePart[] = [];
 let decks: BladerDeck[] = [];
 let tournaments: Tournament[] = [];
@@ -150,7 +146,7 @@ let metaSyncState: MetaSyncState = {
 
 function getPersistedState(): PersistedState {
   return {
-    users, wallets, transactions, parts, decks, tournaments, participants,
+    users, parts, decks, tournaments, participants,
     matches, matchGames, seasons, seasonRankings, hallOfFame, communityPosts,
     postLikes, postComments, notifications, metaSyncState
   };
@@ -158,8 +154,6 @@ function getPersistedState(): PersistedState {
 
 function replacePersistedState(state: PersistedState): void {
   users = state.users;
-  wallets = state.wallets;
-  transactions = state.transactions;
   parts = state.parts;
   decks = state.decks;
   tournaments = state.tournaments;
@@ -403,23 +397,6 @@ function seedDatabase() {
       });
     }
   }
-
-  // Wallets
-  wallets = users.map((u, i) => ({
-    id: i + 1,
-    user_id: u.id,
-    balance: ["admin", "organizer"].includes(u.role) ? 1200 : 500,
-    created_at: now
-  }));
-
-  transactions = wallets.map((w, i) => ({
-    id: i + 1,
-    wallet_id: w.id,
-    amount: w.balance,
-    tx_type: "signup_bonus",
-    reason: "Saldo inicial y bienvenida AppBey",
-    created_at: now
-  }));
 
   // AppBey's local part catalog and reference data; no live provider is connected.
   parts = [

@@ -1,32 +1,32 @@
-ï»¿# AppBey â€” Plataforma Competitiva Oficial Beyblade X (Web & Mobile PWA)
+# AppBey — Plataforma Competitiva Oficial Beyblade X (Web & Mobile PWA)
 
-AppBey es la plataforma integral diseÃ±ada para la organizaciÃ³n, arbitraje y gestiÃ³n de torneos competitivos de **Beyblade X**. Utiliza un backend **Node.js / Express / TypeScript** con **WebSockets**, frontend SPA/PWA estÃ¡tico en **Vercel** y PostgreSQL en **Neon**.
+AppBey es la plataforma integral diseñada para la organización, arbitraje y gestión de torneos competitivos de **Beyblade X**. Utiliza un backend **Node.js / Express / TypeScript** con **WebSockets**, frontend SPA/PWA estático en **Vercel** y PostgreSQL en **Neon**.
 
-- ğŸŒ **Sitio Web Oficial:** [https://appbey-v2.vercel.app/](https://appbey-v2.vercel.app/)
-- âš™ï¸ **API en Render:** [https://appbey-v2.onrender.com/](https://appbey-v2.onrender.com/)
-- ğŸ“¦ **Repositorio GitHub:** [https://github.com/AMMB-V/appbey-v2](https://github.com/AMMB-V/appbey-v2)
+- ?? **Sitio Web Oficial:** [https://appbey-v2.vercel.app/](https://appbey-v2.vercel.app/)
+- ?? **API en Render:** [https://appbey-v2.onrender.com/](https://appbey-v2.onrender.com/)
+- ?? **Repositorio GitHub:** [https://github.com/AMMB-V/appbey-v2](https://github.com/AMMB-V/appbey-v2)
 
 ---
 
-## ğŸ† Motor de Torneos y Compatibilidad Challonge
+## ?? Motor de Torneos y Compatibilidad Challonge
 
-AppBey ofrece una suite completa inspirada en las mejores mecÃ¡nicas de **Challonge** y las normativas internacionales de la **World Beyblade Organization (WBO)**:
+AppBey ofrece una suite completa inspirada en las mejores mecánicas de **Challonge** y las normativas internacionales de la **World Beyblade Organization (WBO)**:
 
-1. **Fase de Grupos + EliminaciÃ³n Directa (Estilo Challonge)**:
-   - DistribuciÃ³n de participantes mediante **Siembra en Serpentina (Serpentine Seeding)**: 1Âº al Grupo A, 2Âº al Grupo B, 3Âº al Grupo B, 4Âº al Grupo A...
+1. **Fase de Grupos + Eliminación Directa (Estilo Challonge)**:
+   - Distribución de participantes mediante **Siembra en Serpentina (Serpentine Seeding)**: 1º al Grupo A, 2º al Grupo B, 3º al Grupo B, 4º al Grupo A...
    - Tablas de posiciones en vivo con criterios oficiales de desempate: Puntos (3V-1E) &rarr; Diferencia de Puntos &rarr; Puntos a favor &rarr; Seed inicial.
-   - GeneraciÃ³n automÃ¡tica de cruces de Playoffs (16vos, 8vos, Cuartos, Semifinales y Gran Final).
-2. **EliminaciÃ³n Directa y Sistema Suizo Oficial**:
-   - Ãrbol de llaves interactivo, ordenado por ronda, con acceso propio para torneos de eliminaciÃ³n directa.
-   - Marcador de eliminaciÃ³n directa al mejor de 3 sets; los BYE se muestran como pase libre y avanzan automÃ¡ticamente.
-   - Emparejamientos Suizos evitando combates repetidos y cÃ¡lculo automÃ¡tico de Buchholz.
-3. **GestiÃ³n de Participantes en Torneo Real**:
-   - InscripciÃ³n de Bladers registrados y Bladers invitados (Walk-in bladers) en el dÃ­a del evento.
-   - Registro y ediciÃ³n de Deck oficial 3on3 por Blader.
+   - Generación automática de cruces de Playoffs (16vos, 8vos, Cuartos, Semifinales y Gran Final).
+2. **Eliminación Directa y Sistema Suizo Oficial**:
+   - Árbol de llaves interactivo, ordenado por ronda, con acceso propio para torneos de eliminación directa.
+   - Marcador de eliminación directa al mejor de 3 sets; los BYE se muestran como pase libre y avanzan automáticamente.
+   - Emparejamientos Suizos evitando combates repetidos y cálculo automático de Buchholz.
+3. **Gestión de Participantes en Torneo Real**:
+   - Inscripción de Bladers registrados y Bladers invitados (Walk-in bladers) en el día del evento.
+   - Registro y edición de Deck oficial 3on3 por Blader.
    - Barajado aleatorio de siembras (**Challonge Shuffle Seeds**).
    - Check-in individual o masivo.
-   - Retiro/RemociÃ³n de participantes antes del inicio.
-4. **Mesa de Arbitraje TÃ¡ctil & Marcador BeyScore**:
+   - Retiro/Remoción de participantes antes del inicio.
+4. **Mesa de Arbitraje Táctil & Marcador BeyScore**:
    - Panel de 1-toque optimizado para smartphones y tablets:
      - **Spin Finish (+1 pt)**
      - **Over Finish (+2 pts)**
@@ -34,108 +34,108 @@ AppBey ofrece una suite completa inspirada en las mejores mecÃ¡nicas de **Challo
      - **Xtreme Finish (+3 pts)**
      - **Faltas y Penalizaciones (+1 pt al oponente)**
      - **Empate / Draw (0 pts)**
-   - Deshacer Ãºltima jugada (**Undo**), reinicio de marcador y reanudaciÃ³n de combates cerrados por error.
-   - SelecciÃ³n de meta de puntos (4 puntos estÃ¡ndar, 5 o 7 en finales).
+   - Deshacer última jugada (**Undo**), reinicio de marcador y reanudación de combates cerrados por error.
+   - Selección de meta de puntos (4 puntos estándar, 5 o 7 en finales).
 5. **Pantalla de Estadio / Proyector TV (Stadium Display)**:
    - Pantalla completa en vivo para proyector o pantalla gigante en el recinto.
-   - Convocatoria en tiempo real a mesas de combate ("Mesa #1: Yorch vs Woonka â€” EN COMBATE").
-   - TransmisiÃ³n en tiempo real vÃ­a WebSockets sin recargar pÃ¡gina.
+   - Convocatoria en tiempo real a mesas de combate ("Mesa #1: Yorch vs Woonka — EN COMBATE").
+   - Transmisión en tiempo real vía WebSockets sin recargar página.
 
 ---
 
-## ğŸ“Š Registro de Rankings Temporada #1 y #2
+## ?? Registro de Rankings Temporada #1 y #2
 
 AppBey mantiene un registro de rankings y resultados de temporadas:
-- **Temporada 1 (HistÃ³rica)**: 96 Bladers registrados con su puntaje acumulado, victorias, derrotas, porcentaje de winrate y podio:
-  - ğŸ¥‡ **#1 Yorch** (CampeÃ³n Nacional)
-  - ğŸ¥ˆ **#2 Woonka** (2do Lugar)
-  - ğŸ¥‰ **#3 Kanghy** (3er Lugar)
+- **Temporada 1 (Histórica)**: 96 Bladers registrados con su puntaje acumulado, victorias, derrotas, porcentaje de winrate y podio:
+  - ?? **#1 Yorch** (Campeón Nacional)
+  - ?? **#2 Woonka** (2do Lugar)
+  - ?? **#3 Kanghy** (3er Lugar)
 - **Temporada 2 (Nueva Temporada Activa)**: Sistema de ranking por Elo competitivo ($K=32$) con base inicial de 1500 Elo.
-- **SalÃ³n de la Fama**: Registro histÃ³rico de campeones y combos insignia.
+- **Salón de la Fama**: Registro histórico de campeones y combos insignia.
 
 ---
 
-## ğŸ›¡ï¸ Control de Roles y Seguridad (RBAC)
+## ??? Control de Roles y Seguridad (RBAC)
 
 - **Blader**: Rol por defecto al registrarse (los nuevos usuarios solo pueden registrarse como Bladers).
-- **Ãrbitro (Referee)**: AsignaciÃ³n a mesas de combate y control del marcador tÃ¡ctil en vivo.
-- **Organizador (Organizer)**: CreaciÃ³n de torneos, inicio de grupos, avance de llaves y gestiÃ³n de inscripciones.
-- **Administrador (Admin)**: Acceso total al panel de administraciÃ³n para nombrar Ã¡rbitros, organizadores, ascender admins y gestionar el estado de los usuarios.
+- **Árbitro (Referee)**: Asignación a mesas de combate y control del marcador táctil en vivo.
+- **Organizador (Organizer)**: Creación de torneos, inicio de grupos, avance de llaves y gestión de inscripciones.
+- **Administrador (Admin)**: Acceso total al panel de administración para nombrar árbitros, organizadores, ascender admins y gestionar el estado de los usuarios.
 
 ---
 
-## ğŸ› ï¸ Estructura del Proyecto
+## ??? Estructura del Proyecto
 
 ```
 appbey_v2/
-â”œâ”€â”€ server.ts                      # ComposiciÃ³n de la aplicaciÃ³n y registro actual de rutas
-â”œâ”€â”€ src/
-â”‚   â””â”€â”€ backend/
-â”‚       â”œâ”€â”€ models.ts              # Modelos compartidos del dominio
-â”‚       â”œâ”€â”€ auth.ts                # EmisiÃ³n de JWT y middleware de autorizaciÃ³n
-â”‚       â”œâ”€â”€ realtime.ts            # WebSockets, heartbeat y difusiÃ³n de eventos
-â”‚       â”œâ”€â”€ persistence/
-â”‚       â”‚   â”œâ”€â”€ database.ts        # Pool PostgreSQL, cola de escrituras y estado de conexiÃ³n
-â”‚       â”‚   â”œâ”€â”€ schema.ts          # Tipos persistidos y definiciÃ³n de tablas relacionales
-â”‚       â”‚   â””â”€â”€ repository.ts      # InicializaciÃ³n, migraciÃ³n, carga y persistencia del estado
-â”‚       â”œâ”€â”€ services/
-â”‚       â”‚   â””â”€â”€ tournament-domain.ts # Reglas de Elo, estadÃ­sticas, llaves y emparejamientos
-â”‚       â””â”€â”€ routes/
-â”‚           â”œâ”€â”€ identity.ts        # Registro, inicio de sesiÃ³n y gestiÃ³n de usuarios
-â”‚           â”œâ”€â”€ catalog.ts         # CatÃ¡logo, sincronizaciÃ³n y decks
-â”‚           â”œâ”€â”€ tournaments.ts     # Torneos, grupos, rondas y colas de arbitraje
-â”‚           â”œâ”€â”€ matches.ts         # Marcador y ciclo de vida de combates
-â”‚           â”œâ”€â”€ rankings.ts        # Rankings, temporadas y salÃ³n de la fama
-â”‚           â””â”€â”€ community.ts       # Publicaciones, likes, comentarios y notificaciones
-â”œâ”€â”€ package.json                   # Dependencias Node.js y scripts de compilaciÃ³n
-â”œâ”€â”€ tsconfig.json                  # ConfiguraciÃ³n TypeScript
-â”œâ”€â”€ Dockerfile                     # Contenedor de producciÃ³n para Render.com (Node 20 Alpine)
-â”œâ”€â”€ frontend/                      # Frontend PWA SPA (Carga rÃ¡pida <150ms)
-â”‚   â”œâ”€â”€ index.html                 # Shell principal con tema Cyber Beyblade
-â”‚   â”œâ”€â”€ manifest.json              # Manifiesto PWA para instalaciÃ³n en Android e iOS
-â”‚   â”œâ”€â”€ sw.js                      # Service Worker con cachÃ© versionada
-â”‚   â”œâ”€â”€ assets/
-â”‚   â”‚   â”œâ”€â”€ icons/                 # Favicon e iconos PWA oficiales
-â”‚   â”‚   â””â”€â”€ images/                # Logo oficial AppBey y recursos grÃ¡ficos
-â”‚   â”œâ”€â”€ css/
-â”‚   â”‚   â””â”€â”€ styles.css             # Estilos y efectos NeÃ³n Xtreme Stadium
-â”‚   â””â”€â”€ js/
-â”‚       â”œâ”€â”€ api.js                 # Cliente REST con gestiÃ³n de JWT
-â”‚       â”œâ”€â”€ ws.js                  # Hub de WebSockets con reconexiÃ³n activa
-â”‚       â”œâ”€â”€ components.js          # Componentes globales (RenderAvatar, Toasts, Confirm)
-â”‚       â”œâ”€â”€ app.js                 # Enrutador cliente SPA
-â”‚       â””â”€â”€ views/                 # Vistas modulares:
-â”‚           â”œâ”€â”€ home.js            # Portada y accesos rÃ¡pidos
-â”‚           â”œâ”€â”€ tournaments.js     # Explorador y creador de torneos
-â”‚           â”œâ”€â”€ tournament_detail.js # Brackets, grupos Challonge y participantes
-â”‚           â”œâ”€â”€ referee_pad.js     # Marcador tÃ¡ctil WBO BeyScore
-â”‚           â”œâ”€â”€ stadium_display.js # Proyector TV para estadios
-â”‚           â”œâ”€â”€ deck_builder.js    # Constructor de Decks 3on3
-â”‚           â”œâ”€â”€ tier_list.js       # CatÃ¡logo y clasificaciÃ³n de piezas
-â”‚           â”œâ”€â”€ rankings.js        # Tablas de clasificaciÃ³n T1 y T2
-â”‚           â”œâ”€â”€ hall_of_fame.js    # SalÃ³n de la Fama
-â”‚           â”œâ”€â”€ social.js          # Muro de la comunidad
-â”‚           â”œâ”€â”€ profile.js         # Perfil y combo insignia
-â”‚           â”œâ”€â”€ admin_users.js     # Panel de gestiÃ³n de usuarios y roles
-â”‚           â””â”€â”€ auth.js            # Registro e inicio de sesiÃ³n
-â””â”€â”€ README.md
++-- server.ts                      # Composición de la aplicación y registro actual de rutas
++-- src/
+¦   +-- backend/
+¦       +-- models.ts              # Modelos compartidos del dominio
+¦       +-- auth.ts                # Emisión de JWT y middleware de autorización
+¦       +-- realtime.ts            # WebSockets, heartbeat y difusión de eventos
+¦       +-- persistence/
+¦       ¦   +-- database.ts        # Pool PostgreSQL, cola de escrituras y estado de conexión
+¦       ¦   +-- schema.ts          # Tipos persistidos y definición de tablas relacionales
+¦       ¦   +-- repository.ts      # Inicialización, migración, carga y persistencia del estado
+¦       +-- services/
+¦       ¦   +-- tournament-domain.ts # Reglas de Elo, estadísticas, llaves y emparejamientos
+¦       +-- routes/
+¦           +-- identity.ts        # Registro, inicio de sesión y gestión de usuarios
+¦           +-- catalog.ts         # Catálogo, sincronización y decks
+¦           +-- tournaments.ts     # Torneos, grupos, rondas y colas de arbitraje
+¦           +-- matches.ts         # Marcador y ciclo de vida de combates
+¦           +-- rankings.ts        # Rankings, temporadas y salón de la fama
+¦           +-- community.ts       # Publicaciones, likes, comentarios y notificaciones
++-- package.json                   # Dependencias Node.js y scripts de compilación
++-- tsconfig.json                  # Configuración TypeScript
++-- Dockerfile                     # Contenedor de producción para Render.com (Node 20 Alpine)
++-- frontend/                      # Frontend PWA SPA (Carga rápida <150ms)
+¦   +-- index.html                 # Shell principal con tema Cyber Beyblade
+¦   +-- manifest.json              # Manifiesto PWA para instalación en Android e iOS
+¦   +-- sw.js                      # Service Worker con caché versionada
+¦   +-- assets/
+¦   ¦   +-- icons/                 # Favicon e iconos PWA oficiales
+¦   ¦   +-- images/                # Logo oficial AppBey y recursos gráficos
+¦   +-- css/
+¦   ¦   +-- styles.css             # Estilos y efectos Neón Xtreme Stadium
+¦   +-- js/
+¦       +-- api.js                 # Cliente REST con gestión de JWT
+¦       +-- ws.js                  # Hub de WebSockets con reconexión activa
+¦       +-- components.js          # Componentes globales (RenderAvatar, Toasts, Confirm)
+¦       +-- app.js                 # Enrutador cliente SPA
+¦       +-- views/                 # Vistas modulares:
+¦           +-- home.js            # Portada y accesos rápidos
+¦           +-- tournaments.js     # Explorador y creador de torneos
+¦           +-- tournament_detail.js # Brackets, grupos Challonge y participantes
+¦           +-- referee_pad.js     # Marcador táctil WBO BeyScore
+¦           +-- stadium_display.js # Proyector TV para estadios
+¦           +-- deck_builder.js    # Constructor de Decks 3on3
+¦           +-- tier_list.js       # Catálogo y clasificación de piezas
+¦           +-- rankings.js        # Tablas de clasificación T1 y T2
+¦           +-- hall_of_fame.js    # Salón de la Fama
+¦           +-- social.js          # Muro de la comunidad
+¦           +-- profile.js         # Perfil y combo insignia
+¦           +-- admin_users.js     # Panel de gestión de usuarios y roles
+¦           +-- auth.js            # Registro e inicio de sesión
++-- README.md
 ```
 
-### EvaluaciÃ³n y plan de modularizaciÃ³n del backend
+### Evaluación y plan de modularización del backend
 
-El backend estaba concentrado en `server.ts`, mezclando arranque HTTP, modelos, persistencia, autenticaciÃ³n, WebSockets, reglas de torneos y rutas. Mantener todo ahÃ­ aumenta el acoplamiento, dificulta las pruebas aisladas y hace mÃ¡s costosos los cambios; separar por responsabilidades es preferible a un Ãºnico archivo.
+El backend estaba concentrado en `server.ts`, mezclando arranque HTTP, modelos, persistencia, autenticación, WebSockets, reglas de torneos y rutas. Mantener todo ahí aumenta el acoplamiento, dificulta las pruebas aisladas y hace más costosos los cambios; separar por responsabilidades es preferible a un único archivo.
 
-La modularizaciÃ³n ya separa modelos, autenticaciÃ³n, WebSockets, las reglas de torneo (Elo, estadÃ­sticas, llaves, grupos y Swiss), las rutas de identidad, catÃ¡logo/decks, torneos, combates, rankings y comunidad, y el repositorio PostgreSQL en `src/backend/`. La inicializaciÃ³n y la migraciÃ³n conservan el formato relacional y heredado; el modo en memoria sigue disponible cuando no se configura `DATABASE_URL`. Los mÃ³dulos de dominio y rutas reciben dependencias explÃ­citas, mientras `server.ts` las conecta con el estado vivo del proceso.
+La modularización ya separa modelos, autenticación, WebSockets, las reglas de torneo (Elo, estadísticas, llaves, grupos y Swiss), las rutas de identidad, catálogo/decks, torneos, combates, rankings y comunidad, y el repositorio PostgreSQL en `src/backend/`. La inicialización y la migración conservan el formato relacional y heredado; el modo en memoria sigue disponible cuando no se configura `DATABASE_URL`. Los módulos de dominio y rutas reciben dependencias explícitas, mientras `server.ts` las conecta con el estado vivo del proceso.
 
-1. **Extraer el seeding y la configuraciÃ³n de aplicaciÃ³n** del punto de entrada para dejarlo dedicado a composiciÃ³n, middleware y ciclo de vida del servidor.
-2. **Ampliar las pruebas de regresiÃ³n** para reglas de grupo/Swiss y ciclo de vida de combates, ademÃ¡s de contratos HTTP, persistencia y WebSockets.
-3. **Consolidar `server.ts` como punto de composiciÃ³n** que construye el estado en memoria, conecta repositorios/servicios, monta routers y arranca/cierra el servidor.
+1. **Extraer el seeding y la configuración de aplicación** del punto de entrada para dejarlo dedicado a composición, middleware y ciclo de vida del servidor.
+2. **Ampliar las pruebas de regresión** para reglas de grupo/Swiss y ciclo de vida de combates, además de contratos HTTP, persistencia y WebSockets.
+3. **Consolidar `server.ts` como punto de composición** que construye el estado en memoria, conecta repositorios/servicios, monta routers y arranca/cierra el servidor.
 
-La migraciÃ³n debe ser incremental: mover primero una responsabilidad autocontenida y conservar los contratos de API evita el riesgo de una reescritura integral. No se recomienda convertir todas las funciones en clases: eso aÃ±adirÃ­a estructura sin reducir el acoplamiento. Tampoco hace falta que cada lÃ­nea se cargue desde un Ãºnico archivo; los mÃ³dulos delimitan responsabilidades y se importan segÃºn el grafo de dependencias.
+La migración debe ser incremental: mover primero una responsabilidad autocontenida y conservar los contratos de API evita el riesgo de una reescritura integral. No se recomienda convertir todas las funciones en clases: eso añadiría estructura sin reducir el acoplamiento. Tampoco hace falta que cada línea se cargue desde un único archivo; los módulos delimitan responsabilidades y se importan según el grafo de dependencias.
 
 ---
 
-## âš¡ EjecuciÃ³n Local
+## ? Ejecución Local
 
 ### Requisitos
 - Node.js 20+ y npm
@@ -147,29 +147,29 @@ npm ci
 # 2. Ejecutar en modo desarrollo
 npm run dev
 
-# 3. Compilar para producciÃ³n
+# 3. Compilar para producción
 npm run build
 
-# 4. Iniciar servidor de producciÃ³n
+# 4. Iniciar servidor de producción
 npm start
 ```
-La plataforma estarÃ¡ disponible en: `http://localhost:3000`
+La plataforma estará disponible en: `http://localhost:3000`
 
 Health checks disponibles:
 - `GET /healthz` confirma que el proceso responde.
-- `GET /readyz` confirma que el proceso estÃ¡ listo para recibir trÃ¡fico (ruta recomendada para Render).
+- `GET /readyz` confirma que el proceso está listo para recibir tráfico (ruta recomendada para Render).
 - `GET /api/health` mantiene compatibilidad con clientes existentes.
 
-Configura el Health Check Path de Render como `/readyz`: asÃ­ el deploy no se
-marca listo hasta que PostgreSQL terminÃ³ de cargar y aplicar la migraciÃ³n.
+Configura el Health Check Path de Render como `/readyz`: así el deploy no se
+marca listo hasta que PostgreSQL terminó de cargar y aplicar la migración.
 
 ---
 
-## ğŸ‘¤ ConfiguraciÃ³n inicial de producciÃ³n
+## ?? Configuración inicial de producción
 
-La aplicaciÃ³n conserva los usuarios y rankings oficiales precargados. En
-producciÃ³n no crea el torneo de prueba ni sus resultados. Las cuentas
-precargadas pueden cambiar su contraseÃ±a desde su perfil. Para habilitar el
+La aplicación conserva los usuarios y rankings oficiales precargados. En
+producción no crea el torneo de prueba ni sus resultados. Las cuentas
+precargadas pueden cambiar su contraseña desde su perfil. Para habilitar el
 primer administrador configurable, usa:
 
 - `APPBEY_DEMO_DATA=false`
@@ -180,33 +180,33 @@ primer administrador configurable, usa:
 - `DATABASE_URL=URL privada de PostgreSQL`
 
 Cuando se configuran `APPBEY_ADMIN_EMAIL` y `APPBEY_ADMIN_PASSWORD`, el arranque
-crea o eleva esa cuenta a `admin` de forma idempotente. ConfigÃºralas como
+crea o eleva esa cuenta a `admin` de forma idempotente. Configúralas como
 variables protegidas en Render; nunca las escribas en el repositorio.
 
 `APPBEY_DEMO_DATA=true` solo debe usarse en desarrollo o demostraciones. No se
-deben publicar ni reutilizar credenciales de demostraciÃ³n.
+deben publicar ni reutilizar credenciales de demostración.
 
-Con `DATABASE_URL` configurada, AppBey migra automÃ¡ticamente el estado anterior
+Con `DATABASE_URL` configurada, AppBey migra automáticamente el estado anterior
 de `appbey_state` a tablas PostgreSQL separadas y luego lee/escribe los cambios
-en esas tablas. La migraciÃ³n se registra en `appbey_schema_migrations` y es
-idempotente; no vuelve a importar el snapshot anterior despuÃ©s de completarse.
-La tabla `appbey_state` se conserva como copia del estado previo a la migraciÃ³n,
+en esas tablas. La migración se registra en `appbey_schema_migrations` y es
+idempotente; no vuelve a importar el snapshot anterior después de completarse.
+La tabla `appbey_state` se conserva como copia del estado previo a la migración,
 pero deja de ser la fuente activa de datos.
 
 Las tablas principales incluyen `appbey_users`, `appbey_tournaments`,
 `appbey_tournament_participants`, `appbey_matches` y `appbey_match_games`.
-TambiÃ©n se migran wallets, transacciones, partes, decks, temporadas, rankings,
+También se migran partes, decks, temporadas, rankings,
 Hall of Fame, publicaciones, likes, comentarios y notificaciones. Los torneos
 contienen los datos de evento que maneja actualmente la app (fecha, sede,
-direcciÃ³n y paÃ­s); hoy no existe un modelo independiente de eventos. Las tablas
-exponen columnas de bÃºsqueda para sus campos principales y conservan el objeto
+dirección y país); hoy no existe un modelo independiente de eventos. Las tablas
+exponen columnas de búsqueda para sus campos principales y conservan el objeto
 completo de cada registro en `payload` para no perder propiedades que el API ya
 utiliza.
 
-Al actualizar una fila desde la aplicaciÃ³n, los cambios se escriben de forma
+Al actualizar una fila desde la aplicación, los cambios se escriben de forma
 transaccional en PostgreSQL; el proceso vuelve a cargar las filas relacionales
-en cada arranque. `/healthz` indica que el proceso estÃ¡ vivo y `/readyz` que la
-carga de la base de datos terminÃ³. Si `DATABASE_URL` no estÃ¡ configurada, el
+en cada arranque. `/healthz` indica que el proceso está vivo y `/readyz` que la
+carga de la base de datos terminó. Si `DATABASE_URL` no está configurada, el
 backend usa memoria y los cambios se pierden al reiniciar. La URL debe
 mantenerse como secreto de Render y nunca entrar al repositorio.
 
@@ -228,10 +228,10 @@ ORDER BY tournament_id, seed;
 
 ---
 
-## ğŸš€ Despliegue Continuo en Render.com
+## ?? Despliegue Continuo en Render.com
 
-El despliegue de producciÃ³n usa Vercel para el frontend estÃ¡tico, Render para el backend Docker y Neon para PostgreSQL. Los proveedores estÃ¡n conectados a la rama `main`:
-- Cada `push` a `main` desencadena el despliegue de frontend en Vercel y la construcciÃ³n del contenedor backend en Render.
+El despliegue de producción usa Vercel para el frontend estático, Render para el backend Docker y Neon para PostgreSQL. Los proveedores están conectados a la rama `main`:
+- Cada `push` a `main` desencadena el despliegue de frontend en Vercel y la construcción del contenedor backend en Render.
 - Las variables de entorno recomendadas en Render son:
   - `PORT=3000`
   - `NODE_ENV=production`
@@ -240,24 +240,24 @@ El despliegue de producciÃ³n usa Vercel para el frontend estÃ¡tico, Render para 
   - `ALLOWED_ORIGINS=https://appbey-v2.vercel.app`
   - `GOOGLE_CLIENT_ID=(Web client ID de Google; opcional)`
   - `APPBEY_DEMO_DATA=false`
-  - `APPBEY_ADMIN_EMAIL=(correo inicial de la organizaciÃ³n)`
-  - `APPBEY_ADMIN_PASSWORD=(mÃ­nimo 12 caracteres)`
+  - `APPBEY_ADMIN_EMAIL=(correo inicial de la organización)`
+  - `APPBEY_ADMIN_PASSWORD=(mínimo 12 caracteres)`
   - `BEYBLADE_X_API_BASE_URL=https://beyblade-x-api.onrender.com/beybladex`
 
-El catÃ¡logo de piezas puede actualizarse desde la vista de piezas por un
+El catálogo de piezas puede actualizarse desde la vista de piezas por un
 organizador o administrador. AppBey importa blades, ratchets y bits de la API
-comunitaria Beyblade X; no es una fuente oficial de Takara Tomy. La importaciÃ³n
+comunitaria Beyblade X; no es una fuente oficial de Takara Tomy. La importación
 conserva las piezas ya existentes y sus IDs para no romper decks guardados, y
 las piezas nuevas quedan sin clasificar hasta que un organizador las revise.
-Si el servicio externo estÃ¡ dormido o no responde, la actualizaciÃ³n informa el
-error y conserva el catÃ¡logo actual.
+Si el servicio externo está dormido o no responde, la actualización informa el
+error y conserva el catálogo actual.
 
-`SECRET_KEY` es la variable recomendada para Render. Si no estÃ¡ configurada, el
-servidor puede arrancar usando un secreto temporal, pero los JWT se invalidarÃ¡n
+`SECRET_KEY` es la variable recomendada para Render. Si no está configurada, el
+servidor puede arrancar usando un secreto temporal, pero los JWT se invalidarán
 cuando Render reinicie el servicio. Genera una clave con un gestor de secretos
-y guÃ¡rdala como variable protegida en Render.
+y guárdala como variable protegida en Render.
 
-Cuando `GOOGLE_CLIENT_ID` estÃ¡ configurado, el formulario muestra Google Sign-In. El
+Cuando `GOOGLE_CLIENT_ID` está configurado, el formulario muestra Google Sign-In. El
 servidor valida cada `id_token` con Google antes de crear o vincular la cuenta.
 
-El shell SPA se sirve con `Cache-Control: no-cache`, mientras que los assets estÃ¡ticos usan cachÃ© con ETag y expiraciÃ³n corta. Esto evita que un despliegue deje el HTML apuntando a recursos antiguos.
+El shell SPA se sirve con `Cache-Control: no-cache`, mientras que los assets estáticos usan caché con ETag y expiración corta. Esto evita que un despliegue deje el HTML apuntando a recursos antiguos.
