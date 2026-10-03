@@ -232,7 +232,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       configuredGroupIds = Array.from({ length: configuredCount }, (_, i) => String.fromCharCode(65 + i));
     }
     parts.forEach(p => { if (p.group_id && !configuredGroupIds.includes(p.group_id)) configuredGroupIds.push(p.group_id); });
-    configuredGroupIds.sort();
+    configuredGroupIds.sort((a, b) => a.localeCompare(b));
     configuredGroupIds.forEach(gid => { groupMap[gid] = []; });
 
     if (hasAssignedGroups) {
@@ -240,7 +240,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         if (!p.group_id) return;
         groupMap[p.group_id].push(p);
       });
-      const groupKeys = Object.keys(groupMap).sort();
+      const groupKeys = Object.keys(groupMap).sort((a, b) => a.localeCompare(b));
       const serpentineOrder = [];
       if (groupKeys.length === 1) serpentineOrder.push(0);
       else {
@@ -291,7 +291,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
       });
     }
 
-    const groupKeys = Object.keys(groupMap).sort();
+    const groupKeys = Object.keys(groupMap).sort((a, b) => a.localeCompare(b));
     if (!groupKeys.length) {
       return `<div class="p-8 text-center text-slate-500 glass-card rounded-2xl">No hay grupos configurados aún.</div>`;
     }
@@ -907,7 +907,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const allGroupIds = Array.from(new Set([
       ...(tournament.group_ids || []),
       ...participants.map(p => p.group_id).filter(Boolean)
-    ])).sort();
+    ])).sort((a, b) => String(a).localeCompare(String(b)));
     if (!allGroupIds.length && isGroupsFormat) {
       const initialGroupCount = tournament.group_count || automaticTournamentGroupCount(participants.length);
       allGroupIds.push(...Array.from({ length: initialGroupCount }, (_, index) => String.fromCharCode(65 + index)));

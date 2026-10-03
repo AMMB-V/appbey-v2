@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import { isIP } from "node:net";
 
 function isLoopbackHost(hostname) {
@@ -95,4 +96,24 @@ export async function resolveManualApiTarget(args = process.argv.slice(2), env =
     throw new Error("Manual simulations require an in-memory server to avoid persistent data changes.");
   }
   return target;
+}
+
+export function createManualApiClient(baseUrl) {
+  return async function req(method, url, body, token) {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(buildManualApiUrl(baseUrl, url), {
+      method,
+      headers,
+      redirect: "error",
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    let json = null;
+    try { json = await res.json(); } catch { /* no body */ }
+    return { status: res.status, body: json };
+  };
+}
+
+export function randomBelow(max) {
+  return randomInt(max);
 }

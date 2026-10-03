@@ -21,7 +21,8 @@
 //        node tests/manual/simulate-round-robin.mjs [baseUrl] [--allow-remote]
 // Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-import { buildManualApiUrl, resolveManualApiTarget } from "./safe-target.mjs";
+
+import { createManualApiClient, resolveManualApiTarget } from "./safe-target.mjs";
 
 const { baseUrl: BASE } = await resolveManualApiTarget();
 const SUFFIX = Date.now().toString(36).slice(-5);
@@ -36,19 +37,7 @@ function assert(cond, msg) {
   }
 }
 
-async function req(method, url, body, token) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(buildManualApiUrl(BASE, url), {
-    method,
-    headers,
-    redirect: "error",
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
-  let json = null;
-  try { json = await res.json(); } catch { /* no body */ }
-  return { status: res.status, body: json };
-}
+const req = createManualApiClient(BASE);
 
 async function registerAndLogin(username) {
   await req("POST", "/auth/register", {

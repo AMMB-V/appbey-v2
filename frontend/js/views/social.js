@@ -96,7 +96,7 @@ window.renderSocialView = async (container) => {
       await window.api.createPost(el.value);
       el.value = "";
       window.showToast?.("Publicación compartida", "success");
-      loadFeed();
+      void loadFeed();
     } catch(err) {
       window.showToast?.(err.message || "Error al publicar", "error");
     }
@@ -127,11 +127,11 @@ window.renderSocialView = async (container) => {
       await window.api.addComment(postId, input.value);
       input.value = "";
       window.showToast?.("Comentario agregado", "success");
-      loadFeed();
+      void loadFeed();
     } catch(err) {
       window.showToast?.(err.message || "Error al comentar", "error");
     }
   };
 
-  loadFeed();
+  void loadFeed();
 };

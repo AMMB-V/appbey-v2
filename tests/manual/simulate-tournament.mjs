@@ -5,9 +5,11 @@
 // generation, and bracket advancement all the way to the final.
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-tournament.mjs [baseUrl]
+//        node tests/manual/simulate-tournament.mjs [baseUrl] [--allow-remote]
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 const PARTICIPANT_COUNT = 32; // near max realistic size, power of two for clean groups
 
 let failures = 0;
@@ -20,18 +22,7 @@ function assert(cond, msg) {
   }
 }
 
-async function req(method, url, body, token) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${BASE}${url}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
-  let json = null;
-  try { json = await res.json(); } catch { /* no body */ }
-  return { status: res.status, body: json };
-}
+const req = createManualApiClient(BASE);
 
 async function main() {
   console.log(`Simulating a ${PARTICIPANT_COUNT}-participant tournament against ${BASE}`);
@@ -110,8 +101,8 @@ async function main() {
       for (const m of pending) {
         // Deterministic-ish "random" winner based on ids to vary outcomes
         const aWins = (m.id + m.player_a_id) % 2 === 0;
-        const scoreA = aWins ? 3 : Math.floor(Math.random() * 2);
-        const scoreB = aWins ? Math.floor(Math.random() * 2) : 3;
+        const scoreA = aWins ? 3 : randomBelow(2);
+        const scoreB = aWins ? randomBelow(2) : 3;
         const scoreRes = await req("PUT", `/matches/${m.id}/manual-score`, {
           score_a: scoreA,
           score_b: scoreB,

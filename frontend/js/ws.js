@@ -1,4 +1,9 @@
 // AppBey WebSocket Hub
+
+function randomFraction() {
+  const [value] = crypto.getRandomValues(new Uint32Array(1));
+  return value / 2 ** 32;
+}
 class WebSocketHub {
   constructor() {
     this.socket = null;
@@ -86,7 +91,7 @@ class WebSocketHub {
   scheduleReconnect(connectionId) {
     if (connectionId !== this.connectionId || !navigator.onLine || this.reconnectTimer) return;
     const delay = Math.min(1000 * (2 ** this.reconnectAttempts), 30000);
-    const jitter = Math.random() * delay * 0.25;
+    const jitter = randomFraction() * delay * 0.25;
     this.reconnectAttempts += 1;
     this.emitNetworkStatus("reconnecting");
     this.reconnectTimer = setTimeout(() => {

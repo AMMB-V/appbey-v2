@@ -4,9 +4,11 @@
 // so the advancing player is placed into round 2 instead of getting stuck.
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-single-elim-byes.mjs [baseUrl]
+//        node tests/manual/simulate-single-elim-byes.mjs [baseUrl] [--allow-remote]
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 const PARTICIPANT_COUNT = 24; // not a power of two -> bracketSize 32, 8 byes in round 1
 const SUFFIX = Date.now().toString(36).slice(-5); // keep usernames within the 20-char limit
 
@@ -20,18 +22,7 @@ function assert(cond, msg) {
   }
 }
 
-async function req(method, url, body, token) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${BASE}${url}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
-  let json = null;
-  try { json = await res.json(); } catch { /* no body */ }
-  return { status: res.status, body: json };
-}
+const req = createManualApiClient(BASE);
 
 async function main() {
   console.log(`Simulating a ${PARTICIPANT_COUNT}-participant pure single_elim tournament (with byes) against ${BASE}`);
@@ -105,8 +96,8 @@ async function main() {
       }
       for (const m of pending) {
         const aWins = (m.id + m.player_a_id) % 2 === 0;
-        const scoreA = aWins ? 3 : Math.floor(Math.random() * 2);
-        const scoreB = aWins ? Math.floor(Math.random() * 2) : 3;
+        const scoreA = aWins ? 3 : randomBelow(2);
+        const scoreB = aWins ? randomBelow(2) : 3;
         await req("PUT", `/matches/${m.id}/manual-score`, { score_a: scoreA, score_b: scoreB, status: "finished" }, adminToken);
       }
     }
