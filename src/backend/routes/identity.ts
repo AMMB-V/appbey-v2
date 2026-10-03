@@ -11,6 +11,9 @@ interface IdentityRouteDependencies {
   publicUser: (user?: User | null) => object | null;
 }
 
+const MAX_EMAIL_LENGTH = 254;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function registerIdentityRoutes(api: Router, state: IdentityRouteDependencies): void {
 api.post("/auth/register", (req, res) => {
   const { username, email, password, display_name, country, avatar_url } = req.body;
@@ -363,7 +366,20 @@ api.put("/users/:id", requireRoles(["admin"]), (req: AuthRequest, res) => {
     res.status(404).json({ detail: "Usuario no encontrado" });
     return;
   }
-  const { display_name, country, avatar_url, bio, favorite_combo, role, elo_rating } = req.body;
+  const { display_name, country, avatar_url, bio, favorite_combo, role, elo_rating, email } = req.body;
+  let cleanEmail: string | undefined;
+  if (email !== undefined) {
+    cleanEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    if (!cleanEmail || cleanEmail.length > MAX_EMAIL_LENGTH || !EMAIL_PATTERN.test(cleanEmail)) {
+      res.status(400).json({ detail: "El formato de correo electr?nico no es v?lido" });
+      return;
+    }
+    if (state.users.some((u) => u.id !== target.id && u.email.trim().toLowerCase() === cleanEmail)) {
+      res.status(409).json({ detail: "El correo electr?nico ya est? registrado" });
+      return;
+    }
+  }
+  if (cleanEmail !== undefined) target.email = cleanEmail;
   if (display_name !== undefined) target.display_name = String(display_name).trim().slice(0, 50);
   if (country !== undefined) target.country = String(country).trim().toUpperCase().slice(0, 5);
   if (avatar_url !== undefined) target.avatar_url = String(avatar_url).trim();

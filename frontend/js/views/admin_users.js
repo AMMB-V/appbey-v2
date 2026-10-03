@@ -150,6 +150,9 @@ window.openAdminUserManagementModal = async () => {
           <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
         </select>
       </td>
+      <td class="py-2.5 px-2 text-right">
+        <button type="button" onclick="handleAdminChangeEmail(${Number(u.id)})" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-semibold border border-slate-700">Cambiar correo</button>
+      </td>
     </tr>
   `;
 
@@ -169,6 +172,7 @@ window.openAdminUserManagementModal = async () => {
               <th class="py-2.5 px-2 text-center">Elo</th>
               <th class="py-2.5 px-2">Rol Actual</th>
               <th class="py-2.5 px-2 text-right">Asignar Cargo</th>
+              <th class="py-2.5 px-2 text-right">Correo</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
@@ -205,6 +209,23 @@ window.openAdminUserManagementModal = async () => {
     } catch(err) {
       window.showToast?.(err.message || "Error al actualizar rol", "error");
       window.loadAdminUsersList();
+    }
+  };
+
+  window.handleAdminChangeEmail = async (userId) => {
+    const input = window.prompt("Nuevo correo electr?nico para este usuario:");
+    if (input === null) return;
+    const email = input.trim().toLowerCase();
+    if (!email) {
+      window.showToast?.("Ingresa un correo electr?nico", "error");
+      return;
+    }
+    try {
+      await window.api.updateUserEmail(userId, email);
+      window.showToast?.("Correo actualizado exitosamente", "success");
+      window.loadAdminUsersList();
+    } catch(err) {
+      window.showToast?.(err.message || "Error al actualizar correo", "error");
     }
   };
 
