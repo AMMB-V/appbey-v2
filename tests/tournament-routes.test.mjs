@@ -122,6 +122,30 @@ test("starting a single-elimination tournament creates byes and seeds the next r
   );
 });
 
+test("seed shuffle preserves the seed permutation", async (context) => {
+  const app = express();
+  const router = express.Router();
+  const state = routeDependencies();
+  state.tournaments[0].status = "registration_open";
+  state.participants.push(
+    ...[1, 2, 3, 4].map((seed) => ({ id: seed, tournament_id: 4, user_id: seed, seed }))
+  );
+  registerTournamentRoutes(router, state);
+  app.use(express.json(), (req, _res, next) => {
+    req.user = { id: 1, role: "organizer" };
+    next();
+  }, router);
+
+  const server = http.createServer(app);
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  context.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const response = await fetch(`${baseUrl}/tournaments/4/shuffle-seeds`, { method: "POST" });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(state.participants.map((participant) => participant.seed).sort((a, b) => a - b), [1, 2, 3, 4]);
+});
+
 test("single-elimination score responses expose set wins instead of match points", async (context) => {
   const app = express();
   const router = express.Router();

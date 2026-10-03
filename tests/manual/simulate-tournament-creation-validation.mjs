@@ -1,9 +1,12 @@
 // Manual API regression for tournament creation input validation.
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-tournament-creation-validation.mjs [baseUrl]
+//        node tests/manual/simulate-tournament-creation-validation.mjs [baseUrl] [--allow-remote]
+// Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { buildManualApiUrl, resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 let failures = 0;
 
 function assert(condition, message) {
@@ -18,9 +21,10 @@ function assert(condition, message) {
 async function req(method, url, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch(`${BASE}${url}`, {
+  const response = await fetch(buildManualApiUrl(BASE, url), {
     method,
     headers,
+    redirect: "error",
     body: body !== undefined ? JSON.stringify(body) : undefined
   });
   let json = null;
@@ -84,6 +88,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Simulation crashed:", error);
+  console.error("Simulation failed.");
   process.exit(1);
 });

@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import express from "express";
 import test from "node:test";
-import { registerCatalogRoutes } from "../src/backend/routes/catalog.ts";
+import { catalogNameKey, registerCatalogRoutes, trimTrailingSlashes } from "../src/backend/routes/catalog.ts";
+
+test("catalog name keys strip only a terminal parenthetical suffix", () => {
+  assert.equal(trimTrailingSlashes("https://catalog.example/api///"), "https://catalog.example/api");
+  assert.equal(trimTrailingSlashes("https://catalog.example/api"), "https://catalog.example/api");
+  assert.equal(catalogNameKey("Wizard Rod (4-60B)"), "wizard rod");
+  assert.equal(catalogNameKey("Wizard Rod (4-60B) Limited"), "wizard rod (4-60b) limited");
+  assert.equal(catalogNameKey("Part (old) (new)"), "part (old)");
+  assert.equal(catalogNameKey("Part (unclosed"), "part (unclosed");
+});
 
 test("catalog routes expose tier summary and filter parts", async (context) => {
   const app = express();

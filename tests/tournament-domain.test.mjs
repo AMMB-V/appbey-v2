@@ -64,6 +64,13 @@ test("tournament domain assigns seed order in serpentine group format", () => {
   );
 });
 
+test("group IDs use deterministic code-point order", () => {
+  const tournament = { id: 1, group_ids: ["B", "AA", "A"] };
+  const { domain } = createDomain();
+
+  assert.deepEqual(domain.tournamentGroupIds(tournament, 1), ["A", "AA", "B"]);
+});
+
 test("Swiss pairing avoids rematches and gives an odd roster an unclaimed bye", () => {
   const roster = [participant(1), participant(2), participant(3), participant(4), participant(5)];
   const state = {

@@ -1,15 +1,13 @@
 // Bounded local load test for the most-used tournament user journeys.
-// Never targets non-local hosts unless ALLOW_REMOTE_LOAD_TEST=true is set.
+// Uses the same restricted target rules as other API simulations.
 //
 // Usage: node dist/server.cjs (in one shell), then:
-//        node tests/manual/simulate-tournament-load.mjs [localBaseUrl]
+//        node tests/manual/simulate-tournament-load.mjs [baseUrl] [--allow-remote]
+// Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
-const parsedBase = new URL(BASE);
-const isLocal = ["localhost", "127.0.0.1", "::1"].includes(parsedBase.hostname);
-if (!isLocal && process.env.ALLOW_REMOTE_LOAD_TEST !== "true") {
-  throw new Error("Load test is restricted to localhost. Set ALLOW_REMOTE_LOAD_TEST=true only for an approved test environment.");
-}
+import { buildManualApiUrl, resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 
 const CONCURRENT_USERS = 32;
 const READ_WORKERS = 20;
@@ -30,9 +28,10 @@ async function request(method, url, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
   const start = performance.now();
-  const response = await fetch(`${BASE}${url}`, {
+  const response = await fetch(buildManualApiUrl(BASE, url), {
     method,
     headers,
+    redirect: "error",
     body: body === undefined ? undefined : JSON.stringify(body)
   });
   let json = null;
@@ -45,18 +44,13 @@ async function request(method, url, body, token) {
 }
 
 async function main() {
-  console.log(`Running bounded local tournament load test at ${BASE}`);
-  const healthResponse = await fetch(`${parsedBase.origin}/healthz`);
-  const health = await healthResponse.json();
-  if (!healthResponse.ok || health.storage !== "in-memory") {
-    throw new Error("Load tests require an in-memory local server so simulated users cannot persist in a database.");
-  }
+  console.log("Running bounded tournament load test against an in-memory server.");
 
   const email = process.env.APPBEY_ADMIN_EMAIL || "admin@sim.test";
   const password = process.env.APPBEY_ADMIN_PASSWORD || "Sim123456789!";
   const login = await request("POST", "/auth/login", { email, password });
   assert(login.status === 200 && login.body?.access_token, "organizer/admin login works");
-  if (!login.body?.access_token) throw new Error("Configure APPBEY_ADMIN_EMAIL and APPBEY_ADMIN_PASSWORD for the local simulator.");
+  if (!login.body?.access_token) throw new Error("Configure admin credentials for the simulation target.");
   const token = login.body.access_token;
   let tournamentId;
   let capacityTournamentId;
@@ -93,7 +87,7 @@ async function main() {
       venue_name: "Local Load Test Arena",
       country: "PA"
     }, token);
-    assert(created.status === 200, `create groups + playoffs tournament (HTTP ${created.status})`);
+    assert(created.status === 200, "create groups + playoffs tournament");
     tournamentId = created.body?.id;
     if (!tournamentId) throw new Error("Tournament creation did not return an id.");
 
@@ -109,10 +103,10 @@ async function main() {
       `${CONCURRENT_USERS} users complete check-in concurrently`);
 
     const started = await request("POST", `/tournaments/${tournamentId}/start`, {}, token);
-    assert(started.status === 200, `organizer starts the tournament (HTTP ${started.status})`);
+    assert(started.status === 200, "organizer starts the tournament");
     const initialMatches = await request("GET", `/tournaments/${tournamentId}/matches`, undefined, token);
     assert(initialMatches.status === 200 && initialMatches.body?.length === 48,
-      `generates all 48 group-stage matches for 32 players (got ${initialMatches.body?.length ?? "no response"})`);
+      "generates all 48 group-stage matches for 32 players");
     const matches = initialMatches.body || [];
 
     const capacityTournament = await request("POST", "/tournaments", {
@@ -172,7 +166,7 @@ async function main() {
       "all matches remain consistent after concurrent scoring and read traffic");
 
     const playoffs = await request("POST", `/tournaments/${tournamentId}/generate-playoffs`, {}, token);
-    assert(playoffs.status === 200, `organizer generates playoffs after the loaded group stage (HTTP ${playoffs.status})`);
+    assert(playoffs.status === 200, "organizer generates playoffs after the loaded group stage");
     const finalTournament = await request("GET", `/tournaments/${tournamentId}`, undefined, token);
     assert(finalTournament.status === 200 && finalTournament.body?.stage_type === "knockout",
       "tournament remains readable and advances to knockout stage");
@@ -192,6 +186,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Load test crashed:", error);
+  console.error("Load test failed.");
   process.exit(1);
 });

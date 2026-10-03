@@ -2,7 +2,15 @@ import type { Router } from "express";
 import { requireAuth, requireRoles, type AuthRequest } from "../auth.js";
 import type { BeybladePart, BladerDeck, MetaSyncState, User } from "../models.js";
 
-const BEYBLADE_X_API_BASE_URL = (process.env.BEYBLADE_X_API_BASE_URL || "https://beyblade-x-api.onrender.com/beybladex").replace(/\/+$/, "");
+export function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === "/") end--;
+  return value.slice(0, end);
+}
+
+const BEYBLADE_X_API_BASE_URL = trimTrailingSlashes(
+  process.env.BEYBLADE_X_API_BASE_URL || "https://beyblade-x-api.onrender.com/beybladex"
+);
 
 interface CatalogRouteDependencies {
   parts: BeybladePart[];
@@ -12,6 +20,18 @@ interface CatalogRouteDependencies {
   nextId: (records: readonly { id: number }[]) => number;
   publicUser: (user?: User | null) => object | null;
   persistState: () => Promise<void>;
+}
+
+export function catalogNameKey(name: string): string {
+  const trimmedName = name.trimEnd();
+  const closingParenthesis = trimmedName.length - 1;
+  if (trimmedName[closingParenthesis] !== ")") return name.trim().toLocaleLowerCase();
+
+  const previousClosingParenthesis = trimmedName.lastIndexOf(")", closingParenthesis - 1);
+  const segmentStart = previousClosingParenthesis + 1;
+  const openingParenthesis = trimmedName.indexOf("(", segmentStart);
+  if (openingParenthesis < 0) return name.trim().toLocaleLowerCase();
+  return trimmedName.slice(0, openingParenthesis).trim().toLocaleLowerCase();
 }
 
 export function registerCatalogRoutes(api: Router, state: CatalogRouteDependencies): void {
@@ -66,10 +86,6 @@ function catalogType(record: CatalogSourcePart, existing?: BeybladePart): string
   if (normalizedType === "defense") return "Defense";
   if (normalizedType === "balance") return "Balance";
   return suppliedType || existing?.type_attr || "Sin datos";
-}
-
-function catalogNameKey(name: string): string {
-  return name.replace(/\s*\([^)]*\)\s*$/, "").trim().toLocaleLowerCase();
 }
 
 function mergeExternalParts(
