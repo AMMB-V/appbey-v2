@@ -1549,7 +1549,7 @@ window.renderRefereePadView = async (container, matchId) => {
         }
       } catch(err) {
         window.showToast?.(err.message || "Error al declarar ganador", "error");
-        loadMatch();
+        await loadMatch();
       }
     };
   };

@@ -18,9 +18,12 @@
 //      resolve (falling back to seed when even head-to-head ties).
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-round-robin.mjs [baseUrl]
+//        node tests/manual/simulate-round-robin.mjs [baseUrl] [--allow-remote]
+// Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 const SUFFIX = Date.now().toString(36).slice(-5);
 
 let failures = 0;
@@ -39,6 +42,7 @@ async function req(method, url, body, token) {
   const res = await fetch(`${BASE}${url}`, {
     method,
     headers,
+    redirect: "error",
     body: body !== undefined ? JSON.stringify(body) : undefined
   });
   let json = null;
@@ -76,19 +80,19 @@ async function createRoundRobin(adminToken, title, players) {
     country: "PA"
   }, adminToken);
   const tournamentId = createRes.body?.id;
-  if (!tournamentId) throw new Error(`tournament creation failed: ${JSON.stringify(createRes.body)}`);
+  if (!tournamentId) throw new Error("Tournament creation failed.");
 
   for (const p of players) {
     await req("POST", `/tournaments/${tournamentId}/register`, {}, p.token);
     await req("POST", `/tournaments/${tournamentId}/checkin`, {}, p.token);
   }
   const startRes = await req("POST", `/tournaments/${tournamentId}/start`, {}, adminToken);
-  if (startRes.status !== 200) throw new Error(`start failed: ${JSON.stringify(startRes.body)}`);
+  if (startRes.status !== 200) throw new Error("Tournament start failed.");
   return tournamentId;
 }
 
 async function main() {
-  console.log(`Simulating round_robin tie-breaks & completion against ${BASE}`);
+  console.log("Simulating round_robin tie-breaks and completion.");
 
   const adminLogin = await req("POST", "/auth/login", { email: "admin@sim.test", password: "Sim123456789!" });
   assert(adminLogin.status === 200 && adminLogin.body?.access_token, "admin login succeeds");
@@ -101,17 +105,17 @@ async function main() {
   const [p1, p2, p3, p4] = A;
 
   const tIdA = await createRoundRobin(adminToken, `Round Robin H2H ${SUFFIX}`, A);
-  assert(!!tIdA, `scenario A: tournament ${tIdA} started`);
+  assert(!!tIdA, "scenario A: tournament started");
 
   const matchesA = (await req("GET", `/tournaments/${tIdA}/matches`, undefined, adminToken)).body;
-  assert(matchesA.length === 6, `scenario A: 6 matches generated for 4 players (got ${matchesA.length})`);
+  assert(matchesA.length === 6, "scenario A: 6 matches generated for 4 players");
 
   const findMatch = (list, aId, bId) => list.find((m) =>
     (m.player_a_id === aId && m.player_b_id === bId) || (m.player_a_id === bId && m.player_b_id === aId)
   );
   const playAgainst = async (list, aId, bId, scoreForA) => {
     const m = findMatch(list, aId, bId);
-    if (!m) throw new Error(`match not found for ${aId} vs ${bId}`);
+    if (!m) throw new Error("Expected round-robin match was not found.");
     const isAFirst = m.player_a_id === aId;
     return playMatch(m, adminToken, isAFirst ? scoreForA[0] : scoreForA[1], isAFirst ? scoreForA[1] : scoreForA[0]);
   };
@@ -132,17 +136,17 @@ async function main() {
   assert([r1, r2, r3, r4, r5, r6].every((r) => r.status === 200), "scenario A: all 6 matches recorded successfully");
 
   const finalA = (await req("GET", `/tournaments/${tIdA}`, undefined, adminToken)).body;
-  assert(finalA.status === "completed", `scenario A: tournament auto-completed once all matches finished (got ${finalA.status})`);
-  assert(finalA.winner_user_id === p1.id, `scenario A: winner is P1 via head-to-head tie-break (got ${finalA.winner_user_id}, expected ${p1.id})`);
-  assert(finalA.runner_up_user_id === p2.id, `scenario A: runner-up is P2 (got ${finalA.runner_up_user_id}, expected ${p2.id})`);
-  assert(finalA.third_place_user_id === p3.id, `scenario A: third place is P3 via head-to-head over P4 (got ${finalA.third_place_user_id}, expected ${p3.id})`);
+  assert(finalA.status === "completed", "scenario A: tournament auto-completed once all matches finished");
+  assert(finalA.winner_user_id === p1.id, "scenario A: winner is P1 via head-to-head tie-break");
+  assert(finalA.runner_up_user_id === p2.id, "scenario A: runner-up is P2");
+  assert(finalA.third_place_user_id === p3.id, "scenario A: third place is P3 via head-to-head over P4");
 
   const partsA = (await req("GET", `/tournaments/${tIdA}/participants`, undefined, adminToken)).body;
   const rankOf = (id) => partsA.find((p) => p.user_id === id)?.group_rank;
-  assert(rankOf(p1.id) === 1, `scenario A: P1 group_rank is 1 (got ${rankOf(p1.id)})`);
-  assert(rankOf(p2.id) === 2, `scenario A: P2 group_rank is 2 (got ${rankOf(p2.id)})`);
-  assert(rankOf(p3.id) === 3, `scenario A: P3 group_rank is 3 (got ${rankOf(p3.id)})`);
-  assert(rankOf(p4.id) === 4, `scenario A: P4 group_rank is 4 (got ${rankOf(p4.id)})`);
+  assert(rankOf(p1.id) === 1, "scenario A: P1 group_rank is 1");
+  assert(rankOf(p2.id) === 2, "scenario A: P2 group_rank is 2");
+  assert(rankOf(p3.id) === 3, "scenario A: P3 group_rank is 3");
+  assert(rankOf(p4.id) === 4, "scenario A: P4 group_rank is 4");
 
   // --- Scenario B: 3 players, one real draw ---
   const B = [];
@@ -150,7 +154,7 @@ async function main() {
   const [q1, q2, q3] = B;
   const tIdB = await createRoundRobin(adminToken, `Round Robin Draw ${SUFFIX}`, B);
   const matchesB = (await req("GET", `/tournaments/${tIdB}/matches`, undefined, adminToken)).body;
-  assert(matchesB.length === 3, `scenario B: 3 matches generated for 3 players (got ${matchesB.length})`);
+  assert(matchesB.length === 3, "scenario B: 3 matches generated for 3 players");
 
   const findMatchB = (aId, bId) => matchesB.find((m) =>
     (m.player_a_id === aId && m.player_b_id === bId) || (m.player_a_id === bId && m.player_b_id === aId)
@@ -169,16 +173,16 @@ async function main() {
   assert(d1.body?.winner_id === null || d1.body?.winner_id === undefined, "scenario B: drawn match has no winner_id");
 
   const finalB = (await req("GET", `/tournaments/${tIdB}`, undefined, adminToken)).body;
-  assert(finalB.status === "completed", `scenario B: tournament auto-completed (got ${finalB.status})`);
-  assert([q1.id, q2.id].includes(finalB.winner_user_id), `scenario B: winner is Q1 or Q2 (top two, tied on everything down to seed) (got ${finalB.winner_user_id})`);
-  assert(finalB.third_place_user_id === q3.id, `scenario B: third place is Q3, the only player with 2 losses (got ${finalB.third_place_user_id})`);
+  assert(finalB.status === "completed", "scenario B: tournament auto-completed");
+  assert([q1.id, q2.id].includes(finalB.winner_user_id), "scenario B: winner is Q1 or Q2, the top two");
+  assert(finalB.third_place_user_id === q3.id, "scenario B: third place is Q3, the only player with 2 losses");
 
   const partsB = (await req("GET", `/tournaments/${tIdB}/participants`, undefined, adminToken)).body;
   const q1p = partsB.find((p) => p.user_id === q1.id);
   const q2p = partsB.find((p) => p.user_id === q2.id);
-  assert(q1p.matches_drawn === 1 && q1p.group_matches_drawn === 1, `scenario B: Q1 has 1 recorded draw (matches_drawn=${q1p.matches_drawn}, group_matches_drawn=${q1p.group_matches_drawn})`);
-  assert(q2p.matches_drawn === 1 && q2p.group_matches_drawn === 1, `scenario B: Q2 has 1 recorded draw (matches_drawn=${q2p.matches_drawn}, group_matches_drawn=${q2p.group_matches_drawn})`);
-  assert(rankOfB(q3.id) === 3, `scenario B: Q3 ranked last (rank ${rankOfB(q3.id)})`);
+  assert(q1p.matches_drawn === 1 && q1p.group_matches_drawn === 1, "scenario B: Q1 has 1 recorded draw");
+  assert(q2p.matches_drawn === 1 && q2p.group_matches_drawn === 1, "scenario B: Q2 has 1 recorded draw");
+  assert(rankOfB(q3.id) === 3, "scenario B: Q3 ranked last");
 
   function rankOfB(id) {
     return partsB.find((p) => p.user_id === id)?.group_rank;
@@ -189,6 +193,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Simulation crashed:", err);
+  console.error("Simulation failed.");
   process.exit(1);
 });

@@ -14,9 +14,12 @@
 //      already-advanced match is BLOCKED for the same reason.
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-concurrent-finish.mjs [baseUrl]
+//        node tests/manual/simulate-concurrent-finish.mjs [baseUrl] [--allow-remote]
+// Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 const SUFFIX = Date.now().toString(36).slice(-5);
 
 let failures = 0;
@@ -35,6 +38,7 @@ async function req(method, url, body, token) {
   const res = await fetch(`${BASE}${url}`, {
     method,
     headers,
+    redirect: "error",
     body: body !== undefined ? JSON.stringify(body) : undefined
   });
   let json = null;
@@ -59,7 +63,7 @@ async function getUserElo(userId, adminToken) {
 }
 
 async function main() {
-  console.log(`Simulating concurrent referee finish edge cases against ${BASE}`);
+  console.log("Simulating concurrent referee finish edge cases.");
 
   const adminLogin = await req("POST", "/auth/login", { email: "admin@sim.test", password: "Sim123456789!" });
   assert(adminLogin.status === 200 && adminLogin.body?.access_token, "admin login succeeds");
@@ -93,20 +97,20 @@ async function main() {
     req("PUT", `/matches/${matchA.id}/manual-score`, { score_a: 3, score_b: 0, status: "finished" }, adminToken),
     req("PUT", `/matches/${matchA.id}/manual-score`, { score_a: 3, score_b: 0, status: "finished" }, adminToken)
   ]);
-  assert(r1.status === 200 && r2.status === 200, `both concurrent manual-score calls succeed (status ${r1.status}, ${r2.status})`);
+  assert(r1.status === 200 && r2.status === 200, "both concurrent manual-score calls succeed");
 
   const eloAfterA = { a: await getUserElo(matchA.player_a_id, adminToken), b: await getUserElo(matchA.player_b_id, adminToken) };
   const expectedDeltaA = Math.round(32 * (1.0 - 1.0 / (1.0 + Math.pow(10, (eloBeforeA.b - eloBeforeA.a) / 400.0))));
-  assert(eloAfterA.a === eloBeforeA.a + expectedDeltaA, `winner's ELO only increased once despite 2 concurrent finish calls (before ${eloBeforeA.a}, after ${eloAfterA.a}, expected delta ${expectedDeltaA})`);
+  assert(eloAfterA.a === eloBeforeA.a + expectedDeltaA, "winner's ELO only increased once despite 2 concurrent finish calls");
 
   const gamesA = (await req("GET", `/matches/${matchA.id}`, undefined, adminToken)).body.games;
-  assert(gamesA.length === 0, `manual-score doesn't push duplicate matchGames on double submission (got ${gamesA.length})`);
+  assert(gamesA.length === 0, "manual-score doesn't push duplicate matchGames on double submission");
 
   // A third, later, re-submission of the identical result should also be a no-op.
   const r3 = await req("PUT", `/matches/${matchA.id}/manual-score`, { score_a: 3, score_b: 0, status: "finished" }, adminToken);
-  assert(r3.status === 200, `a third identical re-submission still succeeds as a no-op (status ${r3.status})`);
+  assert(r3.status === 200, "a third identical re-submission still succeeds as a no-op");
   const eloAfterA3 = { a: await getUserElo(matchA.player_a_id, adminToken) };
-  assert(eloAfterA3.a === eloAfterA.a, `a third identical re-submission does not change ELO further (before ${eloAfterA.a}, after ${eloAfterA3.a})`);
+  assert(eloAfterA3.a === eloAfterA.a, "a third identical re-submission does not change ELO further");
 
   // ---------------------------------------------------------------
   // Scenario B: two concurrent declare-winner calls with the SAME winner.
@@ -132,12 +136,12 @@ async function main() {
     req("POST", `/matches/${matchB.id}/declare-winner`, { winner_id: declaredWinner }, adminToken),
     req("POST", `/matches/${matchB.id}/declare-winner`, { winner_id: declaredWinner }, adminToken)
   ]);
-  assert(rb1.status === 200 && rb2.status === 200, `both concurrent declare-winner calls succeed (status ${rb1.status}, ${rb2.status})`);
+  assert(rb1.status === 200 && rb2.status === 200, "both concurrent declare-winner calls succeed");
   const eloAfterB = await getUserElo(declaredWinner, adminToken);
-  assert(eloAfterB > eloBeforeB, `declared winner's ELO increased (before ${eloBeforeB}, after ${eloAfterB})`);
+  assert(eloAfterB > eloBeforeB, "declared winner's ELO increased");
 
   const gamesB = (await req("GET", `/matches/${matchB.id}`, undefined, adminToken)).body.games;
-  assert(gamesB.length === 1, `declare-winner only recorded ONE matchGame despite 2 concurrent calls (got ${gamesB.length})`);
+  assert(gamesB.length === 1, "declare-winner only recorded ONE matchGame despite 2 concurrent calls");
 
   // ---------------------------------------------------------------
   // Scenario C + D: 4-player bracket. Finish both semis, then attempt a
@@ -176,11 +180,11 @@ async function main() {
   const semi1After = matchesC.find((m) => m.id === semi1C.id);
   const otherPlayer = semi1After.player_a_id === semi1After.winner_id ? semi1After.player_b_id : semi1After.player_a_id;
   const lateFlip = await req("PUT", `/matches/${semi1C.id}/manual-score`, { score_a: 0, score_b: 3, winner_id: otherPlayer, status: "finished" }, adminToken);
-  assert(lateFlip.status === 400, `late duplicate finish that would flip semi1's winner is blocked once the final has started (status ${lateFlip.status}, ${JSON.stringify(lateFlip.body)})`);
+  assert(lateFlip.status === 400, "late duplicate finish is blocked once the final has started");
 
   // A late duplicate record-finish reactivation attempt must also be blocked.
   const lateRecordFinish = await req("POST", `/matches/${semi1C.id}/record-finish`, { finish_type: "spin_finish_1p", awarded_to: "player_b" }, adminToken);
-  assert(lateRecordFinish.status === 400, `late duplicate record-finish reactivation is blocked once the final has started (status ${lateRecordFinish.status}, ${JSON.stringify(lateRecordFinish.body)})`);
+  assert(lateRecordFinish.status === 400, "late duplicate record-finish reactivation is blocked once the final has started");
 
   const finalStillIntact = (await req("GET", `/matches/${finalC.id}`, undefined, adminToken)).body;
   assert(finalStillIntact.player_a_id === finalC.player_a_id && finalStillIntact.player_b_id === finalC.player_b_id, "final's slots remained untouched after the blocked late submissions");
@@ -190,6 +194,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Simulation crashed:", err);
+  console.error("Simulation failed.");
   process.exit(1);
 });
