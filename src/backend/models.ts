@@ -15,23 +15,6 @@ export interface User {
   created_at: string;
 }
 
-export interface Wallet {
-  id: number;
-  user_id: number;
-  balance: number;
-  created_at: string;
-}
-
-export interface Transaction {
-  id: number;
-  wallet_id: number;
-  amount: number;
-  tx_type: string;
-  reason: string;
-  reference_id?: string;
-  created_at: string;
-}
-
 export interface BeybladePart {
   id: number;
   code: string;
