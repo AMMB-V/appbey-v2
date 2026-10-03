@@ -1120,7 +1120,7 @@ window.renderRefereePadView = async (container, matchId) => {
         nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
-        loadMatch();
+        void loadMatch();
       }
     } catch(err) {
       match = prevMatchState;
@@ -1302,7 +1302,7 @@ window.renderRefereePadView = async (container, matchId) => {
         nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
-        loadMatch();
+        void loadMatch();
       }
     } catch(err) {
       match = prevMatchState;
@@ -1338,7 +1338,7 @@ window.renderRefereePadView = async (container, matchId) => {
         nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
-        loadMatch();
+        void loadMatch();
       }
     } catch(err) {
       window.showToast?.(err.message || "Error al reabrir combate", "error");
@@ -1383,10 +1383,10 @@ window.renderRefereePadView = async (container, matchId) => {
         nextMatch = serverUpdated.next_combat || resolveNextMatch(serverUpdated);
         updateLiveScoreboardDOM();
       } else {
-        loadMatch();
+        void loadMatch();
       }
     } catch(err) {
-      loadMatch();
+      void loadMatch();
       window.showToast?.(err.message || "Error al reiniciar marcador", "error");
     }
   };
@@ -1618,7 +1618,7 @@ window.renderRefereePadView = async (container, matchId) => {
         localState.winner = null;
       }
       document.getElementById("manual-score-modal")?.remove();
-      loadMatch();
+      void loadMatch();
       return;
     }
 
@@ -1629,7 +1629,7 @@ window.renderRefereePadView = async (container, matchId) => {
         status: status
       });
       document.getElementById("manual-score-modal")?.remove();
-      loadMatch();
+      void loadMatch();
     } catch(err) {
       window.showToast?.(err.message || "Error al actualizar marcador", "error");
     }
@@ -1736,7 +1736,7 @@ window.renderRefereePadView = async (container, matchId) => {
       localState.player_b_deck = [form.b_bey1.value.trim(), form.b_bey2.value.trim(), form.b_bey3.value.trim()].filter(Boolean);
       document.getElementById("standalone-edit-modal")?.remove();
       window.showToast?.("Bladers y Decks actualizados con éxito", "success");
-      loadMatch();
+      void loadMatch();
     };
   };
 
@@ -1750,15 +1750,15 @@ window.renderRefereePadView = async (container, matchId) => {
       if (Date.now() - lastLocalActionTime < 2500) return;
 
       if (data && (data.match_id === parsedId || (match && data.tournament_id === match.tournament_id))) {
-        loadMatch();
+        void loadMatch();
       }
     };
     window.wsHub.on("score_update", wsHandler);
     window.wsHub.on("tournament_updated", wsHandler);
     window.wsHub.on("reconnected", () => {
-      if (window.location.hash.startsWith("#/referee")) loadMatch();
+      if (window.location.hash.startsWith("#/referee")) void loadMatch();
     });
   }
 
-  loadMatch();
+  void loadMatch();
 };

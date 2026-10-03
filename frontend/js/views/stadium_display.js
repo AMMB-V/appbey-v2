@@ -77,9 +77,9 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
   };
 
   window.wsHub.connect(tournamentId);
-  window.wsHub.on("score_update", () => { if (isCurrentView()) refresh(); });
-  window.wsHub.on("match_call", () => { if (isCurrentView()) refresh(); });
-  window.wsHub.on("reconnected", () => { if (isCurrentView()) refresh(true); });
+  window.wsHub.on("score_update", () => { if (isCurrentView()) void refresh(); });
+  window.wsHub.on("match_call", () => { if (isCurrentView()) void refresh(); });
+  window.wsHub.on("reconnected", () => { if (isCurrentView()) void refresh(true); });
 
   const renderDisplay = () => {
     const activeMatches = matches.filter(m => m.status === 'in_progress' || m.status === 'calling');
@@ -188,5 +188,5 @@ window.renderStadiumDisplayView = async (container, tournamentId) => {
     `;
   };
 
-  refresh();
+  void refresh();
 };

@@ -7,44 +7,19 @@
 //      (winner/runner-up/third place) should all work end to end.
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-swiss.mjs [baseUrl]
+//        node tests/manual/simulate-swiss.mjs [baseUrl] [--allow-remote]
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { createChecks, createManualApiClient, createRegisterAndLogin, resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 const SUFFIX = Date.now().toString(36).slice(-5);
 
-let failures = 0;
-function assert(cond, msg) {
-  if (!cond) {
-    failures++;
-    console.error(`FAIL: ${msg}`);
-  } else {
-    console.log(`ok: ${msg}`);
-  }
-}
+const checks = createChecks();
+const { assert } = checks;
 
-async function req(method, url, body, token) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${BASE}${url}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
-  let json = null;
-  try { json = await res.json(); } catch { /* no body */ }
-  return { status: res.status, body: json };
-}
+const req = createManualApiClient(BASE);
 
-async function registerAndLogin(username) {
-  await req("POST", "/auth/register", {
-    username,
-    email: `${username}@sim.test`,
-    password: "PlayerPass123!",
-    display_name: username
-  });
-  const login = await req("POST", "/auth/login", { email: `${username}@sim.test`, password: "PlayerPass123!" });
-  return { username, token: login.body?.access_token, id: login.body?.user?.id };
-}
+const registerAndLogin = createRegisterAndLogin(req);
 
 function pairKey(a, b) {
   return [a, b].sort((x, y) => x - y).join("-");
@@ -139,8 +114,8 @@ async function main() {
   assert(finalTournament.status === "completed", `tournament status is completed (got ${finalTournament.status})`);
   assert(!!finalTournament.winner_user_id, "tournament has a winner_user_id assigned");
 
-  console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
-  process.exit(failures === 0 ? 0 : 1);
+  console.log(checks.failures === 0 ? "\nALL CHECKS PASSED" : `\n${checks.failures} CHECK(S) FAILED`);
+  process.exit(checks.failures === 0 ? 0 : 1);
 }
 
 main().catch((err) => {

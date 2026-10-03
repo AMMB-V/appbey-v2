@@ -4,7 +4,7 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm ci --ignore-scripts --no-audit --no-fund
 
 COPY tsconfig.json ./
 COPY server.ts ./
@@ -16,13 +16,14 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev --no-audit --no-fund
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/frontend ./frontend
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --from=build --chown=node:node /app/frontend ./frontend
 
 ENV NODE_ENV=production
 ENV PORT=3000
+USER node
 EXPOSE 3000
 
 CMD ["npm", "start"]

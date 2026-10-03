@@ -130,6 +130,7 @@ test("WebSocket reconnects with a fresh connection and emits snapshot signal", a
   const context = vm.createContext({
     window,
     navigator: { onLine: true },
+    crypto: globalThis.crypto,
     WebSocket: MockWebSocket,
     CustomEvent: class CustomEvent {},
     setTimeout,

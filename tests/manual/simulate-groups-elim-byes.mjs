@@ -5,35 +5,19 @@
 // session, but we validate it keeps working alongside the other fixes).
 //
 // Usage: node dist/server.cjs (in one shell) then
-//        node tests/manual/simulate-groups-elim-byes.mjs [baseUrl]
+//        node tests/manual/simulate-groups-elim-byes.mjs [baseUrl] [--allow-remote]
 
-const BASE = process.argv[2] || "http://localhost:3999/api";
+import { createChecks, createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
+
+const { baseUrl: BASE } = await resolveManualApiTarget();
 const PARTICIPANT_COUNT = 29; // uneven -> some groups of 4, some of 5; 7 groups x top2 = 14 qualifiers -> bracketSize 16, 2 byes
 const GROUP_COUNT = 7;
 const SUFFIX = Date.now().toString(36).slice(-5);
 
-let failures = 0;
-function assert(cond, msg) {
-  if (!cond) {
-    failures++;
-    console.error(`FAIL: ${msg}`);
-  } else {
-    console.log(`ok: ${msg}`);
-  }
-}
+const checks = createChecks();
+const { assert } = checks;
 
-async function req(method, url, body, token) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${BASE}${url}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
-  let json = null;
-  try { json = await res.json(); } catch { /* no body */ }
-  return { status: res.status, body: json };
-}
+const req = createManualApiClient(BASE);
 
 async function main() {
   console.log(`Simulating a ${PARTICIPANT_COUNT}-participant groups_elim tournament (${GROUP_COUNT} groups, playoff byes expected) against ${BASE}`);
@@ -95,8 +79,8 @@ async function main() {
       }
       for (const m of pending) {
         const aWins = (m.id + m.player_a_id) % 2 === 0;
-        const scoreA = aWins ? 3 : Math.floor(Math.random() * 2);
-        const scoreB = aWins ? Math.floor(Math.random() * 2) : 3;
+        const scoreA = aWins ? 3 : randomBelow(2);
+        const scoreB = aWins ? randomBelow(2) : 3;
         await req("PUT", `/matches/${m.id}/manual-score`, { score_a: scoreA, score_b: scoreB, status: "finished" }, adminToken);
       }
     }
@@ -145,8 +129,8 @@ async function main() {
   const grandFinal = knockoutMatches.find((m) => m.stage === "Gran Final");
   assert(!!grandFinal && grandFinal.status === "finished", "a finished 'Gran Final' match exists");
 
-  console.log(`\n${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`}`);
-  process.exit(failures === 0 ? 0 : 1);
+  console.log(`\n${checks.failures === 0 ? "ALL CHECKS PASSED" : `${checks.failures} CHECK(S) FAILED`}`);
+  process.exit(checks.failures === 0 ? 0 : 1);
 }
 
 main().catch((err) => {
