@@ -17,7 +17,8 @@ AppBey ofrece una suite completa inspirada en las mejores mecánicas de **Challo
    - Tablas de posiciones en vivo con criterios oficiales de desempate: Puntos (3V-1E) &rarr; Diferencia de Puntos &rarr; Puntos a favor &rarr; Seed inicial.
    - Generación automática de cruces de Playoffs (16vos, 8vos, Cuartos, Semifinales y Gran Final).
 2. **Eliminación Directa y Sistema Suizo Oficial**:
-   - Árbol de llaves interactivo con avance dinámico de ganadores.
+   - Árbol de llaves interactivo, ordenado por ronda, con acceso propio para torneos de eliminación directa.
+   - Marcador de eliminación directa al mejor de 3 sets; los BYE se muestran como pase libre y avanzan automáticamente.
    - Emparejamientos Suizos evitando combates repetidos y cálculo automático de Buchholz.
 3. **Gestión de Participantes en Torneo Real**:
    - Inscripción de Bladers registrados y Bladers invitados (Walk-in bladers) en el día del evento.
@@ -67,7 +68,25 @@ AppBey mantiene un registro de rankings y resultados de temporadas:
 
 ```
 appbey_v2/
-├── server.ts                      # Servidor backend Express + WebSockets + Motor de Torneos
+├── server.ts                      # Composición de la aplicación y registro actual de rutas
+├── src/
+│   └── backend/
+│       ├── models.ts              # Modelos compartidos del dominio
+│       ├── auth.ts                # Emisión de JWT y middleware de autorización
+│       ├── realtime.ts            # WebSockets, heartbeat y difusión de eventos
+│       ├── persistence/
+│       │   ├── database.ts        # Pool PostgreSQL, cola de escrituras y estado de conexión
+│       │   ├── schema.ts          # Tipos persistidos y definición de tablas relacionales
+│       │   └── repository.ts      # Inicialización, migración, carga y persistencia del estado
+│       ├── services/
+│       │   └── tournament-domain.ts # Reglas de Elo, estadísticas, llaves y emparejamientos
+│       └── routes/
+│           ├── identity.ts        # Registro, inicio de sesión y gestión de usuarios
+│           ├── catalog.ts         # Catálogo, sincronización y decks
+│           ├── tournaments.ts     # Torneos, grupos, rondas y colas de arbitraje
+│           ├── matches.ts         # Marcador y ciclo de vida de combates
+│           ├── rankings.ts        # Rankings, temporadas y salón de la fama
+│           └── community.ts       # Publicaciones, likes, comentarios y notificaciones
 ├── package.json                   # Dependencias Node.js y scripts de compilación
 ├── tsconfig.json                  # Configuración TypeScript
 ├── Dockerfile                     # Contenedor de producción para Render.com (Node 20 Alpine)
@@ -101,6 +120,18 @@ appbey_v2/
 │           └── auth.js            # Registro e inicio de sesión
 └── README.md
 ```
+
+### Evaluación y plan de modularización del backend
+
+El backend estaba concentrado en `server.ts`, mezclando arranque HTTP, modelos, persistencia, autenticación, WebSockets, reglas de torneos y rutas. Mantener todo ahí aumenta el acoplamiento, dificulta las pruebas aisladas y hace más costosos los cambios; separar por responsabilidades es preferible a un único archivo.
+
+La modularización ya separa modelos, autenticación, WebSockets, las reglas de torneo (Elo, estadísticas, llaves, grupos y Swiss), las rutas de identidad, catálogo/decks, torneos, combates, rankings y comunidad, y el repositorio PostgreSQL en `src/backend/`. La inicialización y la migración conservan el formato relacional y heredado; el modo en memoria sigue disponible cuando no se configura `DATABASE_URL`. Los módulos de dominio y rutas reciben dependencias explícitas, mientras `server.ts` las conecta con el estado vivo del proceso.
+
+1. **Extraer el seeding y la configuración de aplicación** del punto de entrada para dejarlo dedicado a composición, middleware y ciclo de vida del servidor.
+2. **Ampliar las pruebas de regresión** para reglas de grupo/Swiss y ciclo de vida de combates, además de contratos HTTP, persistencia y WebSockets.
+3. **Consolidar `server.ts` como punto de composición** que construye el estado en memoria, conecta repositorios/servicios, monta routers y arranca/cierra el servidor.
+
+La migración debe ser incremental: mover primero una responsabilidad autocontenida y conservar los contratos de API evita el riesgo de una reescritura integral. No se recomienda convertir todas las funciones en clases: eso añadiría estructura sin reducir el acoplamiento. Tampoco hace falta que cada línea se cargue desde un único archivo; los módulos delimitan responsabilidades y se importan según el grafo de dependencias.
 
 ---
 
