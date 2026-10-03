@@ -11,6 +11,50 @@ interface IdentityRouteDependencies {
   publicUser: (user?: User | null) => object | null;
 }
 
+interface IdentityUserInput {
+  username: string;
+  email: string;
+  passwordHash: string;
+  displayName: string;
+  role: User["role"];
+  country: string;
+  avatarUrl: string;
+  verified: boolean;
+}
+
+function createIdentityUser(state: IdentityRouteDependencies, input: IdentityUserInput): User {
+  return {
+    id: state.nextId(state.users),
+    username: input.username,
+    email: input.email,
+    password_hash: input.passwordHash,
+    display_name: input.displayName,
+    role: input.role,
+    country: input.country,
+    avatar_url: input.avatarUrl,
+    elo_rating: 1200,
+    is_active: true,
+    is_verified: input.verified,
+    created_at: new Date().toISOString()
+  };
+}
+
+function chosenAvatar(value: unknown): string {
+  return value && (String(value).startsWith("http") || String(value).startsWith("data:image/"))
+    ? String(value).trim()
+    : "";
+}
+
+function isValidEmail(email: string): boolean {
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 0 || atIndex !== email.lastIndexOf("@")) return false;
+  for (const character of email) {
+    if (/\s/.test(character)) return false;
+  }
+  const lastDot = email.lastIndexOf(".");
+  return lastDot > atIndex + 1 && lastDot < email.length - 1;
+}
+
 export function registerIdentityRoutes(api: Router, state: IdentityRouteDependencies): void {
 api.post("/auth/register", (req, res) => {
   const { username, email, password, display_name, country, avatar_url } = req.body;
@@ -31,7 +75,7 @@ api.post("/auth/register", (req, res) => {
     res.status(400).json({ detail: "El nombre de usuario solo puede contener letras, números y guiones bajos" });
     return;
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+  if (!isValidEmail(cleanEmail)) {
     res.status(400).json({ detail: "El formato de correo electrónico no es válido" });
     return;
   }
@@ -49,24 +93,16 @@ api.post("/auth/register", (req, res) => {
     return;
   }
 
-  const chosenAvatar = avatar_url && (String(avatar_url).startsWith("http") || String(avatar_url).startsWith("data:image/"))
-    ? String(avatar_url).trim()
-    : "";
-
-  const newUser: User = {
-    id: state.nextId(state.users),
+  const newUser = createIdentityUser(state, {
     username: cleanUsername,
     email: cleanEmail,
-    password_hash: bcrypt.hashSync(cleanPassword, 10),
-    display_name: (display_name ? String(display_name).trim() : cleanUsername).slice(0, 50),
+    passwordHash: bcrypt.hashSync(cleanPassword, 10),
+    displayName: (display_name ? String(display_name).trim() : cleanUsername).slice(0, 50),
     role: "blader",
     country: (country ? String(country).trim().toUpperCase() : "PA").slice(0, 5),
-    avatar_url: chosenAvatar,
-    elo_rating: 1200,
-    is_active: true,
-    is_verified: false,
-    created_at: new Date().toISOString()
-  };
+    avatarUrl: chosenAvatar(avatar_url),
+    verified: false
+  });
   state.users.push(newUser);
 
   const token = state.generateToken(newUser);
@@ -161,20 +197,16 @@ api.post("/auth/google", async (req, res) => {
       while (state.users.some((candidate) => candidate.username.toLowerCase() === username.toLowerCase())) {
         username = `${baseUsername}_${suffix++}`;
       }
-      user = {
-        id: state.nextId(state.users),
+      user = createIdentityUser(state, {
         username,
         email: claims.email.toLowerCase(),
-        password_hash: bcrypt.hashSync(crypto.randomBytes(32).toString("hex"), 10),
-        display_name: (claims.name || username).slice(0, 50),
+        passwordHash: bcrypt.hashSync(crypto.randomBytes(32).toString("hex"), 10),
+        displayName: (claims.name || username).slice(0, 50),
         role: "blader",
         country: "PA",
-        avatar_url: claims.picture || "",
-        elo_rating: 1200,
-        is_active: true,
-        is_verified: true,
-        created_at: new Date().toISOString()
-      };
+        avatarUrl: claims.picture || "",
+        verified: true
+      });
       state.users.push(user);
     } else if (claims.picture && !user.avatar_url) {
       user.avatar_url = claims.picture;
@@ -332,24 +364,16 @@ api.post("/users/admin-create", requireRoles(["admin"]), (req: AuthRequest, res)
   const validRoles = ["blader", "referee", "organizer", "admin"];
   const chosenRole = validRoles.includes(role) ? role : "blader";
 
-  const chosenAvatar = avatar_url && (String(avatar_url).startsWith("http") || String(avatar_url).startsWith("data:image/"))
-    ? String(avatar_url).trim()
-    : "";
-
-  const newUser: User = {
-    id: state.nextId(state.users),
+  const newUser = createIdentityUser(state, {
     username: cleanUsername,
     email: cleanEmail,
-    password_hash: bcrypt.hashSync(String(password), 10),
-    display_name: (display_name ? String(display_name).trim() : cleanUsername).slice(0, 50),
+    passwordHash: bcrypt.hashSync(String(password), 10),
+    displayName: (display_name ? String(display_name).trim() : cleanUsername).slice(0, 50),
     role: chosenRole,
     country: (country ? String(country).trim().toUpperCase() : "PA").slice(0, 5),
-    avatar_url: chosenAvatar,
-    elo_rating: 1200,
-    is_active: true,
-    is_verified: true,
-    created_at: new Date().toISOString()
-  };
+    avatarUrl: chosenAvatar(avatar_url),
+    verified: true
+  });
   state.users.push(newUser);
   res.json(state.publicUser(newUser));
 

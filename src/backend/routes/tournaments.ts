@@ -1,5 +1,7 @@
+import { randomInt } from "node:crypto";
 import type { Router } from "express";
 import { requireAuth, requireRoles, type AuthRequest } from "../auth.js";
+import { compareGroupIds } from "../services/tournament-domain.js";
 import type {
   BladerDeck, HallOfFame, MatchGame, Season, SeasonRanking,
   Tournament, TournamentMatch, TournamentParticipant, User
@@ -292,7 +294,7 @@ api.post("/tournaments/:id/add-participant", requireAuth, (req: AuthRequest, res
         res.status(400).json({ detail: "El torneo admite un máximo de 16 grupos" });
         return;
       }
-      t.group_ids = [...groupIds, requestedGroup].sort();
+      t.group_ids = [...groupIds, requestedGroup].sort(compareGroupIds);
       t.group_count = t.group_ids.length;
     } else {
       t.group_ids = groupIds;
@@ -368,7 +370,7 @@ api.post("/tournaments/:id/groups", requireAuth, (req: AuthRequest, res) => {
     res.status(400).json({ detail: "El torneo admite un máximo de 16 grupos" });
     return;
   }
-  t.group_ids = [...groupIds, groupId].sort();
+  t.group_ids = [...groupIds, groupId].sort(compareGroupIds);
   t.group_count = t.group_ids.length;
   state.broadcastTournament(id, "tournament_updated", { tournament_id: id, message: `Grupo ${groupId} creado` });
   res.json({ message: `Grupo ${groupId} creado correctamente`, group_id: groupId, group_count: t.group_count });
@@ -418,7 +420,7 @@ api.put("/tournaments/:id/groups/config", requireAuth, (req: AuthRequest, res) =
       if (!nextIds.includes(groupId)) nextIds.push(groupId);
     }
   }
-  nextIds.sort();
+  nextIds.sort(compareGroupIds);
   t.group_ids = nextIds;
   t.group_count = nextIds.length;
   state.broadcastTournament(id, "tournament_updated", {
@@ -761,7 +763,7 @@ api.post("/tournaments/:id/shuffle-seeds", requireAuth, (req: AuthRequest, res) 
   const tournamentParts = state.participants.filter((p) => p.tournament_id === id);
   // Fisher-Yates shuffle
   for (let i = tournamentParts.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     const temp = tournamentParts[i].seed;
     tournamentParts[i].seed = tournamentParts[j].seed;
     tournamentParts[j].seed = temp;
@@ -912,7 +914,7 @@ function buildRefereeMatchQueue(tournamentId: number, groupKey: string | null) {
   // azar" instead of always following seed/creation order.
   const remaining = pending.slice();
   for (let i = remaining.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
   }
 
@@ -1116,7 +1118,7 @@ api.post("/tournaments/:id/generate-playoffs", requireRoles(["organizer", "admin
   }
   state.recalcTournamentStats(t.id);
   const tParts = state.participants.filter((participant) => participant.tournament_id === id && participant.group_id);
-  const groupLetters = Array.from(new Set(tParts.map((participant) => participant.group_id!))).sort();
+  const groupLetters = Array.from(new Set(tParts.map((participant) => participant.group_id!))).sort(compareGroupIds);
   const advancersCount = Math.max(1, t.advancers_per_group || 2);
 
   interface PlayoffPairing {

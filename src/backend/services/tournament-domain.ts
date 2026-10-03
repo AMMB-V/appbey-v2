@@ -4,6 +4,10 @@ import type {
   MatchGame, Tournament, TournamentMatch, TournamentParticipant, User
 } from "../models.js";
 
+export function compareGroupIds(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 export interface TournamentDomainState {
   users: User[];
   tournaments: Tournament[];
@@ -232,7 +236,7 @@ function tournamentGroupIds(t: Tournament, tournamentId: number): string[] {
   state.participants
     .filter((participant) => participant.tournament_id === tournamentId && participant.group_id)
     .forEach((participant) => ids.add(participant.group_id!));
-  return Array.from(ids).sort();
+  return Array.from(ids).sort(compareGroupIds);
 }
 
 function normalizeGroupId(value: unknown): string | null {
@@ -535,7 +539,7 @@ function planTournamentGroups(t: Tournament, checkedInParts: TournamentParticipa
   const N = checkedInParts.length;
   const assignedIds = Array.from(new Set(
     checkedInParts.map((participant) => participant.group_id).filter((groupId): groupId is string => Boolean(groupId))
-  )).sort();
+  )).sort(compareGroupIds);
   let groupIds = t.group_ids?.length
     ? [...t.group_ids]
     : t.group_count
@@ -544,7 +548,7 @@ function planTournamentGroups(t: Tournament, checkedInParts: TournamentParticipa
   for (const assignedId of assignedIds) {
     if (!groupIds.includes(assignedId)) groupIds.push(assignedId);
   }
-  groupIds.sort();
+  groupIds.sort(compareGroupIds);
   const groupCount = groupIds.length;
   const sorted = [...checkedInParts].sort((a, b) => (a.seed || 999) - (b.seed || 999));
   const groups: TournamentParticipant[][] = Array.from({ length: groupCount }, () => []);
