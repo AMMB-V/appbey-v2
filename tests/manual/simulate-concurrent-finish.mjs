@@ -17,7 +17,7 @@
 //        node tests/manual/simulate-concurrent-finish.mjs [baseUrl] [--allow-remote]
 // Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-import { resolveManualApiTarget } from "./safe-target.mjs";
+import { buildManualApiUrl, resolveManualApiTarget } from "./safe-target.mjs";
 
 const { baseUrl: BASE } = await resolveManualApiTarget();
 const SUFFIX = Date.now().toString(36).slice(-5);
@@ -35,7 +35,7 @@ function assert(cond, msg) {
 async function req(method, url, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${BASE}${url}`, {
+  const res = await fetch(buildManualApiUrl(BASE, url), {
     method,
     headers,
     redirect: "error",

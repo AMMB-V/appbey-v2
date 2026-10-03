@@ -52,6 +52,26 @@ export function parseManualApiTarget(args = process.argv.slice(2), env = process
   };
 }
 
+export function buildManualApiUrl(baseUrl, endpoint) {
+  const [path, query, ...extraQueryParts] = endpoint.split("?");
+  if (
+    !path.startsWith("/") ||
+    path.startsWith("//") ||
+    path.includes("\\") ||
+    !/^\/[A-Za-z0-9_/-]+$/.test(path) ||
+    path.split("/").some((segment) => segment === "." || segment === "..") ||
+    extraQueryParts.length > 0 ||
+    (query !== undefined && !/^[A-Za-z0-9_=&-]*$/.test(query))
+  ) {
+    throw new Error("Invalid manual API endpoint.");
+  }
+
+  const target = new URL(baseUrl);
+  target.pathname = `${target.pathname}/${path.slice(1)}`;
+  target.search = query ? `?${query}` : "";
+  return target.href;
+}
+
 export async function resolveManualApiTarget(args = process.argv.slice(2), env = process.env, fetchImpl = fetch) {
   const target = parseManualApiTarget(args, env);
   let response;

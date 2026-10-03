@@ -5,7 +5,7 @@
 //        node tests/manual/simulate-tournament-load.mjs [baseUrl] [--allow-remote]
 // Remote targets must also be listed in APPBEY_TEST_ALLOWED_HOSTS and use in-memory storage.
 
-import { resolveManualApiTarget } from "./safe-target.mjs";
+import { buildManualApiUrl, resolveManualApiTarget } from "./safe-target.mjs";
 
 const { baseUrl: BASE } = await resolveManualApiTarget();
 
@@ -28,7 +28,7 @@ async function request(method, url, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
   const start = performance.now();
-  const response = await fetch(`${BASE}${url}`, {
+  const response = await fetch(buildManualApiUrl(BASE, url), {
     method,
     headers,
     redirect: "error",

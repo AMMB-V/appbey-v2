@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseManualApiTarget, resolveManualApiTarget } from "./safe-target.mjs";
+import { buildManualApiUrl, parseManualApiTarget, resolveManualApiTarget } from "./safe-target.mjs";
 
 test("manual simulation targets default to localhost and accept only API base paths", () => {
   assert.deepEqual(parseManualApiTarget([]), {
@@ -24,6 +24,16 @@ test("remote targets require explicit HTTPS opt-in and an exact host allowlist",
     parseManualApiTarget(["--allow-remote", "https://test.example.com/api"], env).baseUrl,
     "https://test.example.com/api"
   );
+});
+
+test("manual API URL construction rejects traversal and preserves the API prefix", () => {
+  assert.equal(buildManualApiUrl("http://localhost:3999/api", "/matches/12/manual-score"),
+    "http://localhost:3999/api/matches/12/manual-score");
+  assert.equal(buildManualApiUrl("http://localhost:3999/api", "/referee/queue?group=A"),
+    "http://localhost:3999/api/referee/queue?group=A");
+  for (const endpoint of ["//evil.example/path", "/../healthz", "/%2e%2e/healthz", "/matches\\..\\healthz", "/matches/1?x=../"]) {
+    assert.throws(() => buildManualApiUrl("http://localhost:3999/api", endpoint));
+  }
 });
 
 test("manual targets must confirm in-memory storage before scripts issue mutations", async () => {
