@@ -169,6 +169,7 @@ class ApiClient {
   getUser(id) { return this.request(`/users/${id}`); }
   updateProfile(data) { return this.request("/users/me", { method: "PUT", body: data }); }
   adminCreateUser(data) { return this.request("/users/admin-create", { method: "POST", body: data }); }
+  updateUserEmail(id, email) { return this.request(`/users/${id}`, { method: "PUT", body: { email } }); }
   updateUserRole(id, role) { return this.request(`/users/${id}/role`, { method: "PUT", body: { role } }); }
   getParts(category = "") { return this.request(`/beyblades/parts${category ? `?category=${encodeURIComponent(category)}` : ""}`); }
   getMetaTierList(options = {}) { return this.request("/beyblades/meta-tierlist", options); }
