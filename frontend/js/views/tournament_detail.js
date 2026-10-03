@@ -85,8 +85,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const borderClass = m.status === 'in_progress' ? 'border-cyan-500 glow-cyan' : m.status === 'calling' ? 'border-amber-500 animate-pulse' : 'border-slate-800';
     const playerAName = m.player_a ? m.player_a.display_name : 'TBD';
     const playerBName = m.player_b ? m.player_b.display_name : (m.is_bye ? 'BYE (Pase Libre)' : 'TBD');
-    const scoreAClass = m.score_a > m.score_b ? 'text-cyan-400' : 'text-slate-300';
-    const scoreBClass = m.score_b > m.score_a ? 'text-rose-400' : 'text-slate-300';
+    const scoreA = m.is_elimination ? (m.sets_won_a || 0) : m.score_a;
+    const scoreB = m.is_elimination ? (m.sets_won_b || 0) : m.score_b;
+    const scoreAClass = scoreA > scoreB ? 'text-cyan-400' : 'text-slate-300';
+    const scoreBClass = scoreB > scoreA ? 'text-rose-400' : 'text-slate-300';
 
     const playerADeck = m.player_a_deck && m.player_a_deck.length 
       ? `<div class="text-[10px] text-blue-300/80 truncate font-mono">${m.player_a_deck.join(" • ")}</div>`
@@ -135,9 +137,12 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
           </div>
 
           <div class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 font-mono font-extrabold text-lg sm:text-xl flex items-center gap-1.5 flex-shrink-0 shadow-inner">
-            <span class="${scoreAClass}">${m.score_a}</span>
-            <span class="text-slate-600">:</span>
-            <span class="${scoreBClass}">${m.score_b}</span>
+            ${m.is_bye
+              ? '<span class="text-emerald-400 text-xs font-sans">PASE</span>'
+              : `<span class="${scoreAClass}">${scoreA}</span>
+                <span class="text-slate-600">:</span>
+                <span class="${scoreBClass}">${scoreB}</span>
+                ${m.is_elimination ? '<span class="text-[9px] text-slate-500 font-sans">SETS</span>' : ''}`}
           </div>
 
           <div class="flex items-center justify-end gap-2.5 flex-1 min-w-0 text-right">
@@ -530,6 +535,18 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     const isKnockoutActive = tour.stage_type === 'knockout' || playoffMatches.length > 0;
 
     if (!isKnockoutActive) {
+      if (tour.format === "single_elim") {
+        return `
+          <div class="glass-card rounded-2xl p-6 sm:p-8 border border-cyan-500/30 text-center space-y-4">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-3xl shadow-xl shadow-cyan-500/30">🏆</div>
+            <h2 class="text-xl sm:text-2xl font-black text-white">Cuadro de Eliminación Directa</h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto">
+              Al iniciar el torneo se generarán las llaves automáticamente. Cada combate se juega al mejor de 3 sets y los ganadores avanzan a la siguiente ronda.
+            </p>
+          </div>
+        `;
+      }
+
       // Group stage in progress or not started yet: Show Bracket Preview & Ready trigger
       const configuredGroupCount = tour.group_ids?.length || tour.group_count || automaticTournamentGroupCount(participants.length);
       const advancersCount = configuredGroupCount * (tour.advancers_per_group || 2);
@@ -579,34 +596,41 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
     }
 
     // Group playoff matches by round or stage
-    const stageOrder = ["16vos de Final", "8vos de Final", "Cuartos de Final", "Semifinales", "Gran Final"];
-    let roundsMap = {};
+    const roundsMap = new Map();
 
     playoffMatches.forEach(m => {
-      let rName = m.stage_name || m.stage;
-      if (!rName || rName === "knockout") {
-        rName = `Ronda Playoff ${m.round_number}`;
-      }
-      if (rName === "quarterfinal") rName = "Cuartos de Final";
-      if (rName === "semifinal") rName = "Semifinales";
-      if (rName === "final") rName = "Gran Final";
-      if (!roundsMap[rName]) roundsMap[rName] = [];
-      roundsMap[rName].push(m);
+      const roundNumber = Number(m.round_number) || 0;
+      if (!roundsMap.has(roundNumber)) roundsMap.set(roundNumber, []);
+      roundsMap.get(roundNumber).push(m);
     });
 
-    const orderedRoundNames = Object.keys(roundsMap).sort((a, b) => {
-      const idxA = stageOrder.indexOf(a);
-      const idxB = stageOrder.indexOf(b);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return a.localeCompare(b);
-    });
+    const orderedRoundNumbers = [...roundsMap.keys()].sort((a, b) => a - b);
+    const getRoundLabel = (roundNumber, roundMatches) => {
+      const rawStage = roundMatches.find(m => m.stage)?.stage || "";
+      const stageAliases = {
+        quarterfinal: "Cuartos de Final",
+        semifinal: "Semifinales",
+        final: "Gran Final"
+      };
+      const normalizedStage = stageAliases[rawStage.toLowerCase()] || rawStage;
+      if (normalizedStage && normalizedStage !== "knockout" &&
+          !/^(round|ronda)( playoff)?\s+\d+$/i.test(normalizedStage)) {
+        return normalizedStage;
+      }
+
+      const remainingMatches = 2 ** Math.max(0, (tour.total_rounds || roundNumber) - roundNumber);
+      if (remainingMatches === 1) return "Gran Final";
+      if (remainingMatches === 2) return "Semifinales";
+      if (remainingMatches === 4) return "Cuartos de Final";
+      if (remainingMatches === 8) return "8vos de Final";
+      if (remainingMatches === 16) return "16vos de Final";
+      return `Ronda ${roundNumber}`;
+    };
 
     // Check for champion
-    const finalRoundName = orderedRoundNames[orderedRoundNames.length - 1];
-    const finalMatches = roundsMap[finalRoundName] || [];
-    const grandFinalMatch = finalMatches.find(m => m.stage === "Gran Final" || finalRoundName === "Gran Final");
+    const finalRoundNumber = orderedRoundNumbers[orderedRoundNumbers.length - 1];
+    const finalMatches = roundsMap.get(finalRoundNumber) || [];
+    const grandFinalMatch = finalMatches.find(m => m.stage === "Gran Final") || finalMatches[0];
     let championUser = null;
     if (grandFinalMatch && grandFinalMatch.status === "finished" && grandFinalMatch.winner_id) {
       championUser = grandFinalMatch.winner_id === grandFinalMatch.player_a_id ? grandFinalMatch.player_a : grandFinalMatch.player_b;
@@ -643,8 +667,10 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
         <!-- Interactive Visual Tree Bracket Container -->
         <div id="bracket-tree-view" class="overflow-x-auto pb-6 pt-2 scroll-smooth">
           <div class="flex items-stretch gap-8 min-w-[850px] py-4 px-2">
-            ${orderedRoundNames.map((rName, rIdx) => {
-              const rMatches = roundsMap[rName];
+            ${orderedRoundNumbers.map(roundNumber => {
+              const rMatches = roundsMap.get(roundNumber);
+              const rName = getRoundLabel(roundNumber, rMatches);
+              rMatches.sort((a, b) => a.bracket_position - b.bracket_position);
 
               return `
                 <div class="flex-1 min-w-[270px] max-w-[320px] flex flex-col justify-between space-y-4 relative">
@@ -660,17 +686,17 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                       const pAName = m.player_a?.display_name || "TBD (Clasificado)";
                       const pBName = m.player_b?.display_name || (m.is_bye ? "BYE (Pase Libre)" : "TBD (Clasificado)");
                       const isFinished = m.status === "finished";
-                      const winnerA = m.winner_id === m.player_a_id;
-                      const winnerB = m.winner_id === m.player_b_id;
+                      const winnerA = Boolean(m.winner_id && m.winner_id === m.player_a_id);
+                      const winnerB = Boolean(m.winner_id && m.winner_id === m.player_b_id);
 
                       return `
                         <div 
                           class="bracket-node glass-card rounded-2xl p-3 border ${
                             m.status === 'in_progress' ? 'border-emerald-500/80 shadow-lg shadow-emerald-500/20 glow-cyan' :
                             isFinished ? 'border-slate-800 bg-slate-950/80' : 'border-cyan-500/25'
-                          } space-y-2 relative transition duration-200 hover:border-cyan-400 hover:shadow-cyan-950/40 cursor-pointer"
-                          onclick="location.hash='#/referee/${m.id}'"
-                          title="Haz clic para ver el marcador oficial de este match"
+                          } space-y-2 relative transition duration-200 ${m.is_bye ? '' : 'hover:border-cyan-400 hover:shadow-cyan-950/40 cursor-pointer'}"
+                          ${m.is_bye ? '' : `onclick="location.hash='#/referee/${m.id}'"`}
+                          title="${m.is_bye ? 'Pase libre: avanza automáticamente' : 'Haz clic para ver el marcador oficial de este combate'}"
                         >
                           <div class="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800/80 pb-1.5">
                             <span class="font-mono font-bold text-slate-300">${window.getMatchStationLabel(m)}</span>
@@ -695,7 +721,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                             <div class="flex items-center gap-1.5 flex-shrink-0">
                               ${winnerA ? '<span class="text-xs">👑</span>' : ''}
                               <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerA ? 'text-amber-400' : 'text-slate-300'}">
-                                ${m.is_elimination ? `${m.sets_won_a || 0} sets` : m.score_a}
+                                ${m.is_bye && winnerA ? "Pase" : m.is_elimination ? `${m.sets_won_a || 0} sets` : m.score_a}
                               </span>
                             </div>
                           </div>
@@ -718,7 +744,7 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
                             <div class="flex items-center gap-1.5 flex-shrink-0">
                               ${winnerB ? '<span class="text-xs">👑</span>' : ''}
                               <span class="px-2 py-0.5 rounded-lg bg-slate-950 font-mono font-extrabold text-xs ${winnerB ? 'text-amber-400' : 'text-slate-300'}">
-                                ${m.is_elimination ? `${m.sets_won_b || 0} sets` : m.score_b}
+                                ${m.is_bye && winnerB ? "Pase" : m.is_elimination ? `${m.sets_won_b || 0} sets` : m.score_b}
                               </span>
                             </div>
                           </div>
@@ -767,8 +793,9 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
 
         <!-- Detailed Match List View (Alternative Toggle) -->
         <div id="bracket-list-view" class="hidden space-y-6">
-          ${orderedRoundNames.map(rName => {
-            const rMatches = roundsMap[rName];
+          ${orderedRoundNumbers.map(roundNumber => {
+            const rMatches = roundsMap.get(roundNumber);
+            const rName = getRoundLabel(roundNumber, rMatches);
             return `
               <div class="space-y-3">
                 <div class="flex items-center gap-2 pb-1 border-b border-slate-800">
@@ -1005,6 +1032,11 @@ window.renderTournamentDetailView = async (container, tournamentId) => {
             <button onclick="switchTTab('standings')" id="ttab-btn-standings" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
               Tabla de Posiciones (${participants.length})
             </button>
+            ${tournament.format === "single_elim" ? `
+              <button onclick="switchTTab('bracket')" id="ttab-btn-bracket" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
+                Llaves (${matches.filter(m => !m.group_id).length})
+              </button>
+            ` : ''}
           `}
           <button onclick="switchTTab('decks')" id="ttab-btn-decks" class="ttab-btn px-4 py-2 rounded-xl font-semibold whitespace-nowrap text-slate-400 hover:text-white transition">
             🛡️ Bladers & Decks (${participants.length})
