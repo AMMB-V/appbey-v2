@@ -54,6 +54,18 @@ export function parseManualApiTarget(args = process.argv.slice(2), env = process
 }
 
 const API_BASE_PATHS = new Map([["/api", "/api"], ["/api/v1", "/api/v1"]]);
+const API_SEGMENTS = new Map([
+  "auth", "login", "register", "tournaments", "matches", "users", "participants",
+  "checkin", "start", "referee", "groups", "queue", "generate-playoffs",
+  "next-round", "manual-score", "record-finish", "reopen", "undo-finish", "declare-winner"
+].map((segment) => [segment, segment]));
+
+function mapApiSegment(segment) {
+  if (/^\d{1,15}$/.test(segment)) return String(Number.parseInt(segment, 10));
+  const known = API_SEGMENTS.get(segment);
+  if (known === undefined) throw new Error("Invalid manual API endpoint.");
+  return known;
+}
 
 export function buildManualApiUrl(baseUrl, endpoint) {
   const [path, query, ...extraQueryParts] = endpoint.split("?");
@@ -71,7 +83,7 @@ export function buildManualApiUrl(baseUrl, endpoint) {
   const base = new URL(baseUrl);
   const basePath = API_BASE_PATHS.get(base.pathname);
   if (basePath === undefined) throw new Error("Invalid manual API endpoint.");
-  const segments = path.slice(1).split("/").map((segment) => encodeURIComponent(segment));
+  const segments = path.slice(1).split("/").map(mapApiSegment);
   const target = new URL(`${basePath}/${segments.join("/")}`, base.origin);
   if (query) {
     for (const [key, value] of new URLSearchParams(query)) target.searchParams.append(key, value);
@@ -119,15 +131,19 @@ export function createManualApiClient(baseUrl) {
   };
 }
 
+function sanitizeLog(value) {
+  return String(value).replace(/[\r\n\u2028\u2029]+/g, " ");
+}
+
 export function createChecks() {
   const checks = {
     failures: 0,
     assert(condition, message) {
       if (!condition) {
         checks.failures++;
-        console.error(`FAIL: ${message}`);
+        console.error(`FAIL: ${sanitizeLog(message)}`);
       } else {
-        console.log(`ok: ${message}`);
+        console.log(`ok: ${sanitizeLog(message)}`);
       }
     }
   };
