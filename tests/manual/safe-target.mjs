@@ -53,12 +53,13 @@ export function parseManualApiTarget(args = process.argv.slice(2), env = process
   };
 }
 
+const API_BASE_PATHS = new Map([["/api", "/api"], ["/api/v1", "/api/v1"]]);
+
 export function buildManualApiUrl(baseUrl, endpoint) {
   const [path, query, ...extraQueryParts] = endpoint.split("?");
   if (
     !path.startsWith("/") ||
     path.startsWith("//") ||
-    path.includes("\\") ||
     !/^\/[A-Za-z0-9_/-]+$/.test(path) ||
     path.split("/").some((segment) => segment === "." || segment === "..") ||
     extraQueryParts.length > 0 ||
@@ -67,12 +68,16 @@ export function buildManualApiUrl(baseUrl, endpoint) {
     throw new Error("Invalid manual API endpoint.");
   }
 
-  const target = new URL(baseUrl);
-  target.pathname = `${target.pathname}/${path.slice(1)}`;
-  target.search = query ? `?${query}` : "";
+  const base = new URL(baseUrl);
+  const basePath = API_BASE_PATHS.get(base.pathname);
+  if (basePath === undefined) throw new Error("Invalid manual API endpoint.");
+  const segments = path.slice(1).split("/").map((segment) => encodeURIComponent(segment));
+  const target = new URL(`${basePath}/${segments.join("/")}`, base.origin);
+  if (query) {
+    for (const [key, value] of new URLSearchParams(query)) target.searchParams.append(key, value);
+  }
   return target.href;
 }
-
 export async function resolveManualApiTarget(args = process.argv.slice(2), env = process.env, fetchImpl = fetch) {
   const target = parseManualApiTarget(args, env);
   let response;
@@ -114,6 +119,33 @@ export function createManualApiClient(baseUrl) {
   };
 }
 
+export function createChecks() {
+  const checks = {
+    failures: 0,
+    assert(condition, message) {
+      if (!condition) {
+        checks.failures++;
+        console.error(`FAIL: ${message}`);
+      } else {
+        console.log(`ok: ${message}`);
+      }
+    }
+  };
+  return checks;
+}
+
+export function createRegisterAndLogin(req) {
+  return async function registerAndLogin(username) {
+    await req("POST", "/auth/register", {
+      username,
+      email: `${username}@sim.test`,
+      password: "PlayerPass123!",
+      display_name: username
+    });
+    const login = await req("POST", "/auth/login", { email: `${username}@sim.test`, password: "PlayerPass123!" });
+    return { username, token: login.body?.access_token, id: login.body?.user?.id };
+  };
+}
 export function randomBelow(max) {
   return randomInt(max);
 }

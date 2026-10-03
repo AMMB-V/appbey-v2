@@ -11,33 +11,17 @@
 // Usage: node dist/server.cjs (in one shell) then
 //        node tests/manual/simulate-bracket-undo.mjs [baseUrl] [--allow-remote]
 
-import { createManualApiClient, resolveManualApiTarget } from "./safe-target.mjs";
+import { createChecks, createManualApiClient, createRegisterAndLogin, resolveManualApiTarget } from "./safe-target.mjs";
 
 const { baseUrl: BASE } = await resolveManualApiTarget();
 const SUFFIX = Date.now().toString(36).slice(-5);
 
-let failures = 0;
-function assert(cond, msg) {
-  if (!cond) {
-    failures++;
-    console.error(`FAIL: ${msg}`);
-  } else {
-    console.log(`ok: ${msg}`);
-  }
-}
+const checks = createChecks();
+const { assert } = checks;
 
 const req = createManualApiClient(BASE);
 
-async function registerAndLogin(username) {
-  await req("POST", "/auth/register", {
-    username,
-    email: `${username}@sim.test`,
-    password: "PlayerPass123!",
-    display_name: username
-  });
-  const login = await req("POST", "/auth/login", { email: `${username}@sim.test`, password: "PlayerPass123!" });
-  return { username, token: login.body?.access_token, id: login.body?.user?.id };
-}
+const registerAndLogin = createRegisterAndLogin(req);
 
 async function main() {
   console.log(`Simulating bracket-undo edge cases against ${BASE}`);
@@ -166,8 +150,8 @@ async function main() {
   assert(duoState.score_a === 0 && duoState.score_b === 0, `set 2 score correctly reverted to 0-0, not summed across sets (score_a=${duoState.score_a}, score_b=${duoState.score_b})`);
   assert(duoState.status === "in_progress", `match remains in_progress mid-series (got ${duoState.status})`);
 
-  console.log(`\n${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`}`);
-  process.exit(failures === 0 ? 0 : 1);
+  console.log(`\n${checks.failures === 0 ? "ALL CHECKS PASSED" : `${checks.failures} CHECK(S) FAILED`}`);
+  process.exit(checks.failures === 0 ? 0 : 1);
 }
 
 main().catch((err) => {

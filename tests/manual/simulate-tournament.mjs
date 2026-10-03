@@ -7,20 +7,13 @@
 // Usage: node dist/server.cjs (in one shell) then
 //        node tests/manual/simulate-tournament.mjs [baseUrl] [--allow-remote]
 
-import { createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
+import { createChecks, createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
 
 const { baseUrl: BASE } = await resolveManualApiTarget();
 const PARTICIPANT_COUNT = 32; // near max realistic size, power of two for clean groups
 
-let failures = 0;
-function assert(cond, msg) {
-  if (!cond) {
-    failures++;
-    console.error(`FAIL: ${msg}`);
-  } else {
-    console.log(`ok: ${msg}`);
-  }
-}
+const checks = createChecks();
+const { assert } = checks;
 
 const req = createManualApiClient(BASE);
 
@@ -161,8 +154,8 @@ async function main() {
   console.log("knockout rounds created:", [...roundsCreated].sort((a, b) => a - b).join(", "));
   assert(roundsCreated.size >= 4, `bracket advanced through at least 4 rounds (got ${roundsCreated.size})`);
 
-  console.log(`\n${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`}`);
-  process.exit(failures === 0 ? 0 : 1);
+  console.log(`\n${checks.failures === 0 ? "ALL CHECKS PASSED" : `${checks.failures} CHECK(S) FAILED`}`);
+  process.exit(checks.failures === 0 ? 0 : 1);
 }
 
 main().catch((err) => {

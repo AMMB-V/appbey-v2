@@ -7,22 +7,15 @@
 // Usage: node dist/server.cjs (in one shell) then
 //        node tests/manual/simulate-groups-elim-byes.mjs [baseUrl] [--allow-remote]
 
-import { createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
+import { createChecks, createManualApiClient, randomBelow, resolveManualApiTarget } from "./safe-target.mjs";
 
 const { baseUrl: BASE } = await resolveManualApiTarget();
 const PARTICIPANT_COUNT = 29; // uneven -> some groups of 4, some of 5; 7 groups x top2 = 14 qualifiers -> bracketSize 16, 2 byes
 const GROUP_COUNT = 7;
 const SUFFIX = Date.now().toString(36).slice(-5);
 
-let failures = 0;
-function assert(cond, msg) {
-  if (!cond) {
-    failures++;
-    console.error(`FAIL: ${msg}`);
-  } else {
-    console.log(`ok: ${msg}`);
-  }
-}
+const checks = createChecks();
+const { assert } = checks;
 
 const req = createManualApiClient(BASE);
 
@@ -136,8 +129,8 @@ async function main() {
   const grandFinal = knockoutMatches.find((m) => m.stage === "Gran Final");
   assert(!!grandFinal && grandFinal.status === "finished", "a finished 'Gran Final' match exists");
 
-  console.log(`\n${failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`}`);
-  process.exit(failures === 0 ? 0 : 1);
+  console.log(`\n${checks.failures === 0 ? "ALL CHECKS PASSED" : `${checks.failures} CHECK(S) FAILED`}`);
+  process.exit(checks.failures === 0 ? 0 : 1);
 }
 
 main().catch((err) => {
